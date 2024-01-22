@@ -9,19 +9,30 @@ import org.mapstruct.factory.Mappers;
 
 import com.skch.skchhostelservice.dto.HostellerDTO;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
+import com.skch.skchhostelservice.dto.UserDTO;
+import com.skch.skchhostelservice.dto.UserPrivilegeDTO;
 import com.skch.skchhostelservice.model.Hosteller;
 import com.skch.skchhostelservice.model.PaymentHistory;
+import com.skch.skchhostelservice.model.UserPrivilege;
+import com.skch.skchhostelservice.model.Users;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ObjectMapper {
 
 	ObjectMapper INSTANCE = Mappers.getMapper(ObjectMapper.class);
 
-	@Mapping(source = "joiningDate",target = "joiningDate",dateFormat = "MM/dd/yyyy")
+	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
 	Hosteller fromHostellerDTO(HostellerDTO dto);
 	List<Hosteller> fromHostellerDTO(List<HostellerDTO> dtos);
-	
-	@Mapping(source = "feeDate",target = "feeDate",dateFormat = "MM/dd/yyyy")
+
+	@Mapping(source = "feeDate", target = "feeDate", dateFormat = "MM/dd/yyyy")
 	PaymentHistory fromPaymentHistoryDTO(PaymentHistoryDTO dto);
 	List<PaymentHistory> fromPaymentHistoryDTO(List<PaymentHistoryDTO> dtos);
+
+	@Mapping(source = "dob", target = "dob", dateFormat = "MM/dd/yyyy")
+	Users fromUserDTO(UserDTO dto);
+	List<Users> fromUserDTO(List<UserDTO> dto);
+	
+	UserPrivilege fromUserPrivilegeDTO(UserPrivilegeDTO userPrivilegeDTO);
+	List<UserPrivilege> fromUserPrivilegeDTO(List<UserPrivilegeDTO> userPrivilegeDTO);
 }
