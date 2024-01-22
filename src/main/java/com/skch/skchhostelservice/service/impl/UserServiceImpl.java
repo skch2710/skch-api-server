@@ -190,7 +190,12 @@ public class UserServiceImpl implements UserService {
 				if (userPrivilege.getResource().getIsSubnav().equals("N")) {
 					navigation = new Navigation();
 					navigation.setResourceName(userPrivilege.getResource().getResourceName());
-
+					navigation.setResourcePath(userPrivilege.getResource().getResourcePath());
+					navigation.setIcon(userPrivilege.getResource().getIcon());
+					navigation.setDisplayOrder(userPrivilege.getResource().getDisplayOrder());
+					navMap.put(userPrivilege.getResource().getResourceId(), navigation);
+				}else if(userPrivilege.getResource().getIsSubnav().equals("Y")) {
+					
 				}
 			}
 
