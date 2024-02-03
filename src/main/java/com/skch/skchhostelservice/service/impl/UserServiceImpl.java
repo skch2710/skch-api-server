@@ -171,35 +171,51 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Result navigations(Long userId) {
 		Result result = new Result();
-
-		Navigation navigation = null;
-		SubNavigarion subNavigarion = new SubNavigarion();
-
 		SortedMap<Long, Object> navMap = new TreeMap<>();
-
 		try {
 			Users user = usersDAO.findByUserId(userId);
 
-			List<UserPrivilege> userPrivileges = user.getUserPrivilege().stream()
-					.filter(obj -> obj.getReadOnlyFlag() == true)
-					.sorted(Comparator.comparingLong(prev -> prev.getResource().getDisplayOrder()))
-					.collect(Collectors.toList());
-
-			for (UserPrivilege userPrivilege : userPrivileges) {
-
-				if (userPrivilege.getResource().getIsSubnav().equals("N")) {
-					navigation = new Navigation();
-					navigation.setResourceName(userPrivilege.getResource().getResourceName());
-					navigation.setResourcePath(userPrivilege.getResource().getResourcePath());
-					navigation.setIcon(userPrivilege.getResource().getIcon());
-					navigation.setDisplayOrder(userPrivilege.getResource().getDisplayOrder());
-					navMap.put(userPrivilege.getResource().getResourceId(), navigation);
-				}else if(userPrivilege.getResource().getIsSubnav().equals("Y")) {
-					
+			user.getUserPrivilege().stream()
+					.filter(obj -> obj.getIsActive() && obj.getReadOnlyFlag() 
+							&& obj.getResource().getIsSubnav().equals("N"))
+					.forEach(obj -> {
+						Navigation navigation = new Navigation();
+						navigation.setResourceId(obj.getResource().getResourceId());
+						navigation.setResourceName(obj.getResource().getResourceName());
+						navigation.setIcon(obj.getResource().getIcon());
+						navigation.setResourcePath(obj.getResource().getResourcePath());
+						navigation.setDisplayOrder(obj.getResource().getDisplayOrder());
+						navMap.put(obj.getResource().getDisplayOrder(), navigation);
+					});
+			
+			user.getUserPrivilege().stream()
+			.filter(obj -> obj.getIsActive() && obj.getReadOnlyFlag() 
+					&& obj.getResource().getIsSubnav().equals("Y"))
+			.collect(Collectors.groupingBy(obj->obj.getResource().getDisplayOrder()))
+			.forEach((displyOrder,listNav)->{
+				List<Navigation> navList = new ArrayList<>();
+				SubNavigarion nav = new SubNavigarion();
+				listNav.forEach(obj -> {
+					Navigation navigation = new Navigation();
+					navigation.setResourceId(obj.getResource().getResourceId());
+					navigation.setResourceName(obj.getResource().getResourceName());
+					navigation.setIcon(obj.getResource().getIcon());
+					navigation.setResourcePath(obj.getResource().getResourcePath());
+					navigation.setDisplayOrder(obj.getResource().getDisplayOrder());
+					navList.add(navigation);	
+					});
+				if(!listNav.isEmpty()) {
+					nav.setResourceName(listNav.get(0).getResource().getParentName());
+					nav.setIcon(listNav.get(0).getResource().getParentIcon());
+					nav.setResourcePath(listNav.get(0).getResource().getParentPath());
+					nav.setDisplayOrder(listNav.get(0).getResource().getDisplayOrder());
+					nav.setSubNav(navList);
+					navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);
 				}
-			}
-
-			result.setData(userPrivileges);
+			});
+			
+			
+			result.setData(navMap.values());
 
 		} catch (Exception e) {
 			e.printStackTrace();

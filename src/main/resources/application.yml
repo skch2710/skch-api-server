@@ -12,30 +12,30 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: http://localhost:8060
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8060
 
-#  mail:
-#    host: smtp.office365.com
-#    username: temp2710@outlook.com
-#    password: Temp@2710
-#    protocol: smtp
-#    port: 587
-#    properties:
-#      mail:
-#        smtp:
-#          starttls:
-#            enable: true
-#          auth: true
-#  threads:
-#    virtual:
-#      enabled: true
-#app:
-#  auth-cred: sathish_ch:S@th!$h
-#  url: http://localhost:8060/oauth2/token
-#  passwordlink-expiry: 24
-#  otp-expiry: 5
-#  isOtpEnable : false
+  mail:
+    host: smtp.office365.com
+    username: temp2710@outlook.com
+    password: Temp@2710
+    protocol: smtp
+    port: 587
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: true
+          auth: true
+  threads:
+    virtual:
+      enabled: true
+app:
+  auth-cred: sathish_ch:S@th!$h
+  url: http://localhost:8060/oauth2/token
+  passwordlink-expiry: 24
+  otp-expiry: 5
+  isOtpEnable : true

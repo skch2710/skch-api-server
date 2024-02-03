@@ -2,6 +2,7 @@ package com.skch.skchhostelservice.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,8 +14,11 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.service.UserService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/v1/user")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
 	@Autowired
@@ -28,6 +32,7 @@ public class UserController {
 	}
 
 	@GetMapping("/nav/{userId}")
+	@PreAuthorize("hasAnyAuthority('Super User','Admin')")
 	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId){
 		Result result = userService.navigations(userId);
 		return ResponseEntity.ok(result);

@@ -7,12 +7,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Navigation {
-
-	private Long resourceId;
-	private String resourceName;
-	private String icon;
-	private String resourcePath;
-	private Long displayOrder;
-
+public class LoginResponse {
+	
+	private Boolean isOtpEnable;
+	private String otp;
+	private JwtDTO jwtDTO;
+	private UserDTO user;
+	private Object navigations;
+	
 }

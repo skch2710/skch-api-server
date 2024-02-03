@@ -33,6 +33,10 @@ public interface ObjectMapper {
 	Users fromUserDTO(UserDTO dto);
 	List<Users> fromUserDTO(List<UserDTO> dto);
 	
+	@Mapping(source = "dob", target = "dob", dateFormat = "MM/dd/yyyy")
+	UserDTO fromUserModel(Users user);
+	List<UserDTO> fromUserModel(List<Users> users);
+	
 	UserPrivilege fromUserPrivilegeDTO(UserPrivilegeDTO userPrivilegeDTO);
 	List<UserPrivilege> fromUserPrivilegeDTO(List<UserPrivilegeDTO> userPrivilegeDTO);
 }

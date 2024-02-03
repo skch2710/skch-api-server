@@ -12,8 +12,11 @@ import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.service.HostelService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/v1/hostel")
+@SecurityRequirement(name = "bearerAuth")
 public class HostelController {
 
 	@Autowired

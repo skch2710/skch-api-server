@@ -29,6 +29,15 @@ public class Resource {
 
     @Column(name = "is_subnav", length = 1)
     private String isSubnav;
+    
+    @Column(name = "parent_name")
+    private String parentName;
+    
+    @Column(name = "parent_path")
+    private String parentPath;
+    
+    @Column(name = "parent_icon")
+    private String parentIcon;
 
     @Column(name = "is_active")
     private boolean isActive;
