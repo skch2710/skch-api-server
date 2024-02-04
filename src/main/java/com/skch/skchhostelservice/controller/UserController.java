@@ -14,6 +14,7 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
@@ -30,7 +31,8 @@ public class UserController {
 //	@PreAuthorize("hasAuthority(#object.accesId + '-User-R') or hasAuthority('User-R')")
 //	@PreAuthorize("hasAuthority(#accesId[0] + '-User-R') or hasAuthority('User-R')")
 //	@PreAuthorize("hasAuthority(#object.accesId[0] + '-User-R') or hasAuthority('User-R')")
-	public ResponseEntity<?> saveUpdateHosteller(@RequestBody UserDTO dto) {
+	@Operation(summary="Save or Update User",description = "Save or Update the User")
+	public ResponseEntity<?> saveOrUpdateUser(@RequestBody UserDTO dto) {
 		Result result = userService.saveOrUpdateUser(dto);
 		return ResponseEntity.ok(result);
 	}
@@ -38,6 +40,7 @@ public class UserController {
 	@GetMapping("/nav/{userId}")
 //	@PreAuthorize("hasAnyAuthority('Super User','Admin')")
 	@PreAuthorize("hasAnyAuthority('User-R')")
+	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
 	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId){
 		Result result = userService.navigations(userId);
 		return ResponseEntity.ok(result);
