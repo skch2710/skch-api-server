@@ -207,7 +207,6 @@ public class UserServiceImpl implements UserService {
 				if(!listNav.isEmpty()) {
 					nav.setResourceName(listNav.get(0).getResource().getParentName());
 					nav.setIcon(listNav.get(0).getResource().getParentIcon());
-					nav.setResourcePath(listNav.get(0).getResource().getParentPath());
 					nav.setDisplayOrder(listNav.get(0).getResource().getDisplayOrder());
 					nav.setSubNav(navList);
 					navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);

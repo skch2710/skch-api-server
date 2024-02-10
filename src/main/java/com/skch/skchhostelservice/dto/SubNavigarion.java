@@ -13,7 +13,6 @@ public class SubNavigarion {
 	
 	private String resourceName;
 	private String icon;
-	private String resourcePath;
 	private Long displayOrder;
 	private List<Navigation> subNav;
 

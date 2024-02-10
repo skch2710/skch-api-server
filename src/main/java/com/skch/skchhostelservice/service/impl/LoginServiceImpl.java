@@ -1,5 +1,6 @@
 package com.skch.skchhostelservice.service.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -12,6 +13,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.JwtDTO;
 import com.skch.skchhostelservice.dto.LoginRequest;
@@ -26,6 +33,7 @@ import com.skch.skchhostelservice.model.Users;
 import com.skch.skchhostelservice.service.LoginService;
 import com.skch.skchhostelservice.util.CacheService;
 import com.skch.skchhostelservice.util.JwtUtil;
+import com.skch.skchhostelservice.util.PdfHelper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -164,7 +172,6 @@ public class LoginServiceImpl implements LoginService {
 				if(!listNav.isEmpty()) {
 					nav.setResourceName(listNav.get(0).getResource().getParentName());
 					nav.setIcon(listNav.get(0).getResource().getParentIcon());
-					nav.setResourcePath(listNav.get(0).getResource().getParentPath());
 					nav.setDisplayOrder(listNav.get(0).getResource().getDisplayOrder());
 					nav.setSubNav(navList);
 					navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);
@@ -175,6 +182,79 @@ public class LoginServiceImpl implements LoginService {
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return navMap.values();
+	}
+
+	@Override
+	public ByteArrayOutputStream getPdf(){
+		ByteArrayOutputStream baos;
+		try {
+			Rectangle pagesize = new Rectangle(1754, 1240);
+			// Create a new document
+//			Document document = new Document(PageSize.A4, 30, 30, 45, 30);
+			Document document = new Document(pagesize, 30, 30, 45, 30);
+
+			baos = new ByteArrayOutputStream();
+
+			// Create a new PDF writer
+			PdfWriter.getInstance(document, baos);
+
+			// Open the document
+			document.open();
+
+			PdfPTable totalCard = PdfHelper.createNoBorderTable(3,11f,11f,100);
+			totalCard.setTotalWidth(new float[] {49.8f,0.4f,49.8f});
+			PdfPTable frontCard = frontCard();
+			PdfPTable middleSpacee = PdfHelper.createTable(1,11f,11f,100);
+			PdfPTable backCard = backCard();
+			
+			totalCard.addCell(frontCard);
+			totalCard.addCell(middleSpacee);
+			totalCard.addCell(backCard);
+			
+			document.add(totalCard);
+			
+			// Close the document
+			document.close();
+		} catch (Exception e) {
+			log.error("error in generate Pdf ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return baos;
+	}
+	
+	public PdfPTable frontCard() throws Exception {
+		String bgmPath = "src/main/resources/images/Card Front.png";
+		String logoPath = "src/main/resources/images/logo-one.png";
+		
+		PdfPTable frontCard = PdfHelper.createTable(1,11f,11f,100);
+		PdfPCell cell = new PdfPCell();
+		
+		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
+		PdfHelper.createLogo(innerTable,logoPath,20,10,100,Element.ALIGN_LEFT);
+		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",25,null,10,Element.ALIGN_LEFT);
+		
+		cell.addElement(innerTable);
+		
+		PdfHelper.imageBgm(bgmPath, frontCard,cell, 500);
+		
+		return frontCard;
+	}
+	
+	public PdfPTable backCard() throws Exception {
+		String bgmPath = "src/main/resources/images/Card Back.png";
+		String logoPath = "src/main/resources/images/logo-one.png";
+		
+		PdfPTable backCard = PdfHelper.createTable(1,11f,11f,100);
+		PdfPCell cell = new PdfPCell();
+		
+		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
+		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",25,null,10,Element.ALIGN_LEFT);
+		
+		PdfHelper.createLogo(innerTable,logoPath,0,10,60,Element.ALIGN_RIGHT);
+		cell.addElement(innerTable);
+		
+		PdfHelper.imageBgm(bgmPath, backCard,cell, 500);
+		return backCard;
 	}
 	
 }
