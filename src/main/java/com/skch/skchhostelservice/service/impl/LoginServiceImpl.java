@@ -7,6 +7,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,7 @@ import com.skch.skchhostelservice.dto.Navigation;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.SubNavigarion;
 import com.skch.skchhostelservice.dto.UserDTO;
+import com.skch.skchhostelservice.dto.UserPrivilegeDTO;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.mapper.ObjectMapper;
 import com.skch.skchhostelservice.model.Users;
@@ -85,8 +87,10 @@ public class LoginServiceImpl implements LoginService {
 						result.setStatusCode(HttpStatus.OK.value());
 					} else {
 						JwtDTO jwtDTO = jwtUtil.getToken(request);
-						UserDTO userDTO = MAPPER.fromUserModel(user);
-						loginResponse.setUser(userDTO);
+						List<UserPrivilegeDTO> upr = MAPPER.fromUserPrivilegeModel(user.getUserPrivilege());
+						UserDTO userDto = MAPPER.fromUserModel(user);
+						userDto.setUserPrivilege(upr);
+						loginResponse.setUser(userDto);
 						loginResponse.setNavigations(getNavigations(user));
 						loginResponse.setJwtDTO(jwtDTO);
 						result.setData(loginResponse);
@@ -118,7 +122,10 @@ public class LoginServiceImpl implements LoginService {
 				cacheService.clearOTP(emailId);
 
 				JwtDTO jwtDTO = jwtUtil.getToken(request);
-				loginResponse.setUser(MAPPER.fromUserModel(user));
+				List<UserPrivilegeDTO> upr = MAPPER.fromUserPrivilegeModel(user.getUserPrivilege());
+				UserDTO userDto = MAPPER.fromUserModel(user);
+				userDto.setUserPrivilege(upr);
+				loginResponse.setUser(userDto);
 				loginResponse.setJwtDTO(jwtDTO);
 				loginResponse.setNavigations(getNavigations(user));
 				resut.setData(loginResponse);
@@ -145,11 +152,7 @@ public class LoginServiceImpl implements LoginService {
 							&& obj.getResource().getIsSubnav().equals("N"))
 					.forEach(obj -> {
 						Navigation navigation = new Navigation();
-						navigation.setResourceId(obj.getResource().getResourceId());
-						navigation.setResourceName(obj.getResource().getResourceName());
-						navigation.setIcon(obj.getResource().getIcon());
-						navigation.setResourcePath(obj.getResource().getResourcePath());
-						navigation.setDisplayOrder(obj.getResource().getDisplayOrder());
+						BeanUtils.copyProperties(obj.getResource(), navigation);
 						navMap.put(obj.getResource().getDisplayOrder(), navigation);
 					});
 			
@@ -162,11 +165,7 @@ public class LoginServiceImpl implements LoginService {
 				SubNavigarion nav = new SubNavigarion();
 				listNav.forEach(obj -> {
 					Navigation navigation = new Navigation();
-					navigation.setResourceId(obj.getResource().getResourceId());
-					navigation.setResourceName(obj.getResource().getResourceName());
-					navigation.setIcon(obj.getResource().getIcon());
-					navigation.setResourcePath(obj.getResource().getResourcePath());
-					navigation.setDisplayOrder(obj.getResource().getDisplayOrder());
+					BeanUtils.copyProperties(obj.getResource(), navigation);
 					navList.add(navigation);	
 					});
 				if(!listNav.isEmpty()) {

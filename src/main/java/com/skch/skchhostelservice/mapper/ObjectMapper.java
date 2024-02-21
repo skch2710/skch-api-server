@@ -39,4 +39,8 @@ public interface ObjectMapper {
 	
 	UserPrivilege fromUserPrivilegeDTO(UserPrivilegeDTO userPrivilegeDTO);
 	List<UserPrivilege> fromUserPrivilegeDTO(List<UserPrivilegeDTO> userPrivilegeDTO);
+	
+	@Mapping(source = "resource.resourceId", target = "resourceId")
+	UserPrivilegeDTO fromUserPrivilegeModel(UserPrivilege userPrivilege);
+	List<UserPrivilegeDTO> fromUserPrivilegeModel(List<UserPrivilege> userPrivileges);
 }

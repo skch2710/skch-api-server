@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -180,11 +181,7 @@ public class UserServiceImpl implements UserService {
 							&& obj.getResource().getIsSubnav().equals("N"))
 					.forEach(obj -> {
 						Navigation navigation = new Navigation();
-						navigation.setResourceId(obj.getResource().getResourceId());
-						navigation.setResourceName(obj.getResource().getResourceName());
-						navigation.setIcon(obj.getResource().getIcon());
-						navigation.setResourcePath(obj.getResource().getResourcePath());
-						navigation.setDisplayOrder(obj.getResource().getDisplayOrder());
+						BeanUtils.copyProperties(obj.getResource(), navigation);
 						navMap.put(obj.getResource().getDisplayOrder(), navigation);
 					});
 			
@@ -197,11 +194,7 @@ public class UserServiceImpl implements UserService {
 				SubNavigarion nav = new SubNavigarion();
 				listNav.forEach(obj -> {
 					Navigation navigation = new Navigation();
-					navigation.setResourceId(obj.getResource().getResourceId());
-					navigation.setResourceName(obj.getResource().getResourceName());
-					navigation.setIcon(obj.getResource().getIcon());
-					navigation.setResourcePath(obj.getResource().getResourcePath());
-					navigation.setDisplayOrder(obj.getResource().getDisplayOrder());
+					BeanUtils.copyProperties(obj.getResource(), navigation);
 					navList.add(navigation);	
 					});
 				if(!listNav.isEmpty()) {
@@ -212,12 +205,10 @@ public class UserServiceImpl implements UserService {
 					navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);
 				}
 			});
-			
-			
 			result.setData(navMap.values());
-
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Error in setUserPrivileges .... ::" + e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return result;
