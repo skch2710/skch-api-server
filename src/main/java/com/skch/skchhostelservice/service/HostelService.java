@@ -9,5 +9,7 @@ public interface HostelService {
 	Result saveOrUpdateHosteller(HostellerDTO dto);
 	
 	Result saveOrUpdatePaymentHistory(PaymentHistoryDTO dto);
+	
+	Result getHostellers();
 
 }

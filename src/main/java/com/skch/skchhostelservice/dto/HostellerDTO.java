@@ -19,7 +19,7 @@ public class HostellerDTO {
 	private String proof;
 	private String reason;
 	private String vacatedDate;
-//	private Boolean active;
+	private Boolean active;
 	private Long createdById;
 	private Long modifiedById;
 

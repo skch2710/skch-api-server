@@ -1,5 +1,7 @@
 package com.skch.skchhostelservice;
 
+import java.util.TimeZone;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -21,6 +23,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 public class SkchHostelServiceApplication {
 
 	public static void main(String[] args) {
+		TimeZone.setDefault(TimeZone.getTimeZone("${app.timezone}"));
 		SpringApplication.run(SkchHostelServiceApplication.class, args);
 	}
 

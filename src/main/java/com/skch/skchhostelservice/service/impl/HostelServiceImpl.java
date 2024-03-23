@@ -1,11 +1,14 @@
 package com.skch.skchhostelservice.service.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.HostellerDAO;
 import com.skch.skchhostelservice.dao.PaymentHistoryDAO;
 import com.skch.skchhostelservice.dto.HostellerDTO;
@@ -47,12 +50,18 @@ public class HostelServiceImpl implements HostelService {
 		try {
 			dto.setFee(Utility.isBlank(dto.getFee()));
 			dto.setVacatedDate(Utility.isBlank(dto.getVacatedDate()));
+			dto.setJoiningDate(Utility.isBlank(dto.getJoiningDate()));
+			
+			log.info(">>>>>>"+dto);			
 			result = new Result();
 			if (dto.getHostellerId() == null || dto.getHostellerId() == 0) {
 				hosteller = MAPPER.fromHostellerDTO(dto);
 				hosteller.setCreatedDate(LocalDateTime.now());
 				hosteller.setModifiedDate(LocalDateTime.now());
 				hosteller.setActive(true);
+				if(hosteller.getJoiningDate() == null) {
+					hosteller.setJoiningDate(LocalDate.now());
+				}
 				hosteller = hostellerDAO.save(hosteller);
 
 				result.setStatusCode(HttpStatus.OK.value());
@@ -124,6 +133,34 @@ public class HostelServiceImpl implements HostelService {
 			log.info("Ending at saveOrUpdatePaymentHistory.....");
 		} catch (Exception e) {
 			log.error("Error at saveOrUpdatePaymentHistory :: " + e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
+	}
+
+	/**
+	 * Getting All Hostellers.
+	 */
+	@Override
+	public Result getHostellers() {
+		log.info("Starting at getHostellers.....");
+		Result result = new Result();
+		try {
+			List<Hosteller> allHostellers = hostellerDAO.findAll();
+			
+			if(!allHostellers.isEmpty()) {
+				List<HostellerDTO> dtoList = MAPPER.formHostelModel(allHostellers);
+				result.setStatusCode(HttpStatus.OK.value());
+				result.setSuccessMessage("getting Successfully...");
+				result.setData(dtoList);
+			}else {
+				result.setStatusCode(HttpStatus.NOT_FOUND.value());
+				result.setErrorMessage(Constant.NOT_FOUND);
+			}
+			
+			log.info("Ending at getHostellers.....");
+		} catch (Exception e) {
+			log.error("Error at getHostellers :: " + e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;

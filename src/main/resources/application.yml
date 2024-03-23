@@ -34,6 +34,7 @@ spring:
     virtual:
       enabled: true
 app:
+  timezone: IST
   auth-cred: sathish_ch:S@th!$h
   url: http://localhost:8060/oauth2/token
   passwordlink-expiry: 24

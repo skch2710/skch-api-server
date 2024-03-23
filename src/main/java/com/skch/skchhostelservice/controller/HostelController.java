@@ -2,6 +2,7 @@ package com.skch.skchhostelservice.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,9 @@ import com.skch.skchhostelservice.service.HostelService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api/v1/hostel")
-@SecurityRequirement(name = "bearerAuth")
+//@RequestMapping("/api/v1/hostel")
+@RequestMapping("/hostel")
+//@SecurityRequirement(name = "bearerAuth")
 public class HostelController {
 
 	@Autowired
@@ -33,6 +35,13 @@ public class HostelController {
 //	@PreAuthorize("hasAnyAuthority('Super User')")
 	public ResponseEntity<?> saveUpdatePayment(@RequestBody PaymentHistoryDTO dto) {
 		Result result = hostelService.saveOrUpdatePaymentHistory(dto);
+		return ResponseEntity.ok(result);
+	}
+	
+	@GetMapping("/get-hostellers")
+//	@PreAuthorize("hasAnyAuthority('Super User')")
+	public ResponseEntity<?> getHostellers() {
+		Result result = hostelService.getHostellers();
 		return ResponseEntity.ok(result);
 	}
 

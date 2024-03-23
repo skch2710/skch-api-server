@@ -43,4 +43,8 @@ public interface ObjectMapper {
 	@Mapping(source = "resource.resourceId", target = "resourceId")
 	UserPrivilegeDTO fromUserPrivilegeModel(UserPrivilege userPrivilege);
 	List<UserPrivilegeDTO> fromUserPrivilegeModel(List<UserPrivilege> userPrivileges);
+	
+	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
+	HostellerDTO formHostelModel(Hosteller hostellers);
+	List<HostellerDTO> formHostelModel(List<Hosteller> allHostellers);
 }
