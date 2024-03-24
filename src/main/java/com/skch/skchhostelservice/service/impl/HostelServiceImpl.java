@@ -12,6 +12,7 @@ import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.HostellerDAO;
 import com.skch.skchhostelservice.dao.PaymentHistoryDAO;
 import com.skch.skchhostelservice.dto.HostellerDTO;
+import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.exception.CustomException;
@@ -142,11 +143,13 @@ public class HostelServiceImpl implements HostelService {
 	 * Getting All Hostellers.
 	 */
 	@Override
-	public Result getHostellers() {
+	public Result getHostellers(HostellerSearch search) {
 		log.info("Starting at getHostellers.....");
 		Result result = new Result();
 		try {
-			List<Hosteller> allHostellers = hostellerDAO.findAll();
+			List<Hosteller> allHostellers = 
+					hostellerDAO.findByFullNameStartingWithIgnoreCaseAndEmailIdStartingWithIgnoreCase(
+							search.getFullName(),search.getEmailId());
 			
 			if(!allHostellers.isEmpty()) {
 				List<HostellerDTO> dtoList = MAPPER.formHostelModel(allHostellers);

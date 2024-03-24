@@ -29,7 +29,7 @@ public class Hosteller {
 	private String emailId;
 
 	@Column(name = "pnome_number")
-	private String pnomeNumber;
+	private String phoneNumber;
 
 	@Column(name = "fee")
 	private BigDecimal fee;

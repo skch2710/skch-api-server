@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skch.skchhostelservice.dto.HostellerDTO;
+import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.service.HostelService;
@@ -38,10 +39,17 @@ public class HostelController {
 		return ResponseEntity.ok(result);
 	}
 	
-	@GetMapping("/get-hostellers")
+//	@GetMapping("/get-hostellers")
+////	@PreAuthorize("hasAnyAuthority('Super User')")
+//	public ResponseEntity<?> getHostellers() {
+//		Result result = hostelService.getHostellers();
+//		return ResponseEntity.ok(result);
+//	}
+	
+	@PostMapping("/get-hostellers")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
-	public ResponseEntity<?> getHostellers() {
-		Result result = hostelService.getHostellers();
+	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search) {
+		Result result = hostelService.getHostellers(search);
 		return ResponseEntity.ok(result);
 	}
 

@@ -12,7 +12,7 @@ public class HostellerDTO {
 	private Long hostellerId;
 	private String fullName;
 	private String emailId;
-	private String pnomeNumber;
+	private String phoneNumber;
 	private String fee;
 	private String joiningDate;
 	private String address;
