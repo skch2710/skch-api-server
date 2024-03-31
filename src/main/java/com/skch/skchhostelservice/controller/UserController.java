@@ -18,8 +18,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api/v1/user")
-@SecurityRequirement(name = "bearerAuth")
+//@RequestMapping("/api/v1/user")
+@RequestMapping("/user")
+//@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
 	@Autowired
@@ -39,7 +40,7 @@ public class UserController {
 
 	@GetMapping("/nav/{userId}")
 //	@PreAuthorize("hasAnyAuthority('Super User','Admin')")
-	@PreAuthorize("hasAnyAuthority('User-R')")
+//	@PreAuthorize("hasAnyAuthority('User-R')")
 	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
 	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId){
 		Result result = userService.navigations(userId);

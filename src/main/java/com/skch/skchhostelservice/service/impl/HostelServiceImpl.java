@@ -10,14 +10,19 @@ import org.springframework.stereotype.Service;
 
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.HostellerDAO;
+import com.skch.skchhostelservice.dao.HostellerGridDAO;
 import com.skch.skchhostelservice.dao.PaymentHistoryDAO;
+import com.skch.skchhostelservice.dto.ColumnFilter;
 import com.skch.skchhostelservice.dto.HostellerDTO;
+import com.skch.skchhostelservice.dto.HostellerGridDTO;
 import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
+import com.skch.skchhostelservice.dto.SearchResult;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.mapper.ObjectMapper;
 import com.skch.skchhostelservice.model.Hosteller;
+import com.skch.skchhostelservice.model.HostellerGrid;
 import com.skch.skchhostelservice.model.PaymentHistory;
 import com.skch.skchhostelservice.service.HostelService;
 import com.skch.skchhostelservice.util.Utility;
@@ -33,6 +38,9 @@ public class HostelServiceImpl implements HostelService {
 	@Autowired
 	private HostellerDAO hostellerDAO;
 	
+	@Autowired
+	private HostellerGridDAO hostellerGridDAO;
+
 	@Autowired
 	private PaymentHistoryDAO paymentHistoryDAO;
 
@@ -52,15 +60,15 @@ public class HostelServiceImpl implements HostelService {
 			dto.setFee(Utility.isBlank(dto.getFee()));
 			dto.setVacatedDate(Utility.isBlank(dto.getVacatedDate()));
 			dto.setJoiningDate(Utility.isBlank(dto.getJoiningDate()));
-			
-			log.info(">>>>>>"+dto);			
+
+			log.info(">>>>>>" + dto);
 			result = new Result();
 			if (dto.getHostellerId() == null || dto.getHostellerId() == 0) {
 				hosteller = MAPPER.fromHostellerDTO(dto);
 				hosteller.setCreatedDate(LocalDateTime.now());
 				hosteller.setModifiedDate(LocalDateTime.now());
 				hosteller.setActive(true);
-				if(hosteller.getJoiningDate() == null) {
+				if (hosteller.getJoiningDate() == null) {
 					hosteller.setJoiningDate(LocalDate.now());
 				}
 				hosteller = hostellerDAO.save(hosteller);
@@ -147,20 +155,42 @@ public class HostelServiceImpl implements HostelService {
 		log.info("Starting at getHostellers.....");
 		Result result = new Result();
 		try {
-			List<Hosteller> allHostellers = 
-					hostellerDAO.findByFullNameStartingWithIgnoreCaseAndEmailIdStartingWithIgnoreCase(
-							search.getFullName(),search.getEmailId());
-			
-			if(!allHostellers.isEmpty()) {
-				List<HostellerDTO> dtoList = MAPPER.formHostelModel(allHostellers);
+
+			String clfFullName = "";
+
+			if (search.getColumnFilters() != null) {
+				for (ColumnFilter filter : search.getColumnFilters()) {
+					if (filter.getColumn().getField().equals("fullName")) {
+						clfFullName = filter.getValue();
+					}
+				}
+			}
+
+			List<HostellerGrid> allHostellers = hostellerGridDAO.getHostelData(
+					Utility.nullCheck(search.getFullName()),Utility.nullCheck(search.getEmailId()),
+					Utility.getDbColumn(search.getSortBy()),search.getSortOrder(),
+					search.getPageNumber(),search.getPageSize(),search.isExport(),
+					clfFullName);
+				
+			if (!allHostellers.isEmpty()) {
+				SearchResult<HostellerGridDTO> searchResult = new SearchResult<>();
+				List<HostellerGridDTO> dtoList = MAPPER.formHostelGridModel(allHostellers);
+				searchResult.setContent(dtoList);
+				searchResult.setPageNo(search.getPageNumber());
+				searchResult.setPageSize(search.getPageSize());
+				Long totalCount = allHostellers.get(0).getTotalCount();
+				searchResult.setTotalElements(totalCount);
+				int totalPages = Utility.totalPages(totalCount,search.getPageSize());
+				searchResult.setTotalPages(totalPages);
+				
 				result.setStatusCode(HttpStatus.OK.value());
 				result.setSuccessMessage("getting Successfully...");
-				result.setData(dtoList);
-			}else {
+				result.setData(searchResult);
+			} else {
 				result.setStatusCode(HttpStatus.NOT_FOUND.value());
 				result.setErrorMessage(Constant.NOT_FOUND);
 			}
-			
+
 			log.info("Ending at getHostellers.....");
 		} catch (Exception e) {
 			log.error("Error at getHostellers :: " + e);

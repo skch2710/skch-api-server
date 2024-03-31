@@ -131,4 +131,12 @@ public class Utility {
 		return input != null && !input.isBlank() ? 
 				input.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase() : "";
 	}
+	
+	public static String nullCheck(String input) {
+		return input != null ? input : "";
+	}
+	
+	public static int totalPages(Long totalElements,int pageSize) {
+		return (int) Math.ceil((double) totalElements / pageSize);
+	}
 }

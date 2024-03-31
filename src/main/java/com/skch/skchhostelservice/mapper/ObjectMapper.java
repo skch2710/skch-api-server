@@ -8,10 +8,12 @@ import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
 import com.skch.skchhostelservice.dto.HostellerDTO;
+import com.skch.skchhostelservice.dto.HostellerGridDTO;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.dto.UserPrivilegeDTO;
 import com.skch.skchhostelservice.model.Hosteller;
+import com.skch.skchhostelservice.model.HostellerGrid;
 import com.skch.skchhostelservice.model.PaymentHistory;
 import com.skch.skchhostelservice.model.UserPrivilege;
 import com.skch.skchhostelservice.model.Users;
@@ -47,4 +49,8 @@ public interface ObjectMapper {
 	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
 	HostellerDTO formHostelModel(Hosteller hostellers);
 	List<HostellerDTO> formHostelModel(List<Hosteller> allHostellers);
+	
+	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
+	HostellerGridDTO formHostelGridModel(HostellerGrid hosteller);
+	List<HostellerGridDTO> formHostelGridModel(List<HostellerGrid> hostellersList);
 }
