@@ -28,7 +28,7 @@ public class Hosteller {
 	@Column(name = "email_id")
 	private String emailId;
 
-	@Column(name = "pnome_number")
+	@Column(name = "phone_number")
 	private String phoneNumber;
 
 	@Column(name = "fee")
