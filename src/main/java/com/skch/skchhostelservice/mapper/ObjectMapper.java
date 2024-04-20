@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
@@ -17,6 +18,7 @@ import com.skch.skchhostelservice.model.HostellerGrid;
 import com.skch.skchhostelservice.model.PaymentHistory;
 import com.skch.skchhostelservice.model.UserPrivilege;
 import com.skch.skchhostelservice.model.Users;
+import com.skch.skchhostelservice.util.AESUtils;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ObjectMapper {
@@ -50,7 +52,22 @@ public interface ObjectMapper {
 	HostellerDTO formHostelModel(Hosteller hostellers);
 	List<HostellerDTO> formHostelModel(List<Hosteller> allHostellers);
 	
+//	default String mapName(HostellerGrid hosteller) {
+//		String output = hosteller.getPhoneNumber() != null && 
+//				!hosteller.getPhoneNumber().isBlank() ? 
+//						AESUtils.encrypt(hosteller.getPhoneNumber()) : "";
+//		return output;
+//	}
+	
+	@Named("mapPhoneNumber")
+	default String mapPhoneNumber(String input) {
+		String output = input != null && 
+				!input.isBlank() ? AESUtils.encrypt(input) : "";
+		return output;
+	}
+	
 	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
+	@Mapping(target = "phoneNumber", expression = "java(mapPhoneNumber(hosteller.getPhoneNumber()))")
 	HostellerGridDTO formHostelGridModel(HostellerGrid hosteller);
 	List<HostellerGridDTO> formHostelGridModel(List<HostellerGrid> hostellersList);
 }

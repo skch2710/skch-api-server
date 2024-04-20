@@ -39,4 +39,5 @@ app:
   url: http://localhost:8060/oauth2/token
   passwordlink-expiry: 24
   otp-expiry: 5
-  isOtpEnable : true
+  isOtpEnable: true
+  aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
