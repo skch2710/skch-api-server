@@ -13,14 +13,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.service.UserService;
+import com.skch.skchhostelservice.util.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-//@RequestMapping("/api/v1/user")
-@RequestMapping("/user")
-//@SecurityRequirement(name = "bearerAuth")
+@RequestMapping("/api/v1/user")
+//@RequestMapping("/user")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
 	@Autowired
@@ -44,6 +45,7 @@ public class UserController {
 	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
 	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId){
 		Result result = userService.navigations(userId);
+		System.out.println(JwtUtil.getUserId());
 		return ResponseEntity.ok(result);
 	}
 }

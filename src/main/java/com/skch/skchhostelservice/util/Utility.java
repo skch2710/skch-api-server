@@ -136,6 +136,10 @@ public class Utility {
 		return input != null ? input : "";
 	}
 	
+	public static Boolean check(String input) {
+		return input != null && !input.isBlank() ? true : false;
+	}
+	
 	public static int totalPages(Long totalElements,int pageSize) {
 		return (int) Math.ceil((double) totalElements / pageSize);
 	}
