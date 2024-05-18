@@ -48,8 +48,9 @@ public class HostelController {
 	
 	@PostMapping("/get-hostellers")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
-	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search) {
+	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search) throws InterruptedException {
 		Result result = hostelService.getHostellers(search);
+//		Thread.sleep(5000);
 		return ResponseEntity.ok(result);
 	}
 

@@ -2,7 +2,9 @@ package com.skch.skchhostelservice.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -156,12 +158,28 @@ public class HostelServiceImpl implements HostelService {
 		Result result = new Result();
 		try {
 
-			String clfFullName = "";
-
+//			String clfFullName = "";
+//
+//			if (search.getColumnFilters() != null) {
+//				for (ColumnFilter filter : search.getColumnFilters()) {
+//					if (filter.getColumn().getField().equals("fullName")) {
+//						clfFullName = filter.getValue();
+//					}
+//				}
+//			}
+			
+			Map<String,String> clf = new HashMap<>();
+			
+			String [] columns = {Constant.FULL_NAME};
+			
+			for(String column : columns) {
+				clf.put(column, "");
+			}
+			
 			if (search.getColumnFilters() != null) {
 				for (ColumnFilter filter : search.getColumnFilters()) {
-					if (filter.getColumn().getField().equals("fullName")) {
-						clfFullName = filter.getValue();
+					if (clf.containsKey(filter.getColumn().getField())) {
+						clf.put(filter.getColumn().getField(), filter.getValue());
 					}
 				}
 			}
@@ -170,8 +188,8 @@ public class HostelServiceImpl implements HostelService {
 					Utility.nullCheck(search.getFullName()),Utility.nullCheck(search.getEmailId()),
 					Utility.getDbColumn(search.getSortBy()),search.getSortOrder(),
 					search.getPageNumber(),search.getPageSize(),search.isExport(),
-					clfFullName);
-				
+					clf.get(Constant.FULL_NAME));
+			
 			if (!allHostellers.isEmpty()) {
 				SearchResult<HostellerGridDTO> searchResult = new SearchResult<>();
 				List<HostellerGridDTO> dtoList = MAPPER.formHostelGridModel(allHostellers);
