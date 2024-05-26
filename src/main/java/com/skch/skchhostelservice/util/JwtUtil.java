@@ -36,13 +36,13 @@ public class JwtUtil {
 			
 			dto = RestClientHelper.getTokens(values,JwtDTO.class);
 		}catch(Exception e) {
-			log.error("Error in getToken method...::",e);
+			log.error("Error in getToken method...:: ",e);
 		}
 		return dto;
 	}
 	
-	public static String getUserId() {
-		String result = "";
+	public static Long getUserId() {
+		Long result = 1L;
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -51,9 +51,36 @@ public class JwtUtil {
 					.filter(authority -> authority != null && authority.startsWith("USER_ID"))
 					.findFirst().orElse("");
 
-			result = AESUtils.decrypt(Utility.check(auth) ? auth.split(":")[1].trim() : "");
+			result = Long.valueOf(AESUtils.decrypt(Utility.check(auth) ? auth.split(":")[1].trim() : "1L"));
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Error in getUserId...:: ",e);
+		}
+		return result;
+	}
+	
+	
+	public static Boolean checkAccess(String resource) {
+		Boolean result = false;
+		System.out.println(resource);
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			result = authentication.getAuthorities().stream()
+					.anyMatch(ga -> ga.getAuthority().equals(resource));
+		} catch (Exception e) {
+			log.error("Error in checkAccess...:: ", e);
+		}
+		return result;
+	}
+	
+	public static Boolean checkAccess(String resource,String other) {
+		Boolean result = false;
+		System.out.println(other);
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			result = authentication.getAuthorities().stream()
+					.anyMatch(ga -> ga.getAuthority().equals(resource));
+		} catch (Exception e) {
+			log.error("Error in checkAccess...:: ", e);
 		}
 		return result;
 	}

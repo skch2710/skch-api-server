@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
+import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -187,23 +188,21 @@ public class LoginServiceImpl implements LoginService {
 	public ByteArrayOutputStream getPdf(){
 		ByteArrayOutputStream baos;
 		try {
-			Rectangle pagesize = new Rectangle(1754, 1240);
+//			Rectangle pagesize = new Rectangle(1754, 1240);
 			// Create a new document
-//			Document document = new Document(PageSize.A4, 30, 30, 45, 30);
-			Document document = new Document(pagesize, 30, 30, 45, 30);
+			Document document = new Document(PageSize.A4, 30, 30, 45, 30);
+//			Document document = new Document(pagesize, 30, 30, 45, 30);
 
 			baos = new ByteArrayOutputStream();
 
-			// Create a new PDF writer
-			PdfWriter.getInstance(document, baos);
+			PdfWriter.getInstance(document, baos);// Create a new PDF writer
 
-			// Open the document
-			document.open();
+			document.open(); // Open the document
 
-			PdfPTable totalCard = PdfHelper.createNoBorderTable(3,11f,11f,100);
-			totalCard.setTotalWidth(new float[] {49.8f,0.4f,49.8f});
+			PdfPTable totalCard = PdfHelper.createNoBorderTable(3,0f,0f,92);
+			totalCard.setTotalWidth(new float[] {49f,2f,49f});
 			PdfPTable frontCard = frontCard();
-			PdfPTable middleSpacee = PdfHelper.createTable(1,11f,11f,100);
+			PdfPTable middleSpacee = PdfHelper.createTable(1,0f,0f,100);
 			PdfPTable backCard = backCard();
 			
 			totalCard.addCell(frontCard);
@@ -212,8 +211,7 @@ public class LoginServiceImpl implements LoginService {
 			
 			document.add(totalCard);
 			
-			// Close the document
-			document.close();
+			document.close(); // Close the document
 		} catch (Exception e) {
 			log.error("error in generate Pdf ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -225,16 +223,16 @@ public class LoginServiceImpl implements LoginService {
 		String bgmPath = "src/main/resources/images/Card Front.png";
 		String logoPath = "src/main/resources/images/logo-one.png";
 		
-		PdfPTable frontCard = PdfHelper.createTable(1,11f,11f,100);
+		PdfPTable frontCard = PdfHelper.createTable(1,0f,0f,100);
 		PdfPCell cell = new PdfPCell();
 		
 		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
-		PdfHelper.createLogo(innerTable,logoPath,20,10,100,Element.ALIGN_LEFT);
-		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",25,null,10,Element.ALIGN_LEFT);
+		PdfHelper.createLogo(innerTable,logoPath,5,0,0,25,Element.ALIGN_LEFT);
+		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",10,null,5,Element.ALIGN_LEFT);
 		
 		cell.addElement(innerTable);
 		
-		PdfHelper.imageBgm(bgmPath, frontCard,cell, 500);
+		PdfHelper.imageBgm(bgmPath, frontCard,cell, 158);
 		
 		return frontCard;
 	}
@@ -243,16 +241,16 @@ public class LoginServiceImpl implements LoginService {
 		String bgmPath = "src/main/resources/images/Card Back.png";
 		String logoPath = "src/main/resources/images/logo-one.png";
 		
-		PdfPTable backCard = PdfHelper.createTable(1,11f,11f,100);
+		PdfPTable backCard = PdfHelper.createTable(1,0f,0f,100);
 		PdfPCell cell = new PdfPCell();
 		
 		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
-		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",25,null,10,Element.ALIGN_LEFT);
+		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",10,null,10,Element.ALIGN_LEFT);
 		
-		PdfHelper.createLogo(innerTable,logoPath,0,10,60,Element.ALIGN_RIGHT);
+		PdfHelper.createLogo(innerTable,logoPath,0,0,5,20,Element.ALIGN_RIGHT);
 		cell.addElement(innerTable);
 		
-		PdfHelper.imageBgm(bgmPath, backCard,cell, 500);
+		PdfHelper.imageBgm(bgmPath, backCard,cell, 158);
 		return backCard;
 	}
 	

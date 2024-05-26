@@ -3,6 +3,7 @@ package com.skch.skchhostelservice.util;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +21,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.skch.skchhostelservice.model.Audit;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -142,5 +144,23 @@ public class Utility {
 	
 	public static int totalPages(Long totalElements,int pageSize) {
 		return (int) Math.ceil((double) totalElements / pageSize);
+	}
+	
+	public static <T> void updateFields(T model,String type) {
+		try {
+			Field[] fields = Audit.class.getDeclaredFields();
+			for(Field field : fields) {
+				field.setAccessible(true);
+				if(field.getName().equals("createdById") && type.equals("C")
+						|| field.getName().equals("modifiedById")) {
+					field.set(model, JwtUtil.getUserId());
+				}else if(field.getName().equals("createdDate") && type.equals("C")
+						|| field.getName().equals("modifiedDate")) {
+					field.set(model, LocalDateTime.now());
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
 	}
 }

@@ -64,13 +64,14 @@ public class PdfHelper {
 	}
 	
 	public static void createLogo(PdfPTable table,String path,float left,
-			float top,float heigt,int alignment) throws Exception {
+			float top,float right,float heigt,int alignment) throws Exception {
 		try {
 			// Create an Image object
 			Image image = Image.getInstance(path);
 			PdfPCell cell = new PdfPCell(image);
 			cell.setPaddingLeft(left);
 			cell.setPaddingTop(top);
+			cell.setPaddingRight(right);
 			cell.setFixedHeight(heigt);
 			cell.setHorizontalAlignment(alignment);
 			cell.setBorderColor(BaseColor.GREEN);
@@ -121,7 +122,7 @@ public class PdfHelper {
 
 	public static PdfPTable createNoBorderTable(int size, float spacingBefore, float spacingAfter, int width) {
 		PdfPTable table = new PdfPTable(size);
-		table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+//		table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 		table.setSpacingBefore(spacingBefore);
 		table.setSpacingAfter(spacingAfter);
 		table.setWidthPercentage(width);

@@ -27,6 +27,7 @@ import com.skch.skchhostelservice.model.Hosteller;
 import com.skch.skchhostelservice.model.HostellerGrid;
 import com.skch.skchhostelservice.model.PaymentHistory;
 import com.skch.skchhostelservice.service.HostelService;
+import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.Utility;
 
 import lombok.extern.slf4j.Slf4j;
@@ -63,12 +64,15 @@ public class HostelServiceImpl implements HostelService {
 			dto.setVacatedDate(Utility.isBlank(dto.getVacatedDate()));
 			dto.setJoiningDate(Utility.isBlank(dto.getJoiningDate()));
 
-			log.info(">>>>>>" + dto);
+			log.info(">>>>>> Starting ...." + dto);
 			result = new Result();
 			if (dto.getHostellerId() == null || dto.getHostellerId() == 0) {
 				hosteller = MAPPER.fromHostellerDTO(dto);
-				hosteller.setCreatedDate(LocalDateTime.now());
-				hosteller.setModifiedDate(LocalDateTime.now());
+//				hosteller.setCreatedById(JwtUtil.getUserId());
+//				hosteller.setModifiedById(JwtUtil.getUserId());
+//				hosteller.setCreatedDate(LocalDateTime.now());
+//				hosteller.setModifiedDate(LocalDateTime.now());
+				Utility.updateFields(hosteller,"C");
 				hosteller.setActive(true);
 				if (hosteller.getJoiningDate() == null) {
 					hosteller.setJoiningDate(LocalDate.now());
@@ -86,8 +90,10 @@ public class HostelServiceImpl implements HostelService {
 				hosteller.setCreatedDate(serverHosteller.getCreatedDate());
 				hosteller.setCreatedById(serverHosteller.getCreatedById());
 				hosteller.setVacatedDate(serverHosteller.getVacatedDate());
-				hosteller.setModifiedDate(LocalDateTime.now());
+//				hosteller.setModifiedDate(LocalDateTime.now());
 
+				Utility.updateFields(hosteller,"U");
+				
 				hosteller = hostellerDAO.save(hosteller);
 
 				result.setStatusCode(HttpStatus.OK.value());

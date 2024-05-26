@@ -11,11 +11,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "hostellers", schema = "hostel")
-public class Hosteller {
+public class Hosteller extends Audit{
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,16 +54,16 @@ public class Hosteller {
 	@Column(name = "active")
 	private Boolean active;
 
-	@Column(name = "created_by_id")
-	private Long createdById;
-
-	@Column(name = "created_date")
-	private LocalDateTime createdDate;
-
-	@Column(name = "modified_by_id")
-	private Long modifiedById;
-
-	@Column(name = "modified_date")
-	private LocalDateTime modifiedDate;
+//	@Column(name = "created_by_id")
+//	private Long createdById;
+//
+//	@Column(name = "created_date")
+//	private LocalDateTime createdDate;
+//
+//	@Column(name = "modified_by_id")
+//	private Long modifiedById;
+//
+//	@Column(name = "modified_date")
+//	private LocalDateTime modifiedDate;
 
 }

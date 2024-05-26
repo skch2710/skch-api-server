@@ -1,5 +1,11 @@
 server:
   port: 8061
+  forward-headers-strategy: framework
+  max-http-request-header-size: 200000000
+  tomcat:
+    max-http-form-post-size: 200000000
+    max-swallow-size: 200000000
+  
   
 spring:
   datasource:
@@ -41,3 +47,15 @@ app:
   otp-expiry: 5
   isOtpEnable: true
   aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
+  
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        type: TRACE
+      springframework:
+        jdbc:
+          core:
+            JdbcTemplate: DEBUG
+            StatementCreatorUtils: TRACE

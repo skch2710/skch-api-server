@@ -2,7 +2,7 @@ package com.skch.skchhostelservice.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +17,9 @@ import com.skch.skchhostelservice.service.HostelService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-//@RequestMapping("/api/v1/hostel")
-@RequestMapping("/hostel")
-//@SecurityRequirement(name = "bearerAuth")
+@RequestMapping("/api/v1/hostel")
+//@RequestMapping("/hostel")
+@SecurityRequirement(name = "bearerAuth")
 public class HostelController {
 
 	@Autowired
@@ -48,9 +48,10 @@ public class HostelController {
 	
 	@PostMapping("/get-hostellers")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
-	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search) throws InterruptedException {
+//	@PreAuthorize("@jwtUtil.checkAccess('Super User')")
+	@PreAuthorize("@jwtUtil.checkAccess('Super User',#search.emailId)")
+	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
 		Result result = hostelService.getHostellers(search);
-//		Thread.sleep(5000);
 		return ResponseEntity.ok(result);
 	}
 
