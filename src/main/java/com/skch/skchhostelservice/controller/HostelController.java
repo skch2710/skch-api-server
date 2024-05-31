@@ -13,6 +13,7 @@ import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.service.HostelService;
+import com.skch.skchhostelservice.util.JwtUtil;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
@@ -24,6 +25,9 @@ public class HostelController {
 
 	@Autowired
 	private HostelService hostelService;
+	
+	 @Autowired
+	 private JwtUtil jwtUtil;
 
 	@PostMapping("/save-update-hosteller")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
@@ -47,12 +51,15 @@ public class HostelController {
 //	}
 	
 	@PostMapping("/get-hostellers")
-//	@PreAuthorize("hasAnyAuthority('Super User')")
+//	@PreAuthorize("hasAnyAuthority(@jwtUtil.SUPER_USER)")
+	@PreAuthorize("hasAuthority(@jwtUtil.SUPER_USER)")
 //	@PreAuthorize("@jwtUtil.checkAccess('Super User')")
-	@PreAuthorize("@jwtUtil.checkAccess('Super User',#search.emailId)")
+//	@PreAuthorize("@jwtUtil.checkAccess(@jwtUtil.SUPER_USER)")
 	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
 		Result result = hostelService.getHostellers(search);
 		return ResponseEntity.ok(result);
 	}
+	
+	//SpEL parameter Not Working #search.fullName
 
 }

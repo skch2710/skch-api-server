@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import com.skch.skchhostelservice.dto.JwtDTO;
 import com.skch.skchhostelservice.dto.LoginRequest;
@@ -15,8 +15,10 @@ import com.skch.skchhostelservice.dto.LoginRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
+@Service
 public class JwtUtil {
+	
+	public static final String SUPER_USER = "Super User";
 	
 	@Value("${app.url}")
 	private String url;

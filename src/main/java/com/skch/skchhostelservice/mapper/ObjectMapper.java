@@ -66,8 +66,16 @@ public interface ObjectMapper {
 		return output;
 	}
 	
+	@Named("mapEncprict")
+	default String mapEncprict(String input) {
+		String output = input != null && 
+				!input.isBlank() ? AESUtils.encrypt(input) : "";
+		return output;
+	}
+	
 	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
-	@Mapping(target = "phoneNumber", expression = "java(mapPhoneNumber(hosteller.getPhoneNumber()))")
+	@Mapping(target = "phoneNumber", expression = "java(mapEncprict(hosteller.getPhoneNumber()))")
+	@Mapping(target = "address", expression = "java(mapEncprict(hosteller.getAddress()))")
 	HostellerGridDTO formHostelGridModel(HostellerGrid hosteller);
 	List<HostellerGridDTO> formHostelGridModel(List<HostellerGrid> hostellersList);
 }
