@@ -29,8 +29,8 @@ public class UserDTO {
 
 	private List<UserPrivilegeDTO> userPrivilege;
 
-	private Long createdById;
-
-	private Long modifiedById;
+//	private Long createdById;
+//
+//	private Long modifiedById;
 
 }

@@ -3,7 +3,6 @@ package com.skch.skchhostelservice.service.impl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -57,9 +56,10 @@ public class UserServiceImpl implements UserService {
 				} else {
 					Users saveUser = MAPPER.fromUserDTO(dto);
 
-					saveUser.setActive(true);
-					saveUser.setCreatedDate(new Date());
-					saveUser.setModifiedDate(new Date());
+					saveUser.setIsActive(true);
+//					saveUser.setCreatedDate(new Date());
+//					saveUser.setModifiedDate(new Date());
+					Utility.updateFields(saveUser,"C");
 					String userUuid = UUID.randomUUID().toString() + "#" + System.currentTimeMillis();
 					saveUser.setUserUuid(userUuid);
 					// Set The User Role
@@ -81,15 +81,17 @@ public class UserServiceImpl implements UserService {
 					user.setLastName(dto.getLastName());
 					user.setDob(Utility.dateConvert(dto.getDob()));
 					user.setPhoneNumber(dto.getPhoneNumber());
-					user.setModifiedById(dto.getModifiedById());
-					user.setModifiedDate(new Date());
-
+//					user.setModifiedById(dto.getModifiedById());
+//					user.setModifiedDate(new Date());
+					Utility.updateFields(user,"U");
+					
 					if (user.getUserRole().getRoles().getRoleId() != dto.getRoleId()) {
 						Roles role = new Roles();
 						role.setRoleId(dto.getRoleId());
 						user.getUserRole().setRoles(role);
-						user.getUserRole().setModifiedById(dto.getModifiedById());
-						user.getUserRole().setModifiedDate(new Date());
+//						user.getUserRole().setModifiedById(dto.getModifiedById());
+//						user.getUserRole().setModifiedDate(new Date());
+						Utility.updateFields(user.getUserRole(),"U");
 					}
 
 					List<UserPrivilege> userPrivileges = user.getUserPrivilege();
@@ -105,8 +107,9 @@ public class UserServiceImpl implements UserService {
 						userPrivilege.setReadOnlyFlag(userPrivilegeDTO.getReadOnlyFlag());
 						userPrivilege.setReadWriteFlag(userPrivilegeDTO.getReadWriteFlag());
 						userPrivilege.setTerminateFlag(userPrivilegeDTO.getTerminateFlag());
-						userPrivilege.setModifiedById(dto.getModifiedById());
-						userPrivilege.setModifiedDate(new Date());
+//						userPrivilege.setModifiedById(dto.getModifiedById());
+//						userPrivilege.setModifiedDate(new Date());
+						Utility.updateFields(userPrivilege,"U");
 
 					}
 					user.setUserPrivilege(userPrivileges);
@@ -132,10 +135,11 @@ public class UserServiceImpl implements UserService {
 			roles.setRoleId(dto.getRoleId());
 			userRole.setRoles(roles);
 			userRole.setActive(true);
-			userRole.setCreatedById(dto.getCreatedById());
-			userRole.setCreatedDate(new Date());
-			userRole.setModifiedById(dto.getModifiedById());
-			userRole.setModifiedDate(new Date());
+//			userRole.setCreatedById(dto.getCreatedById());
+//			userRole.setCreatedDate(new Date());
+//			userRole.setModifiedById(dto.getModifiedById());
+//			userRole.setModifiedDate(new Date());
+			Utility.updateFields(userRole,"C");
 			userRole.setUsers(users);
 
 			users.setUserRole(userRole);
@@ -154,10 +158,11 @@ public class UserServiceImpl implements UserService {
 				resource.setResourceId(userPrivilegeDTO.getResourceId());
 				userPrivilege.setResource(resource);
 				userPrivilege.setIsActive(true);
-				userPrivilege.setCreatedById(dto.getCreatedById());
-				userPrivilege.setCreatedDate(new Date());
-				userPrivilege.setModifiedById(dto.getModifiedById());
-				userPrivilege.setModifiedDate(new Date());
+//				userPrivilege.setCreatedById(dto.getCreatedById());
+//				userPrivilege.setCreatedDate(new Date());
+//				userPrivilege.setModifiedById(dto.getModifiedById());
+//				userPrivilege.setModifiedDate(new Date());
+				Utility.updateFields(userPrivilege,"C");
 
 				userPrivilege.setUsers(users);
 				userPrivilegeList.add(userPrivilege);

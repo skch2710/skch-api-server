@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.codec.language.Soundex;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import com.itextpdf.text.Document;
@@ -162,5 +163,18 @@ public class Utility {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
+	}
+	
+	public static String soundex(String input) {
+		String output = "";
+		try {
+			if (input != null && !input.isBlank()) {
+				Soundex soundex = new Soundex();
+				output = soundex.soundex(input);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return output;
 	}
 }

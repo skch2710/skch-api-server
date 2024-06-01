@@ -2,6 +2,8 @@ package com.skch.skchhostelservice.controller;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -9,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +22,7 @@ import com.skch.skchhostelservice.dto.ReqSearch;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.LoginService;
+import com.skch.skchhostelservice.util.Utility;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,5 +66,16 @@ public class LoginController {
 			log.error("Error in Get Pdf Controller....",e);
 			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+	
+	@GetMapping("/soundex-test")
+	public ResponseEntity<?> soundexTest() {
+		Map<String,String> output = new HashMap<>();
+		output.put("Sathish", Utility.soundex("Sathish"));
+		output.put("Satish", Utility.soundex("Satish"));
+		output.put("Kumar", Utility.soundex("Kumar"));
+		output.put("kumaaar", Utility.soundex("kumaaar"));
+		
+		return ResponseEntity.ok(output);
 	}
 }

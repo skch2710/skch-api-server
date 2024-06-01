@@ -1,7 +1,5 @@
 package com.skch.skchhostelservice.model;
 
-import java.util.Date;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -15,12 +13,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "user_privileges", schema = "hostel")
 @JsonIgnoreProperties(ignoreUnknown = true, value = { "users" })
-public class UserPrivilege {
+public class UserPrivilege  extends Audit{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,15 +47,4 @@ public class UserPrivilege {
     @Column(name = "is_active")
     private Boolean isActive;
 
-    @Column(name = "created_by_id")
-    private Long createdById;
-
-    @Column(name = "created_date")
-    private Date createdDate;
-
-    @Column(name = "modified_by_id")
-    private Long modifiedById;
-
-    @Column(name = "modified_date")
-    private Date modifiedDate;
 }

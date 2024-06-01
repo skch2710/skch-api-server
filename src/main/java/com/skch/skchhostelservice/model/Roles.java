@@ -1,17 +1,17 @@
 package com.skch.skchhostelservice.model;
 
-import java.util.Date;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "roles", schema = "hostel")
-public class Roles {
+public class Roles extends Audit{
 	
 	@Id
     @Column(name = "role_id")
@@ -29,16 +29,4 @@ public class Roles {
     @Column(name = "note", columnDefinition = "text")
     private String note;
     
-    @Column(name = "created_by_id")
-    private Long createdById;
-    
-    @Column(name = "created_date")
-    private Date createdDate;
-    
-    @Column(name = "modified_by_id")
-    private Long modifiedById;
-    
-    @Column(name = "modified_date")
-    private Date modifiedDate;
-
 }
