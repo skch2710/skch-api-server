@@ -29,6 +29,7 @@ public class HostellerGrid {
 	@Column(name = "fee")
 	private BigDecimal fee;
 
+//	@JsonFormat(pattern = "MM/dd/yyyy")
 	@Column(name = "joining_date")
 	private LocalDate joiningDate;
 

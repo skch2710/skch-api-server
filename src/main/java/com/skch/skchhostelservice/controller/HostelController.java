@@ -13,7 +13,6 @@ import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.service.HostelService;
-import com.skch.skchhostelservice.util.JwtUtil;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
@@ -26,9 +25,6 @@ public class HostelController {
 	@Autowired
 	private HostelService hostelService;
 	
-	 @Autowired
-	 private JwtUtil jwtUtil;
-
 	@PostMapping("/save-update-hosteller")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
 	public ResponseEntity<?> saveUpdateHosteller(@RequestBody HostellerDTO dto) {
