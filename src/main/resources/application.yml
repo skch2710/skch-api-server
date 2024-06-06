@@ -63,3 +63,8 @@ logging:
         cache: DEBUG
         aop: DEBUG
 
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
