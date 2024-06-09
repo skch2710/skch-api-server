@@ -43,6 +43,22 @@ public class JwtUtil {
 		return dto;
 	}
 	
+	public JwtDTO getRefreshToken(String token) {
+		JwtDTO dto = null;
+		try {
+			Map<String,String> values = new HashMap<>();
+			values.put("url", url);
+			values.put("clientCred", clientCred);
+			values.put("grantType", "refresh_token");
+			values.put("refresh_token", token);
+			
+			dto = RestClientHelper.getRefreshToken(values,JwtDTO.class);
+		}catch(Exception e) {
+			log.error("Error in getRefreshToken method...:: ",e);
+		}
+		return dto;
+	}
+	
 	public static Long getUserId() {
 		Long result = 1L;
 		try {

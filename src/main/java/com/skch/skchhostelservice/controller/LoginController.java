@@ -29,12 +29,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dto.FileUploadDTO;
+import com.skch.skchhostelservice.dto.JwtDTO;
 import com.skch.skchhostelservice.dto.LoginRequest;
 import com.skch.skchhostelservice.dto.ReqSearch;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.LoginService;
 import com.skch.skchhostelservice.util.DateUtil;
+import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.Utility;
 
 import lombok.extern.slf4j.Slf4j;
@@ -180,4 +182,14 @@ public class LoginController {
         return ResponseEntity.ok(fileNames);
     }
     
+    @Autowired
+    private JwtUtil jwtUtil;
+    
+    @PostMapping("/get-jwt-refresh-token")
+	public ResponseEntity<?> getRefreshToken(@RequestBody JwtDTO dto) {
+		
+    	JwtDTO result = jwtUtil.getRefreshToken(dto.getRefresh_token());
+		
+		return ResponseEntity.ok(result);
+	}
 }
