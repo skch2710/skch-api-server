@@ -35,7 +35,7 @@ import com.skch.skchhostelservice.dto.ReqSearch;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.LoginService;
-import com.skch.skchhostelservice.util.DateUtil;
+import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.Utility;
 
@@ -167,7 +167,7 @@ public class LoginController {
                 	String fileName = file.getName();
                 	String dateNum = fileName.split("_")[1];
                 	
-                	LocalDate date = DateUtil.stringToDate(dateNum, "MMddyyyy");
+                	LocalDate date = DateUtility.stringToDate(dateNum, "MMddyyyy");
                 	System.out.println(date);
                 	
                 	if(date.isBefore(LocalDate.now())) {

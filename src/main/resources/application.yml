@@ -48,20 +48,20 @@ app:
   isOtpEnable: true
   aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
   
-logging:
-  level:
-    org:
-      hibernate:
-        SQL: DEBUG
-        type: TRACE
-      springframework:
-        jdbc:
-          core:
-            JdbcTemplate: DEBUG
-            StatementCreatorUtils: TRACE
-        security: DEBUG
-        cache: DEBUG
-        aop: DEBUG
+#logging:
+#  level:
+#    org:
+#      hibernate:
+#        SQL: DEBUG
+#        type: TRACE
+#      springframework:
+#        jdbc:
+#          core:
+#            JdbcTemplate: DEBUG
+#            StatementCreatorUtils: TRACE
+#        security: DEBUG
+#        cache: DEBUG
+#        aop: DEBUG
 
 springdoc:
   swagger-ui:

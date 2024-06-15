@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.util.Date;
 
-public class DateUtil {
+public class DateUtility {
 	
 	/**
 	 * FORMATS 

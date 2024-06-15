@@ -6,8 +6,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skchhostelservice.dto.FileUploadDTO;
 import com.skch.skchhostelservice.dto.HostellerDTO;
 import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
@@ -58,4 +61,18 @@ public class HostelController {
 	
 	//SpEL parameter Not Working #search.fullName
 
+	/**
+	* This Method is validate the file and Upload
+	*
+	* @param file
+	* @param dto
+	* @return result
+	*/
+	@PostMapping(path = "/upload-file", consumes = "multipart/form-data")
+	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
+			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
+		Result result = hostelService.uploadFile(file);
+		return ResponseEntity.ok(result);
+	}
+	
 }

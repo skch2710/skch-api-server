@@ -1,14 +1,25 @@
 package com.skch.skchhostelservice.service.impl;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.HostellerDAO;
@@ -27,6 +38,7 @@ import com.skch.skchhostelservice.model.Hosteller;
 import com.skch.skchhostelservice.model.HostellerGrid;
 import com.skch.skchhostelservice.model.PaymentHistory;
 import com.skch.skchhostelservice.service.HostelService;
+import com.skch.skchhostelservice.util.ExcelUtil;
 import com.skch.skchhostelservice.util.Utility;
 
 import lombok.extern.slf4j.Slf4j;
@@ -220,6 +232,85 @@ public class HostelServiceImpl implements HostelService {
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;
+	}
+
+	/**
+	* This Method is validate the file and Upload to shared path
+	*
+	* @param file
+	* @param dto
+	* @return result
+	*/
+	@Override
+	public Result uploadFile(MultipartFile file) {
+		Result result = new Result();
+		XSSFWorkbook workbook = null;
+		try {
+			if (file != null && !file.isEmpty() && ExcelUtil.excelType(file.getContentType())) {
+				workbook = new XSSFWorkbook(file.getInputStream());
+				XSSFSheet sheet = workbook.getSheetAt(0);
+				Row headerRow = sheet.getRow(0);
+				if (headerRow != null && 
+						headerRow.getPhysicalNumberOfCells() == ExcelUtil.HOSTEL_HEADERS.length) {
+					List<String> excelHeaders = new ArrayList<>();
+					for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
+						String header = headerRow.getCell(i).getStringCellValue();
+						excelHeaders.add(header.trim());
+					}
+					if (Arrays.equals(ExcelUtil.HOSTEL_HEADERS, excelHeaders.toArray())) {
+						Row secondRow = sheet.getRow(1);
+						if (secondRow != null && secondRow.getPhysicalNumberOfCells() > 0) {
+							//Method to Save the Data
+							getRowValues(sheet);
+							result.setData("Saved Data..");
+						} else {
+							result.setData("Empty Template Uploaded");
+						}
+					} else {
+						result.setErrorMessage("Headers not matched");
+					}
+				} else {
+					result.setErrorMessage("Header Length not matched");
+				}
+			} else {
+				result.setErrorMessage("The uploaded file is not Present or Not an Excel file");
+			}
+		} catch (Exception e) {
+			log.error("Error in uploadFile :: " + e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		} finally {
+			try {
+				if (workbook != null) {
+					workbook.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+	
+	public void getRowValues(XSSFSheet sheet) {
+		
+		List<HostellerDTO> dtoList = new ArrayList<>();
+		
+		Iterator<Row> rowIterator = sheet.iterator();
+		rowIterator.forEachRemaining(row -> {
+			if (row.getRowNum() == 0) {
+				return;
+			}
+			List<String> cellValues = IntStream.range(0, ExcelUtil.HOSTEL_HEADERS.length)
+					.mapToObj(i -> {
+				Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+				return ExcelUtil.getCellValue(cell);
+			}).collect(Collectors.toList());
+			
+			dtoList.add(new HostellerDTO(cellValues));
+		});
+		
+		log.info("List DTO :: "+dtoList);
+		log.info("List DTO Size :: "+dtoList.size());
+		
 	}
 
 }

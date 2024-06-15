@@ -1,5 +1,7 @@
 package com.skch.skchhostelservice.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,5 +24,10 @@ public class HostellerDTO {
 	private Boolean active;
 //	private Long createdById;
 //	private Long modifiedById;
+	
+	public HostellerDTO(List<String> cellValues) {
+		this.fullName = cellValues.get(0);
+		this.emailId = cellValues.get(1);
+	}
 
 }
