@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -176,5 +177,12 @@ public class Utility {
 			e.printStackTrace();
 		}
 		return output;
+	}
+	
+	public static BigDecimal toNum(String input) {
+		if(input != null && !input.isBlank()) {
+			return new BigDecimal(input);
+		}
+		return null;
 	}
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -246,31 +245,23 @@ public class HostelServiceImpl implements HostelService {
 		Result result = new Result();
 		XSSFWorkbook workbook = null;
 		try {
-			if (file != null && !file.isEmpty() && ExcelUtil.excelType(file.getContentType())) {
+			if (ExcelUtil.excelType(file)) {
+				
 				workbook = new XSSFWorkbook(file.getInputStream());
 				XSSFSheet sheet = workbook.getSheetAt(0);
 				Row headerRow = sheet.getRow(0);
-				if (headerRow != null && 
-						headerRow.getPhysicalNumberOfCells() == ExcelUtil.HOSTEL_HEADERS.length) {
-					List<String> excelHeaders = new ArrayList<>();
-					for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
-						String header = headerRow.getCell(i).getStringCellValue();
-						excelHeaders.add(header.trim());
-					}
-					if (Arrays.equals(ExcelUtil.HOSTEL_HEADERS, excelHeaders.toArray())) {
-						Row secondRow = sheet.getRow(1);
-						if (secondRow != null && secondRow.getPhysicalNumberOfCells() > 0) {
-							//Method to Save the Data
-							getRowValues(sheet);
-							result.setData("Saved Data..");
-						} else {
-							result.setData("Empty Template Uploaded");
-						}
+				
+				if (ExcelUtil.headerCheck(headerRow, ExcelUtil.HOSTEL_HEADERS)) {
+					Row secondRow = sheet.getRow(1);
+					if (secondRow != null && secondRow.getPhysicalNumberOfCells() > 0) {
+						// Method to Save the Data
+						getRowValues(sheet);
+						result.setData("Saved Data..");
 					} else {
-						result.setErrorMessage("Headers not matched");
+						result.setData("Empty Template Uploaded");
 					}
 				} else {
-					result.setErrorMessage("Header Length not matched");
+					result.setErrorMessage("Headers not matched");
 				}
 			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not an Excel file");
@@ -292,7 +283,7 @@ public class HostelServiceImpl implements HostelService {
 	
 	public void getRowValues(XSSFSheet sheet) {
 		
-		List<HostellerDTO> dtoList = new ArrayList<>();
+		List<Hosteller> dataList = new ArrayList<>();
 		
 		Iterator<Row> rowIterator = sheet.iterator();
 		rowIterator.forEachRemaining(row -> {
@@ -305,11 +296,13 @@ public class HostelServiceImpl implements HostelService {
 				return ExcelUtil.getCellValue(cell);
 			}).collect(Collectors.toList());
 			
-			dtoList.add(new HostellerDTO(cellValues));
+			dataList.add(new Hosteller(cellValues));
 		});
 		
-		log.info("List DTO :: "+dtoList);
-		log.info("List DTO Size :: "+dtoList.size());
+		hostellerDAO.saveAll(dataList);
+		
+		log.info("List DTO :: "+dataList);
+		log.info("List DTO Size :: "+dataList.size());
 		
 	}
 

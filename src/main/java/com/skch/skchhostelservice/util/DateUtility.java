@@ -49,6 +49,15 @@ public class DateUtility {
 		return LocalDateTime.parse(date,formatter);
 	}
 	
+	public static LocalDateTime stringToDateTimes(String date, String format) {
+		if(date != null && !date.isBlank()) {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+	        LocalDate localDate = LocalDate.parse(date, formatter);
+	        return localDate.atStartOfDay(); // Combines the date with the start of the day
+		}
+        return null;
+    }
+	
 	public static String dateToString(Date date, String format) {
 		SimpleDateFormat formatter = new SimpleDateFormat(format);
 		return formatter.format(date);

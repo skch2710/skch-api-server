@@ -3,6 +3,10 @@ package com.skch.skchhostelservice.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.skch.skchhostelservice.util.DateUtility;
+import com.skch.skchhostelservice.util.Utility;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,10 +14,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "hostellers", schema = "hostel")
@@ -54,16 +62,19 @@ public class Hosteller extends Audit{
 	@Column(name = "active")
 	private Boolean active;
 
-//	@Column(name = "created_by_id")
-//	private Long createdById;
-//
-//	@Column(name = "created_date")
-//	private LocalDateTime createdDate;
-//
-//	@Column(name = "modified_by_id")
-//	private Long modifiedById;
-//
-//	@Column(name = "modified_date")
-//	private LocalDateTime modifiedDate;
-
+	public Hosteller(List<String> cellValues) {
+		this.hostellerId = 0L;
+		this.fullName = cellValues.get(0);
+		this.emailId = cellValues.get(1);
+		this.phoneNumber = cellValues.get(2);
+		this.fee = Utility.toNum(cellValues.get(3));
+		this.joiningDate = DateUtility.stringToDate(cellValues.get(4), "yyyyMMdd");
+		this.address = cellValues.get(5);
+		this.proof = cellValues.get(6);
+		this.reason = cellValues.get(7);
+		this.vacatedDate = DateUtility.stringToDateTimes(cellValues.get(8),"yyyyMMdd");
+		this.active = cellValues.get(9).equalsIgnoreCase("Yes");
+		Utility.updateFields(this, "C");
+	}
+	
 }

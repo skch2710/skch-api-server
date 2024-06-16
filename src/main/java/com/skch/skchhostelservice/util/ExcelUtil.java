@@ -14,20 +14,49 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
 import org.springframework.web.multipart.MultipartFile;
 
 public class ExcelUtil {
 	
-	public static final String[] HOSTEL_HEADERS = {"Full Name","Email Id"};
+	public static final String[] HOSTEL_HEADERS = {"Full Name","Email Id","Phone Number","fee",
+			"Joining Date","Address","Proof","Reason","Vacated Date","Active"};
 	
 	public static final List<String> EXCEL_MIME_TYPES = Arrays.asList(
             "application/vnd.ms-excel",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 	
-	public static Boolean excelType(String fileType) {
-		if (fileType != null && EXCEL_MIME_TYPES.contains(fileType)) {
+	/**
+	 * Check the File is Excel or Not
+	 * @param fileType
+	 * @return Boolean
+	 */
+	public static Boolean excelType(MultipartFile file) {
+		if (file != null && !file.isEmpty() &&
+				EXCEL_MIME_TYPES.contains(file.getContentType())) {
 			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * This Method is check the Headers
+	 * 
+	 * @param headerRow
+	 * @param headers
+	 * @return boolean
+	 */
+	public static Boolean headerCheck(Row headerRow, String[] headers) {
+		if (headerRow != null && headerRow.getPhysicalNumberOfCells() == headers.length) {
+			List<String> excelHeaders = new ArrayList<>();
+			for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
+				String header = headerRow.getCell(i).getStringCellValue();
+				excelHeaders.add(header.trim());
+			}
+			if (Arrays.equals(headers, excelHeaders.toArray())) {
+				return true;
+			}
 		}
 		return false;
 	}
