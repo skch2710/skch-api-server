@@ -1,8 +1,16 @@
 package com.skch.skchhostelservice.controller;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +23,7 @@ import com.skch.skchhostelservice.dto.HostellerDTO;
 import com.skch.skchhostelservice.dto.HostellerSearch;
 import com.skch.skchhostelservice.dto.PaymentHistoryDTO;
 import com.skch.skchhostelservice.dto.Result;
+import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.HostelService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -75,4 +84,20 @@ public class HostelController {
 		return ResponseEntity.ok(result);
 	}
 	
+	@GetMapping("/hostel-template")
+	public ResponseEntity<?> getHostelTemplate() {
+		try {
+			ByteArrayOutputStream bao = hostelService.getHostelTemplate();
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			headers.setContentDispositionFormData("attachment", "Hostel_Template.xlsx");
+			InputStreamResource inputStreamResource = new InputStreamResource(
+					new ByteArrayInputStream(bao.toByteArray()));
+			bao.flush();// Flush the output stream
+			return ResponseEntity.ok().headers(headers).body(inputStreamResource);
+		} catch (Exception e) {
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

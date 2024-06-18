@@ -1,5 +1,8 @@
 package com.skch.skchhostelservice.service.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,6 +16,7 @@ import java.util.stream.IntStream;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -252,8 +256,7 @@ public class HostelServiceImpl implements HostelService {
 				Row headerRow = sheet.getRow(0);
 				
 				if (ExcelUtil.headerCheck(headerRow, ExcelUtil.HOSTEL_HEADERS)) {
-					Row secondRow = sheet.getRow(1);
-					if (secondRow != null && secondRow.getPhysicalNumberOfCells() > 0) {
+					if (sheet.getLastRowNum() > 0) {
 						// Method to Save the Data
 						getRowValues(sheet);
 						result.setData("Saved Data..");
@@ -304,6 +307,34 @@ public class HostelServiceImpl implements HostelService {
 		log.info("List DTO :: "+dataList);
 		log.info("List DTO Size :: "+dataList.size());
 		
+	}
+
+	/**
+	 * Download the Hostel Template
+	 */
+	@Override
+	public ByteArrayOutputStream getHostelTemplate() {
+		ByteArrayOutputStream bao = null;
+		Workbook workbook = null;
+		try {
+			FileInputStream inputStream = new FileInputStream(Constant.HOSTEL_TEMPLATE);
+			workbook = new XSSFWorkbook(inputStream);
+
+			bao = new ByteArrayOutputStream();
+			workbook.write(bao); // Write the workbook to temp byte array
+		} catch (Exception e) {
+			log.error("Error in get Hostel Template :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		} finally {
+			try {
+				if (workbook != null) {
+					workbook.close();// close the workbook
+				}
+			} catch (IOException e) {
+				log.error("Error in Closing Workbook :: ", e);
+			}
+		}
+		return bao;
 	}
 
 }

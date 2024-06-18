@@ -15,8 +15,12 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ExcelUtil {
 	
 	public static final String[] HOSTEL_HEADERS = {"Full Name","Email Id","Phone Number","fee",
@@ -51,7 +55,7 @@ public class ExcelUtil {
 		if (headerRow != null && headerRow.getPhysicalNumberOfCells() == headers.length) {
 			List<String> excelHeaders = new ArrayList<>();
 			for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
-				String header = headerRow.getCell(i).getStringCellValue();
+				String header = getCellValue(headerRow.getCell(i));
 				excelHeaders.add(header.trim());
 			}
 			if (Arrays.equals(headers, excelHeaders.toArray())) {
@@ -156,4 +160,23 @@ public class ExcelUtil {
 		}
 		return isDeleted;
 	}
+	
+	public static void shiftRows(Sheet sheet,int startRow,int endRow,int n) {
+		sheet.shiftRows(startRow, endRow, n);
+//		sheet.shiftRows(startRow, endRow, n, true, true);
+	}
+	
+	public static void updateCellValue(Sheet sheet,int rowIndex,int colIndex,String value) {
+		try {
+			Row row = sheet.getRow(rowIndex);
+			if(row == null) {
+				row = sheet.createRow(rowIndex);
+			}
+			Cell cell = row.getCell(colIndex,Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+			cell.setCellValue(Utility.nullCheck(value));
+		} catch (Exception e) {
+			log.error("Error in update Cell Value :: ",e);
+		}
+	}
+	
 }

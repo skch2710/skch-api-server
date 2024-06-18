@@ -1,5 +1,7 @@
 package com.skch.skchhostelservice.service;
 
+import java.io.ByteArrayOutputStream;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import com.skch.skchhostelservice.dto.HostellerDTO;
@@ -16,5 +18,6 @@ public interface HostelService {
 	Result getHostellers(HostellerSearch search);
 	
 	Result uploadFile(MultipartFile file);
-
+	
+	ByteArrayOutputStream getHostelTemplate();
 }
