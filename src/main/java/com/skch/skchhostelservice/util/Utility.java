@@ -140,6 +140,14 @@ public class Utility {
 		return input != null ? input : "";
 	}
 	
+	public static Boolean nullCheck(Boolean input) {
+		return input != null ? input : false;
+	}
+	
+	public static Double toDouble(BigDecimal input) {
+		return input != null ? input.doubleValue() : 0d;
+	}
+	
 	public static Boolean check(String input) {
 		return input != null && !input.isBlank() ? true : false;
 	}

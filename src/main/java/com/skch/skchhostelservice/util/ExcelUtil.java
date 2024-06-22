@@ -12,10 +12,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
@@ -65,8 +69,6 @@ public class ExcelUtil {
 		return false;
 	}
 	
-	private static final DecimalFormat df = new DecimalFormat("#");
-	
 	public static String getCellValue(Cell cell) {
 		CellType cellType = cell.getCellType();
 		switch (cellType) {
@@ -76,7 +78,7 @@ public class ExcelUtil {
 				if (DateUtil.isCellDateFormatted(cell)) {
 					return DateUtility.dateToString(cell.getLocalDateTimeCellValue(), "yyyyMMdd");
 				} else {
-					return df.format(cell.getNumericCellValue());
+					return new DecimalFormat("#").format(cell.getNumericCellValue());
 				}
 			case BOOLEAN:
 				return String.valueOf(cell.getBooleanCellValue());
@@ -177,6 +179,14 @@ public class ExcelUtil {
 		} catch (Exception e) {
 			log.error("Error in update Cell Value :: ",e);
 		}
+	}
+	
+	public static CellStyle cellStyle(Workbook workbook,String format) {
+		CellStyle cellStyle = workbook.createCellStyle();
+		DataFormat dataFormat = workbook.createDataFormat();
+		cellStyle.setDataFormat(dataFormat.getFormat(format));
+		cellStyle.setAlignment(HorizontalAlignment.RIGHT);
+		return cellStyle;
 	}
 	
 }

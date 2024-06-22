@@ -13,5 +13,7 @@ public class Pagination {
 	private String sortBy;
 	private String sortOrder;
 	private ColumnFilter[] columnFilters;
-	private boolean export;
+	private boolean exportExcel;
+	private boolean exportPdf;
+	private boolean fullLoad;
 }

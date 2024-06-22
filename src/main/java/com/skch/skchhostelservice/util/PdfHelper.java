@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chunk;
+import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Font.FontFamily;
@@ -135,6 +136,13 @@ public class PdfHelper {
 		paragraph.setSpacingAfter(spacingAfter);
 		return paragraph;
 	}
+	
+	public static Paragraph createParagraph(String title, int spacingBefore, int spacingAfter,Font font) {
+		Paragraph paragraph = new Paragraph(title, font);
+		paragraph.setSpacingBefore(spacingBefore);
+		paragraph.setSpacingAfter(spacingAfter);
+		return paragraph;
+	}
 
 	public static void headerCell(PdfPTable table, String text,BaseColor backgroundColor,Font font) {
 		PdfPCell cell = new PdfPCell(new Phrase(text, font));
@@ -250,6 +258,23 @@ public class PdfHelper {
 		    cell.setHorizontalAlignment(horizontalAlignment);
 		    cell.setBackgroundColor(new BaseColor(242, 242, 242));
 		    table.addCell(cell);
+	}
+	
+	public static void lineSeparator(Document document,String data){
+		try {
+			LineSeparator ls = new LineSeparator();
+			ls.setOffset(5);
+
+			PdfPTable lineTable = PdfHelper.createNoBorderTable(3, 5, 5, 80);
+			lineTable.setTotalWidth(new float[] { 35, 20, 35 });
+			PdfHelper.createPdfPCell(lineTable, ls);
+			PdfHelper.noBorderCell(lineTable, data, 12,new BaseColor(0,0,0) , 5, Element.ALIGN_CENTER);
+			PdfHelper.createPdfPCell(lineTable, ls);
+
+			document.add(lineTable);
+		} catch (Exception e) {
+			log.error("Error in createLineSeparator :: " + e);
+		}
 	}
 	
 }

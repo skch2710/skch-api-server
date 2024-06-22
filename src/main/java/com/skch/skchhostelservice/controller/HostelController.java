@@ -64,8 +64,23 @@ public class HostelController {
 //	@PreAuthorize("@jwtUtil.checkAccess('Super User')")
 //	@PreAuthorize("@jwtUtil.checkAccess(@jwtUtil.SUPER_USER)")
 	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
-		Result result = hostelService.getHostellers(search);
-		return ResponseEntity.ok(result);
+		try {
+			if (!search.isExportExcel() && !search.isExportPdf()) {
+				Result result = hostelService.getHostellers(search);
+				return ResponseEntity.ok(result);
+			}else {
+				Result result = hostelService.getHostellers(search);
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(result.getType());
+				headers.setContentDispositionFormData("attachment", result.getFileName());
+				InputStreamResource inputStreamResource = new InputStreamResource(
+						new ByteArrayInputStream(result.getBao().toByteArray()));
+				result.getBao().flush();// Flush the output stream
+				return ResponseEntity.ok().headers(headers).body(inputStreamResource);
+			}
+		} catch (Exception e) {
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	//SpEL parameter Not Working #search.fullName

@@ -1,11 +1,13 @@
 package com.skch.skchhostelservice.dto;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class Result {
+public class Result extends FileDetails {
 
 	private int statusCode;
 	private String successMessage;

@@ -30,13 +30,19 @@ public class DateUtility {
 	 */
 
 	public static String dateToString(LocalDateTime date, String format) {
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-		return date.format(formatter);
+		if(date != null) {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+			return date.format(formatter);
+		}
+		return "";
 	}
 
 	public static String dateToString(LocalDate date, String format) {
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-		return date.format(formatter);
+		if(date != null) {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+			return date.format(formatter);
+		}
+		return "";
 	}
 	
 	public static LocalDate stringToDate(String date,String format) {
