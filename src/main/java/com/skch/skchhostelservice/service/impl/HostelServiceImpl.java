@@ -1,5 +1,6 @@
 package com.skch.skchhostelservice.service.impl;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,8 +12,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -189,7 +194,7 @@ public class HostelServiceImpl implements HostelService {
 		log.info("Starting at getHostellers.....");
 		Result result = new Result();
 		try {
-			if (!search.isExportExcel() && !search.isExportPdf()) {
+			if (!search.isExportExcel() && !search.isExportPdf() && !search.isExportZip()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
 
 				if (!hostellerGridList.isEmpty()) {
@@ -220,6 +225,11 @@ public class HostelServiceImpl implements HostelService {
 				result.setBao(getHostelGridPdf(hostellerGridList));
 				result.setFileName("Hostel_Data.pdf");
 				result.setType(MediaType.APPLICATION_PDF);
+			}else if (search.isExportZip()) {
+				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
+				result.setBao(getHostelZip(hostellerGridList));
+				result.setFileName("Hostel_Data.zip");
+				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			}
 
 			log.info("Ending at getHostellers.....");
@@ -375,6 +385,56 @@ public class HostelServiceImpl implements HostelService {
 			document.close();// Close the document
 		} catch (Exception e) {
 			log.error("error in generate Pdf ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return baos;
+	}
+	
+	/**
+	 * Get the Hostel Grid ZIP
+	 * 
+	 * @param hostellerGridList
+	 * @return bao
+	 */
+	public ByteArrayOutputStream getHostelZip(List<HostellerGrid> hostellerGridList) {
+		ByteArrayOutputStream baos = null;
+		log.info("Inside Zip Starting...");
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+		try {
+			
+			CompletableFuture<ByteArrayOutputStream> excel = CompletableFuture.supplyAsync(() -> {
+				try {
+					log.info(">>Thread Name: " + Thread.currentThread());
+					return getHostelGridExcel(hostellerGridList);
+				} catch (Exception e) {
+					log.error("error in getHostelZip :: ", e);
+					throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+			}, executor);
+
+			CompletableFuture<ByteArrayOutputStream> pdf = CompletableFuture.supplyAsync(() -> {
+				try {
+					log.info(">>Thread Name: " + Thread.currentThread());
+					return getHostelGridPdf(hostellerGridList);
+				} catch (Exception e) {
+					log.error("error in getHostelZip :: ", e);
+					throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+			}, executor);
+			
+			CompletableFuture<Void> allOfFuture = CompletableFuture.allOf(excel, pdf);
+			allOfFuture.get();
+			
+			baos = new ByteArrayOutputStream();
+			try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(baos))) {
+				Utility.createFileToZip(zos, "Hostel_Data.xlsx", excel.get());
+				Utility.createFileToZip(zos, "Hostel_Data.pdf", pdf.get());
+				// Add more files to the zip if needed
+				zos.finish();
+			}
+			log.info("Inside Zip Ending...");
+		} catch (Exception e) {
+			log.error("error in getHostelZip :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return baos;

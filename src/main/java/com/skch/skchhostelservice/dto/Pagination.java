@@ -15,5 +15,6 @@ public class Pagination {
 	private ColumnFilter[] columnFilters;
 	private boolean exportExcel;
 	private boolean exportPdf;
+	private boolean exportZip;
 	private boolean fullLoad;
 }

@@ -104,14 +104,18 @@ public class Utility {
 		return baos;
 	}
 
-	private static void createFileToZip(ZipOutputStream zipOutputStream, String fileName, ByteArrayOutputStream baos)
-			throws IOException {
-		if (baos != null) {
-			// Add the byte array to the zip as an entry
-			ZipEntry zipEntry = new ZipEntry(fileName);
-			zipOutputStream.putNextEntry(zipEntry);
-			zipOutputStream.write(baos.toByteArray());
-			zipOutputStream.closeEntry();
+	public static void createFileToZip(ZipOutputStream zos, String fileName, ByteArrayOutputStream baos) {
+		log.info("Inside Zip Entry... :: "+fileName);
+		try {
+			if (baos != null) {
+				// Add the byte array to the zip as an entry
+				ZipEntry zipEntry = new ZipEntry(fileName);
+				zos.putNextEntry(zipEntry);
+				zos.write(baos.toByteArray());
+				zos.closeEntry();
+			}
+		} catch (Exception e) {
+			log.error("Error in Zip File Adding :: ",e);
 		}
 	}
 
@@ -193,4 +197,5 @@ public class Utility {
 		}
 		return null;
 	}
+	
 }

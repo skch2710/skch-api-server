@@ -27,11 +27,13 @@ import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.HostelService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/v1/hostel")
 //@RequestMapping("/hostel")
 @SecurityRequirement(name = "bearerAuth")
+@Slf4j
 public class HostelController {
 
 	@Autowired
@@ -65,7 +67,7 @@ public class HostelController {
 //	@PreAuthorize("@jwtUtil.checkAccess(@jwtUtil.SUPER_USER)")
 	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
 		try {
-			if (!search.isExportExcel() && !search.isExportPdf()) {
+			if (!search.isExportExcel() && !search.isExportPdf() && !search.isExportZip()) {
 				Result result = hostelService.getHostellers(search);
 				return ResponseEntity.ok(result);
 			}else {
@@ -79,6 +81,7 @@ public class HostelController {
 				return ResponseEntity.ok().headers(headers).body(inputStreamResource);
 			}
 		} catch (Exception e) {
+			log.error("error in getHostellers Controller :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
