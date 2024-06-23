@@ -115,6 +115,7 @@ public class HostelController {
 			bao.flush();// Flush the output stream
 			return ResponseEntity.ok().headers(headers).body(inputStreamResource);
 		} catch (Exception e) {
+			log.error("Error in getHostelTemplate Controller :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
