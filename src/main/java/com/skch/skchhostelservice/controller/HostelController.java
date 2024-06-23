@@ -65,6 +65,7 @@ public class HostelController {
 	@PreAuthorize("hasAuthority(@jwtUtil.SUPER_USER)")
 //	@PreAuthorize("@jwtUtil.checkAccess('Super User')")
 //	@PreAuthorize("@jwtUtil.checkAccess(@jwtUtil.SUPER_USER)")
+//	@PreAuthorize("@jwtUtil.checkAccess(#search.fullName)")
 	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
 		try {
 			if (!search.isExportExcel() && !search.isExportPdf() && !search.isExportZip()) {
