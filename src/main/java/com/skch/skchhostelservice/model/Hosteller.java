@@ -67,7 +67,7 @@ public class Hosteller extends Audit{
 		this.fullName = cellValues.get(0);
 		this.emailId = cellValues.get(1);
 		this.phoneNumber = cellValues.get(2);
-		this.fee = Utility.toNum(cellValues.get(3));
+		this.fee = Utility.toBigDecimal(cellValues.get(3));
 		this.joiningDate = DateUtility.stringToDate(cellValues.get(4), "yyyyMMdd");
 		this.address = cellValues.get(5);
 		this.proof = cellValues.get(6);

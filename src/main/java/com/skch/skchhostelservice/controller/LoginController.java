@@ -187,9 +187,14 @@ public class LoginController {
     
     @PostMapping("/get-jwt-refresh-token")
 	public ResponseEntity<?> getRefreshToken(@RequestBody JwtDTO dto) {
-		
     	JwtDTO result = jwtUtil.getRefreshToken(dto.getRefresh_token());
-		
 		return ResponseEntity.ok(result);
 	}
+    
+    @GetMapping("/get-jwt-access-token")
+   	public ResponseEntity<?> getAccessToken() {
+    	LoginRequest dto = new LoginRequest("skch@outlook.com","S@th!$h","");
+       	JwtDTO result = jwtUtil.getToken(dto);
+   		return ResponseEntity.ok(result);
+   	}
 }

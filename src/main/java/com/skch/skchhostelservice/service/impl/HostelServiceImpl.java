@@ -60,6 +60,7 @@ import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.ExcelUtil;
 import com.skch.skchhostelservice.util.PdfHelper;
 import com.skch.skchhostelservice.util.Utility;
+import com.skch.skchhostelservice.util.ValidationUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -95,41 +96,46 @@ public class HostelServiceImpl implements HostelService {
 			dto.setVacatedDate(Utility.isBlank(dto.getVacatedDate()));
 			dto.setJoiningDate(Utility.isBlank(dto.getJoiningDate()));
 
-			log.info(">>>>>> Starting ...." + dto);
+			Map<String, String> errors = ValidationUtils.validate(dto);
 			result = new Result();
-			if (dto.getHostellerId() == null || dto.getHostellerId() == 0) {
-				hosteller = MAPPER.fromHostellerDTO(dto);
-//				hosteller.setCreatedById(JwtUtil.getUserId());
-//				hosteller.setModifiedById(JwtUtil.getUserId());
-//				hosteller.setCreatedDate(LocalDateTime.now());
-//				hosteller.setModifiedDate(LocalDateTime.now());
-				Utility.updateFields(hosteller, "C");
-				hosteller.setActive(true);
-				if (hosteller.getJoiningDate() == null) {
-					hosteller.setJoiningDate(LocalDate.now());
+			if (errors.isEmpty()) {
+				log.info(">>>>>> Starting ...." + dto);
+				if (dto.getHostellerId() == null || dto.getHostellerId() == 0) {
+					hosteller = MAPPER.fromHostellerDTO(dto);
+					Utility.updateFields(hosteller, "C");
+					hosteller.setActive(true);
+					if (hosteller.getJoiningDate() == null) {
+						hosteller.setJoiningDate(LocalDate.now());
+					}
+					hosteller = hostellerDAO.save(hosteller);
+
+					result.setStatusCode(HttpStatus.OK.value());
+					result.setSuccessMessage("Saved Successfully...");
+					result.setData(hosteller);
+				} else {
+					Hosteller serverHosteller = hostellerDAO.findByHostellerId(dto.getHostellerId());
+
+					hosteller = MAPPER.fromHostellerDTO(dto);
+					hosteller.setActive(serverHosteller.getActive());
+					hosteller.setCreatedDate(serverHosteller.getCreatedDate());
+					hosteller.setCreatedById(serverHosteller.getCreatedById());
+					hosteller.setVacatedDate(serverHosteller.getVacatedDate());
+
+					Utility.updateFields(hosteller, "U");
+
+					hosteller = hostellerDAO.save(hosteller);
+
+					result.setStatusCode(HttpStatus.OK.value());
+					result.setSuccessMessage("Updated Successfully...");
+					result.setData(hosteller);
 				}
-				hosteller = hostellerDAO.save(hosteller);
-
-				result.setStatusCode(HttpStatus.OK.value());
-				result.setSuccessMessage("Saved Successfully...");
-				result.setData(hosteller);
 			} else {
-				Hosteller serverHosteller = hostellerDAO.findByHostellerId(dto.getHostellerId());
-
-				hosteller = MAPPER.fromHostellerDTO(dto);
-				hosteller.setActive(serverHosteller.getActive());
-				hosteller.setCreatedDate(serverHosteller.getCreatedDate());
-				hosteller.setCreatedById(serverHosteller.getCreatedById());
-				hosteller.setVacatedDate(serverHosteller.getVacatedDate());
-//				hosteller.setModifiedDate(LocalDateTime.now());
-
-				Utility.updateFields(hosteller, "U");
-
-				hosteller = hostellerDAO.save(hosteller);
-
-				result.setStatusCode(HttpStatus.OK.value());
-				result.setSuccessMessage("Updated Successfully...");
-				result.setData(hosteller);
+				String commaSeparatedValues = errors.values().stream()
+		                .collect(Collectors.joining(","));
+				
+				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+				result.setErrorMessage("Object Is Not Valid :: "+commaSeparatedValues);
+				result.setData(errors);
 			}
 			log.info("Ending at saveOrUpdateHosteller.....");
 		} catch (Exception e) {
@@ -463,7 +469,7 @@ public class HostelServiceImpl implements HostelService {
 					if (totalRecords > 0) {
 						// Method to Save the Data
 						getRowValues(sheet);
-						result.setData("Uploaded " + totalRecords + " records is Uploaded.");
+						result.setData("Uploaded " + totalRecords + " records.");
 					} else {
 						result.setData("Empty Template Uploaded");
 					}
@@ -488,9 +494,16 @@ public class HostelServiceImpl implements HostelService {
 		return result;
 	}
 
+	@Autowired
+	private HostelBatch hostelBatch;
+	
 	public void getRowValues(XSSFSheet sheet) {
+		ArrayList<HostellerDTO> dataList = new ArrayList<>();
+		List<HostellerDTO> errorList = new ArrayList<>();
+		List<CompletableFuture<Void>> features = new ArrayList<>();
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-		List<Hosteller> dataList = new ArrayList<>();
+		int batchSize = 10;
 
 		Iterator<Row> rowIterator = sheet.iterator();
 		rowIterator.forEachRemaining(row -> {
@@ -502,14 +515,49 @@ public class HostelServiceImpl implements HostelService {
 				return ExcelUtil.getCellValue(cell);
 			}).collect(Collectors.toList());
 
-			dataList.add(new Hosteller(cellValues));
+			HostellerDTO dto = new HostellerDTO(cellValues);
+			Map<String, String> errors = ValidationUtils.validate(dto);
+
+			if (!errors.isEmpty()) {
+				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+					features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+					dataList.clear();
+				}
+				dataList.add(dto);
+			} else {
+				String error = errors.values().stream().collect(Collectors.joining(","));
+				dto.setError(error);
+				errorList.add(dto);
+			}
 		});
 
-		hostellerDAO.saveAll(dataList);
+		if (!dataList.isEmpty()) {
+			features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+		}
 
-		log.info("List DTO :: " + dataList);
+//		log.info("Before started.....");
+//		CompletableFuture<Void> allFeatures = CompletableFuture.allOf(features.toArray(new CompletableFuture[0]));
+//		allFeatures.join();
+//
+//		log.info("After started......");
+
 		log.info("List DTO Size :: " + dataList.size());
+		log.info("List Error Size :: " + errorList.size());
 
+		executor.shutdown();
+	}
+	
+	public CompletableFuture<Void> saveRecordsInBatch(ArrayList<HostellerDTO> records, 
+			ExecutorService executor) {
+		log.info("Started method.... Batch size: " + records.size());
+		return CompletableFuture.runAsync(() -> {
+			try {
+				hostelBatch.saveInBatch(records);
+			} catch (Exception e) {
+				log.error("Error in saveRecordsInBatch :: " + e);
+				throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}, executor);
 	}
 
 	/**

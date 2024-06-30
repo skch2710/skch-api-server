@@ -148,6 +148,13 @@ public class Utility {
 		return input != null ? input : false;
 	}
 	
+	public static BigDecimal toBigDecimal(String input) {
+		if(input != null && !input.isBlank()) {
+			return new BigDecimal(input);
+		}
+		return null;
+	}
+	
 	public static Double toDouble(BigDecimal input) {
 		return input != null ? input.doubleValue() : 0d;
 	}
@@ -189,13 +196,6 @@ public class Utility {
 			e.printStackTrace();
 		}
 		return output;
-	}
-	
-	public static BigDecimal toNum(String input) {
-		if(input != null && !input.isBlank()) {
-			return new BigDecimal(input);
-		}
-		return null;
 	}
 	
 }
