@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.skch.skchhostelservice.dto.HostellerDTO;
+import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.Utility;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HostelBatch {
 
 	private final JdbcTemplate jdbcTemplate;
-	private final int batchSize = 10;
+	private final int batchSize = 1000;
 
 	public HostelBatch(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
@@ -42,17 +43,15 @@ public class HostelBatch {
 							ps.setObject(2, model.getEmailId(), Types.VARCHAR);
 							ps.setObject(3, model.getPhoneNumber(), Types.VARCHAR);
 							ps.setObject(4, Utility.toBigDecimal(model.getFee()), Types.NUMERIC);
-//							ps.setObject(5, DateUtility.stringToDateTimes(model.getJoiningDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
-							ps.setObject(5, null, Types.NULL);
+							ps.setObject(5, DateUtility.stringToDateTimes(model.getJoiningDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
 							ps.setObject(6, model.getAddress(), Types.VARCHAR);
 							ps.setObject(7, model.getProof(), Types.VARCHAR);
 							ps.setObject(8, model.getReason(), Types.VARCHAR);
-							
-//							if(model.getVacatedDate() != null && !model.getVacatedDate().isBlank()) {
-//								ps.setObject(9, DateUtility.stringToDateTimes(model.getVacatedDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
-//							}else {
+							if(model.getVacatedDate() != null && !model.getVacatedDate().isBlank()) {
+								ps.setObject(9, DateUtility.stringToDateTimes(model.getVacatedDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
+							}else {
 								ps.setObject(9, null, Types.NULL);
-//							}
+							}
 							ps.setObject(10, model.getActive().equalsIgnoreCase("Yes"), Types.BOOLEAN);
 							ps.setObject(11, model.getCreatedById(), Types.BIGINT);
 							ps.setObject(12, model.getCreatedDate(), Types.TIMESTAMP);
@@ -60,7 +59,7 @@ public class HostelBatch {
 							ps.setObject(14, model.getModifiedDate(), Types.TIMESTAMP);
 						}
 					});
-            log.info("Batch insert completed for batch size: " + list.size());
+//            log.info("Batch insert completed for batch size: " + list.size());
 		} catch (Exception e) {
 			log.error("Error in Batch Insert :: " + e);
 		}

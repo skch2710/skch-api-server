@@ -42,7 +42,7 @@ public class HostellerDTO extends Audit {
 	private String fee;
 
 	@NotNull(message = "Joining Date cannot be null")
-	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Joining Date(dd-MM-yyy) is not valid")
+	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Joining Date(dd-MM-yyyy) is not valid")
 	private String joiningDate;
 
 	private String address;
@@ -52,7 +52,7 @@ public class HostellerDTO extends Audit {
 	@NotBlank(message = "Reason cannot be Blank")
 	private String reason;
 
-	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Vacated Date(dd-MM-yyy) is not valid")
+	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Vacated Date(dd-MM-yyyy) is not valid")
 	private String vacatedDate;
 
 	private String active;

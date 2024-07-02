@@ -39,6 +39,11 @@ spring:
   threads:
     virtual:
       enabled: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+        
 app:
   timezone: IST
   auth-cred: sathish_ch:S@th!$h

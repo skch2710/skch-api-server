@@ -114,4 +114,9 @@ public class DateUtility {
 		}
 		return result;
 	}
+	
+//	public static void main(String[] args) {
+//		System.out.println(stringToDateTimes("21-01-2024","dd-MM-yyyy"));
+//	}
+	
 }

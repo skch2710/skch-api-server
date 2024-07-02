@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -458,6 +457,8 @@ public class HostelServiceImpl implements HostelService {
 		Result result = new Result();
 		XSSFWorkbook workbook = null;
 		try {
+			long intialTime = System.currentTimeMillis();
+
 			if (ExcelUtil.excelType(file)) {
 
 				workbook = new XSSFWorkbook(file.getInputStream());
@@ -479,6 +480,10 @@ public class HostelServiceImpl implements HostelService {
 			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not an Excel file");
 			}
+		
+		long finalTime = System.currentTimeMillis();
+		log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
+		
 		} catch (Exception e) {
 			log.error("Error in uploadFile :: " + e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -503,10 +508,11 @@ public class HostelServiceImpl implements HostelService {
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-		int batchSize = 10;
-
-		Iterator<Row> rowIterator = sheet.iterator();
-		rowIterator.forEachRemaining(row -> {
+		int batchSize = 1000;
+//		Map<String,Integer> mapData = new HashMap<>();
+		List<Integer> succCount = new ArrayList<>();
+		
+		sheet.forEach(row -> {
 			if (row.getRowNum() == 0) {
 				return;
 			}
@@ -514,13 +520,14 @@ public class HostelServiceImpl implements HostelService {
 				Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 				return ExcelUtil.getCellValue(cell);
 			}).collect(Collectors.toList());
-
+			
 			HostellerDTO dto = new HostellerDTO(cellValues);
 			Map<String, String> errors = ValidationUtils.validate(dto);
 
-			if (!errors.isEmpty()) {
+			if (errors.isEmpty()) {
 				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
 					features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+					succCount.add(dataList.size());
 					dataList.clear();
 				}
 				dataList.add(dto);
@@ -528,28 +535,29 @@ public class HostelServiceImpl implements HostelService {
 				String error = errors.values().stream().collect(Collectors.joining(","));
 				dto.setError(error);
 				errorList.add(dto);
+				log.info("Error :: " + error);
 			}
 		});
-
+		
 		if (!dataList.isEmpty()) {
 			features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+			succCount.add(dataList.size());
 		}
 
-//		log.info("Before started.....");
 //		CompletableFuture<Void> allFeatures = CompletableFuture.allOf(features.toArray(new CompletableFuture[0]));
 //		allFeatures.join();
-//
-//		log.info("After started......");
-
-		log.info("List DTO Size :: " + dataList.size());
-		log.info("List Error Size :: " + errorList.size());
+		
+		int sum = succCount.stream().mapToInt(Integer::intValue).sum();
+		log.info("List DTO Size :: " + sum);
+//		log.info("List Error Size :: " + errorList.size());
+//		log.info("List Error Size :: " + errorList);
 
 		executor.shutdown();
 	}
 	
 	public CompletableFuture<Void> saveRecordsInBatch(ArrayList<HostellerDTO> records, 
 			ExecutorService executor) {
-		log.info("Started method.... Batch size: " + records.size());
+//		log.info("Started method.... Batch size: " + records.size());
 		return CompletableFuture.runAsync(() -> {
 			try {
 				hostelBatch.saveInBatch(records);

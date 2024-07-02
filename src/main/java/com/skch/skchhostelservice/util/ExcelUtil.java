@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
@@ -70,26 +72,49 @@ public class ExcelUtil {
 	}
 	
 	public static String getCellValue(Cell cell) {
-		CellType cellType = cell.getCellType();
-		switch (cellType) {
-			case STRING:
-				return cell.getStringCellValue();
-			case NUMERIC:
-				if (DateUtil.isCellDateFormatted(cell)) {
-					return DateUtility.dateToString(cell.getLocalDateTimeCellValue(), "yyyyMMdd");
-				} else {
-					return new DecimalFormat("#").format(cell.getNumericCellValue());
-				}
-			case BOOLEAN:
-				return String.valueOf(cell.getBooleanCellValue());
-			case FORMULA:
-				return cell.getCellFormula();
-			case BLANK:
-				return "";
-			default:
-				return "Unsupported Cell Type";
+		String output = "";
+		try {
+			CellType cellType = cell.getCellType();
+			switch (cellType) {
+				case STRING:
+					return cell.getStringCellValue();
+				case NUMERIC:
+					if (DateUtil.isCellDateFormatted(cell)) {
+						return DateUtility.dateToString(cell.getLocalDateTimeCellValue(), "dd-MM-yyyy");
+					} else {
+						return new DecimalFormat("#").format(cell.getNumericCellValue());
+					}
+				case BOOLEAN:
+					return String.valueOf(cell.getBooleanCellValue());
+				case FORMULA:
+					return cell.getCellFormula();
+				case BLANK:
+					return "";
+				default:
+					return "Unsupported Cell Type";
+			}
+		} catch (Exception e) {
+			log.info("Error in get Cell Value"+e);
 		}
+		return output;
 	}
+	
+	public static String getCellValues(Cell cell) {
+		DataFormatter df = new DataFormatter();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+		String output = "";
+		try {
+			if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+				output = dateFormat.format(cell.getDateCellValue());
+			} else {
+				output = df.formatCellValue(cell);
+			}
+		} catch (Exception e) {
+			log.info("Error in get Cell Value" + e);
+		}
+		return output;
+	}
+	
 	
 	/**
 	 * Share the file into directory
