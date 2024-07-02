@@ -13,6 +13,7 @@ public class HostellerGridDTO {
 	private String fullName;
 	private String emailId;
 	private String phoneNumber;
+	private String dob;
 	private String fee;
 	private String joiningDate;
 	private String address;

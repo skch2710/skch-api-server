@@ -3,6 +3,7 @@ package com.skch.skchhostelservice.service.impl;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,10 +28,10 @@ public class HostelBatch {
 		this.jdbcTemplate = jdbcTemplate;
 	}
 
-	private String insertQuery = "INSERT INTO hostel.hostellers(full_name, email_id, phone_number, fee, "
+	private String insertQuery = "INSERT INTO hostel.hostellers(full_name, email_id, phone_number,dob, fee, "
 			+ "joining_date, address, proof, reason, vacated_date, active, "
 			+ "created_by_id, created_date, modified_by_id, modified_date)\r\n"
-			+ "	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			+ "	VALUES (?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 	@Transactional
     public void saveInBatch(ArrayList<HostellerDTO> list) {
@@ -42,21 +43,22 @@ public class HostelBatch {
 							ps.setObject(1, model.getFullName(), Types.VARCHAR);
 							ps.setObject(2, model.getEmailId(), Types.VARCHAR);
 							ps.setObject(3, model.getPhoneNumber(), Types.VARCHAR);
-							ps.setObject(4, Utility.toBigDecimal(model.getFee()), Types.NUMERIC);
-							ps.setObject(5, DateUtility.stringToDateTimes(model.getJoiningDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
-							ps.setObject(6, model.getAddress(), Types.VARCHAR);
-							ps.setObject(7, model.getProof(), Types.VARCHAR);
-							ps.setObject(8, model.getReason(), Types.VARCHAR);
+							ps.setObject(4, DateUtility.stringToDate(model.getDob(),"dd-MM-yyyy"), Types.DATE);
+							ps.setObject(5, Utility.toBigDecimal(model.getFee()), Types.NUMERIC);
+							ps.setObject(6, DateUtility.stringToDateTimes(model.getJoiningDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
+							ps.setObject(7, model.getAddress(), Types.VARCHAR);
+							ps.setObject(8, model.getProof(), Types.VARCHAR);
+							ps.setObject(9, model.getReason(), Types.VARCHAR);
 							if(model.getVacatedDate() != null && !model.getVacatedDate().isBlank()) {
-								ps.setObject(9, DateUtility.stringToDateTimes(model.getVacatedDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
+								ps.setObject(10, DateUtility.stringToDateTimes(model.getVacatedDate(),"dd-MM-yyyy"), Types.TIMESTAMP);
 							}else {
-								ps.setObject(9, null, Types.NULL);
+								ps.setObject(10, null, Types.NULL);
 							}
-							ps.setObject(10, model.getActive().equalsIgnoreCase("Yes"), Types.BOOLEAN);
-							ps.setObject(11, model.getCreatedById(), Types.BIGINT);
-							ps.setObject(12, model.getCreatedDate(), Types.TIMESTAMP);
-							ps.setObject(13, model.getModifiedById(), Types.BIGINT);
-							ps.setObject(14, model.getModifiedDate(), Types.TIMESTAMP);
+							ps.setObject(11, model.getActive().equalsIgnoreCase("Yes"), Types.BOOLEAN);
+							ps.setObject(12, model.getCreatedById(), Types.BIGINT);
+							ps.setObject(13, LocalDateTime.now() , Types.TIMESTAMP);
+							ps.setObject(14, model.getModifiedById(), Types.BIGINT);
+							ps.setObject(15, LocalDateTime.now(), Types.TIMESTAMP);
 						}
 					});
 //            log.info("Batch insert completed for batch size: " + list.size());

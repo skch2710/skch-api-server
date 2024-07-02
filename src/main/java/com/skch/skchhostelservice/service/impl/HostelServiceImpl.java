@@ -57,6 +57,7 @@ import com.skch.skchhostelservice.model.PaymentHistory;
 import com.skch.skchhostelservice.service.HostelService;
 import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.ExcelUtil;
+import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.PdfHelper;
 import com.skch.skchhostelservice.util.Utility;
 import com.skch.skchhostelservice.util.ValidationUtils;
@@ -94,6 +95,7 @@ public class HostelServiceImpl implements HostelService {
 			dto.setFee(Utility.isBlank(dto.getFee()));
 			dto.setVacatedDate(Utility.isBlank(dto.getVacatedDate()));
 			dto.setJoiningDate(Utility.isBlank(dto.getJoiningDate()));
+			dto.setDob(Utility.isBlank(dto.getDob()));
 
 			Map<String, String> errors = ValidationUtils.validate(dto);
 			result = new Result();
@@ -106,6 +108,9 @@ public class HostelServiceImpl implements HostelService {
 					if (hosteller.getJoiningDate() == null) {
 						hosteller.setJoiningDate(LocalDate.now());
 					}
+					
+					hosteller.setVacatedDate(DateUtility.stringToDateTimes(dto.getVacatedDate(),"dd-MM-yyyy"));
+					
 					hosteller = hostellerDAO.save(hosteller);
 
 					result.setStatusCode(HttpStatus.OK.value());
@@ -118,8 +123,8 @@ public class HostelServiceImpl implements HostelService {
 					hosteller.setActive(serverHosteller.getActive());
 					hosteller.setCreatedDate(serverHosteller.getCreatedDate());
 					hosteller.setCreatedById(serverHosteller.getCreatedById());
-					hosteller.setVacatedDate(serverHosteller.getVacatedDate());
-
+					hosteller.setVacatedDate(DateUtility.stringToDateTimes(dto.getVacatedDate(),"dd-MM-yyyy"));
+					
 					Utility.updateFields(hosteller, "U");
 
 					hosteller = hostellerDAO.save(hosteller);
@@ -300,18 +305,20 @@ public class HostelServiceImpl implements HostelService {
 				row.createCell(1).setCellValue(Utility.nullCheck(Hosteller.getEmailId()));
 				row.createCell(2).setCellValue(Utility.nullCheck(Hosteller.getPhoneNumber()));
 
-				Cell cell3 = row.createCell(3);
-				cell3.setCellStyle(currencyStyle);
-				cell3.setCellValue(Utility.toDouble(Hosteller.getFee()));
+				row.createCell(3).setCellValue(DateUtility.dateToString(Hosteller.getDob(), "yyyy-MM-dd"));
+				
+				Cell cell4 = row.createCell(4);
+				cell4.setCellStyle(currencyStyle);
+				cell4.setCellValue(Utility.toDouble(Hosteller.getFee()));
 
-				row.createCell(4).setCellValue(DateUtility.dateToString(Hosteller.getJoiningDate(), "yyyy-MM-dd"));
+				row.createCell(5).setCellValue(DateUtility.dateToString(Hosteller.getJoiningDate(), "yyyy-MM-dd"));
 
-				row.createCell(5).setCellValue(Utility.nullCheck(Hosteller.getAddress()));
-				row.createCell(6).setCellValue(Utility.nullCheck(Hosteller.getProof()));
-				row.createCell(7).setCellValue(Utility.nullCheck(Hosteller.getReason()));
+				row.createCell(6).setCellValue(Utility.nullCheck(Hosteller.getAddress()));
+				row.createCell(7).setCellValue(Utility.nullCheck(Hosteller.getProof()));
+				row.createCell(8).setCellValue(Utility.nullCheck(Hosteller.getReason()));
 
-				row.createCell(8).setCellValue(DateUtility.dateToString(Hosteller.getVacatedDate(), "yyyy-MM-dd"));
-				row.createCell(9).setCellValue(Utility.nullCheck(Hosteller.getActive()) ? "Yes" : "No");
+				row.createCell(9).setCellValue(DateUtility.dateToString(Hosteller.getVacatedDate(), "yyyy-MM-dd"));
+				row.createCell(10).setCellValue(Utility.nullCheck(Hosteller.getActive()) ? "Yes" : "No");
 			}
 
 			bao = new ByteArrayOutputStream();
@@ -351,8 +358,8 @@ public class HostelServiceImpl implements HostelService {
 					14, 5, PdfHelper.getPoppinsFont(12, new BaseColor(255, 165, 0)));
 			document.add(tableTitle);
 
-			PdfPTable mainTable = PdfHelper.createTable(10, 5, 5, 100);
-			mainTable.setTotalWidth(new float[] { 12, 14, 12, 8, 8, 12, 10, 10, 8, 6 });
+			PdfPTable mainTable = PdfHelper.createTable(11, 5, 5, 100);
+			mainTable.setTotalWidth(new float[] { 10, 14, 10, 4, 8, 8, 12, 10, 10, 8, 6 });
 
 			// Add table headers
 			List<String> headers = Arrays.asList(ExcelUtil.HOSTEL_HEADERS);
@@ -369,6 +376,8 @@ public class HostelServiceImpl implements HostelService {
 						Element.ALIGN_CENTER);
 				PdfHelper.createPdfPCell(mainTable, data.getPhoneNumber(), PdfHelper.getPoppinsFont(6, null), 5,
 						Element.ALIGN_CENTER);
+				PdfHelper.createPdfPCell(mainTable, DateUtility.dateToString(data.getDob(),"yyyy-MM-dd"),
+						PdfHelper.getPoppinsFont(6, null), 5, Element.ALIGN_CENTER);
 				PdfHelper.createPdfPCell(mainTable, PdfHelper.numberFormatGrid(data.getFee()),
 						PdfHelper.getPoppinsFont(6, null), 5, Element.ALIGN_RIGHT);
 				PdfHelper.createPdfPCell(mainTable, DateUtility.dateToString(data.getJoiningDate(),"yyyy-MM-dd"),
@@ -468,8 +477,14 @@ public class HostelServiceImpl implements HostelService {
 				if (ExcelUtil.headerCheck(headerRow, ExcelUtil.HOSTEL_HEADERS)) {
 					long totalRecords = sheet.getLastRowNum();
 					if (totalRecords > 0) {
-						// Method to Save the Data
-						getRowValues(sheet);
+						// Method to Save the Data Synchronus
+//						getRowValues(sheet);
+						
+						Long userId = JwtUtil.getUserId();
+						
+						//Run Method Async
+						runAsyncMethod(sheet,userId);
+						
 						result.setData("Uploaded " + totalRecords + " records.");
 					} else {
 						result.setData("Empty Template Uploaded");
@@ -502,7 +517,7 @@ public class HostelServiceImpl implements HostelService {
 	@Autowired
 	private HostelBatch hostelBatch;
 	
-	public void getRowValues(XSSFSheet sheet) {
+	public void getRowValues(XSSFSheet sheet,Long userId) {
 		ArrayList<HostellerDTO> dataList = new ArrayList<>();
 		List<HostellerDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
@@ -521,7 +536,7 @@ public class HostelServiceImpl implements HostelService {
 				return ExcelUtil.getCellValue(cell);
 			}).collect(Collectors.toList());
 			
-			HostellerDTO dto = new HostellerDTO(cellValues);
+			HostellerDTO dto = new HostellerDTO(cellValues,userId);
 			Map<String, String> errors = ValidationUtils.validate(dto);
 
 			if (errors.isEmpty()) {
@@ -566,6 +581,17 @@ public class HostelServiceImpl implements HostelService {
 				throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}, executor);
+	}
+	
+	public void runAsyncMethod(XSSFSheet sheet,Long userId) {
+		CompletableFuture.runAsync(() -> {
+			try {
+				getRowValues(sheet,userId);
+			} catch (Exception e) {
+				log.error("Error in saveRecordsInBatch :: " + e);
+				throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		});
 	}
 
 	/**

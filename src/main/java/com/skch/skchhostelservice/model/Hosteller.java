@@ -40,6 +40,9 @@ public class Hosteller extends Audit{
 
 	@Column(name = "phone_number")
 	private String phoneNumber;
+	
+	@Column(name = "dob")
+	private LocalDate dob;
 
 	@Column(name = "fee")
 	private BigDecimal fee;

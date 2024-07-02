@@ -26,7 +26,8 @@ public interface ObjectMapper {
 	ObjectMapper INSTANCE = Mappers.getMapper(ObjectMapper.class);
 
 	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "dd-MM-yyyy")
-	@Mapping(source = "vacatedDate", target = "vacatedDate", dateFormat = "dd-MM-yyyy")
+	@Mapping(target = "vacatedDate", ignore=true)
+	@Mapping(source = "dob", target = "dob", dateFormat = "dd-MM-yyyy")
 	Hosteller fromHostellerDTO(HostellerDTO dto);
 	List<Hosteller> fromHostellerDTO(List<HostellerDTO> dtos);
 
@@ -74,6 +75,7 @@ public interface ObjectMapper {
 		return output;
 	}
 	
+	@Mapping(source = "dob", target = "dob", dateFormat = "MM/dd/yyyy")
 	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
 	@Mapping(target = "phoneNumber", expression = "java(mapEncprict(hosteller.getPhoneNumber()))")
 	@Mapping(target = "address", expression = "java(mapEncprict(hosteller.getAddress()))")

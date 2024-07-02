@@ -43,9 +43,9 @@ spring:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
-        
+      
 app:
-  timezone: IST
+  timezone: "Asia/Kolkata"
   auth-cred: sathish_ch:S@th!$h
   url: http://localhost:8060/oauth2/token
   passwordlink-expiry: 24

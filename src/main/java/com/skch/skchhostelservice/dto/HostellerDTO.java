@@ -2,9 +2,9 @@ package com.skch.skchhostelservice.dto;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.skch.skchhostelservice.model.Audit;
-import com.skch.skchhostelservice.util.Utility;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -36,6 +36,10 @@ public class HostellerDTO extends Audit {
 
 	@Pattern(regexp = "^[0-9]*$", message = "Phone number is not valid")
 	private String phoneNumber;
+	
+	@NotNull(message = "DOB cannot be null")
+	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "DOB(dd-MM-yyyy) is not valid")
+	private String dob;
 
 	@NotNull(message = "Fee cannot be null")
 	@Pattern(regexp = "^-?\\d{1,3}(,\\d{3})*(\\.\\d{1,3})?$|^-?\\d+(\\.\\d{1,3})?$", message = "Fee is not valid")
@@ -55,22 +59,28 @@ public class HostellerDTO extends Audit {
 	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Vacated Date(dd-MM-yyyy) is not valid")
 	private String vacatedDate;
 
+//	private Boolean active;
+	
 	private String active;
 	
+	@JsonIgnore
 	private String error;
 	
-	public HostellerDTO(List<String> cellValues) {
+	public HostellerDTO(List<String> cellValues,Long userId) {
 		this.fullName = cellValues.get(0);
 		this.emailId = cellValues.get(1);
 		this.phoneNumber = cellValues.get(2);
-		this.fee = cellValues.get(3);
-		this.joiningDate = cellValues.get(4);
-		this.address = cellValues.get(5);
-		this.proof = cellValues.get(6);
-		this.reason = cellValues.get(7);
-		this.vacatedDate = cellValues.get(8);
-		this.active = cellValues.get(9);
-		Utility.updateFields(this, "C");
+		this.dob = cellValues.get(3);
+		this.fee = cellValues.get(4);
+		this.joiningDate = cellValues.get(5);
+		this.address = cellValues.get(6);
+		this.proof = cellValues.get(7);
+		this.reason = cellValues.get(8);
+		this.vacatedDate = cellValues.get(9);
+		this.active = cellValues.get(10);
+		this.setCreatedById(userId);
+		this.setModifiedById(userId);
+//		Utility.updateFields(this, "C");
 	}
 
 }

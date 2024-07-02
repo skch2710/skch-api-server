@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExcelUtil {
 	
-	public static final String[] HOSTEL_HEADERS = {"Full Name","Email Id","Phone Number","fee",
+	public static final String[] HOSTEL_HEADERS = {"Full Name","Email Id","Phone Number","DOB","Fee",
 			"Joining Date","Address","Proof","Reason","Vacated Date","Active"};
 	
 	public static final List<String> EXCEL_MIME_TYPES = Arrays.asList(
