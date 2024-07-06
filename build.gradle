@@ -35,6 +35,8 @@ dependencies {
 	implementation 'org.apache.poi:poi-ooxml:4.1.2'
 	//For pdf
 	implementation 'com.itextpdf:itextpdf:5.5.13'
+	//opencsv
+	implementation 'com.opencsv:opencsv:5.7.1'
 	// Swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 	//Chache Service

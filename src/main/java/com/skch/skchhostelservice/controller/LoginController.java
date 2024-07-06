@@ -36,6 +36,7 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.LoginService;
 import com.skch.skchhostelservice.util.DateUtility;
+import com.skch.skchhostelservice.util.ExcelUtil;
 import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.Utility;
 
@@ -126,6 +127,33 @@ public class LoginController {
             		.body("Error occurred while uploading the file: " + e);
         }
     }
+    
+    @PostMapping(path ="/csv-excel", consumes = "multipart/form-data")
+	public ResponseEntity<?> csvToExcel(@RequestPart(required = true, name="file") MultipartFile file){
+		try {
+			log.info(file.getContentType());
+			ExcelUtil.csvReadData(file);
+			if(file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
+				ByteArrayOutputStream outputStream = ExcelUtil.convertCsvToExcel(file);
+
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+				headers.setContentDispositionFormData("attachment", "Sample.xlsx");
+
+				InputStreamResource inputStreamResource = new InputStreamResource(
+						new ByteArrayInputStream(outputStream.toByteArray()));
+
+				outputStream.flush();// Flush the output stream
+
+				return ResponseEntity.ok().headers(headers).body(inputStreamResource);
+			}else {
+				return ResponseEntity.badRequest().body("Not a CSV File");
+			}
+		} catch (Exception e) {
+			log.error("Error in csvToExcel....",e);
+			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
     
     @DeleteMapping("/delete-file")
     public ResponseEntity<?> deleteFile(@RequestBody FileUploadDTO dto) {
