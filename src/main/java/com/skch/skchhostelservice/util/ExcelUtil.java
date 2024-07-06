@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -29,8 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExcelUtil {
 	
-	public static final String[] HOSTEL_HEADERS = {"Full Name","Email Id","Phone Number","DOB","Fee",
-			"Joining Date","Address","Proof","Reason","Vacated Date","Active"};
+	public static final List<String> HOSTEL_HEADERS = Arrays.asList("Full Name","Email Id","Phone Number","DOB","Fee",
+			"Joining Date","Address","Proof","Reason","Vacated Date","Active");
 	
 	public static final List<String> EXCEL_MIME_TYPES = Arrays.asList(
             "application/vnd.ms-excel",
@@ -57,18 +59,57 @@ public class ExcelUtil {
 	 * @param headers
 	 * @return boolean
 	 */
-	public static Boolean headerCheck(Row headerRow, String[] headers) {
-		if (headerRow != null && headerRow.getPhysicalNumberOfCells() == headers.length) {
+	public static Boolean headerCheck(Row headerRow, List<String> headers) {
+		if (headerRow != null && headerRow.getPhysicalNumberOfCells() == headers.size()) {
 			List<String> excelHeaders = new ArrayList<>();
 			for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
-				String header = getCellValue(headerRow.getCell(i));
+				String header = getCellValue(headerRow.getCell(i,Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
 				excelHeaders.add(header.trim());
 			}
-			if (Arrays.equals(headers, excelHeaders.toArray())) {
+			if (Arrays.equals(headers.toArray(), excelHeaders.toArray())) {
 				return true;
 			}
 		}
 		return false;
+	}
+	
+	public static String headerCheck(Workbook workbook, List<String> headers) {
+		String error = "";
+		try {
+			if (workbook.getNumberOfSheets() > 0 && workbook.getSheetAt(0).getRow(0) != null &&
+					workbook.getSheetAt(0).getRow(0).getPhysicalNumberOfCells() > 0) {
+				Row headerRow = workbook.getSheetAt(0).getRow(0);
+				List<String> excelHeaders = new ArrayList<>();
+				for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
+					String header = getCellValue(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
+					excelHeaders.add(header.trim());
+				}
+				if (Arrays.equals(headers.toArray(), excelHeaders.toArray())) {
+					return error;
+				} else {
+					List<String> unMatched = IntStream.range(0, headers.size())
+							.filter(i -> i >= excelHeaders.size() || !headers.get(i).equals(excelHeaders.get(i)))
+							.mapToObj(headers::get).collect(Collectors.toList());
+					if(!unMatched.isEmpty()) {
+						error += "Missing Columns " + String.join(",", unMatched);
+					}else {
+						List<String> additionalData = IntStream.range(headers.size(), excelHeaders.size())
+								.mapToObj(excelHeaders::get)
+								.filter(obj -> obj != null && !obj.isBlank())
+								.collect(Collectors.toList());
+						if(!additionalData.isEmpty()) {
+							error += "Extra Columns " + String.join(",", additionalData);
+						}
+					}
+				}
+			} else {
+				error += "Missing Columns " + String.join(",", headers);
+			}
+		} catch (Exception e) {
+			log.error("Error in Header Check :: "+e);
+			error += "Something Went Wrong";
+		}
+		return error;
 	}
 	
 	public static String getCellValue(Cell cell) {
@@ -94,7 +135,7 @@ public class ExcelUtil {
 					return "Unsupported Cell Type";
 			}
 		} catch (Exception e) {
-			log.info("Error in get Cell Value"+e);
+			log.info("Error in get Cell Value :: "+e);
 		}
 		return output;
 	}

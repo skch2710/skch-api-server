@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -362,8 +361,7 @@ public class HostelServiceImpl implements HostelService {
 			mainTable.setTotalWidth(new float[] { 10, 14, 10, 4, 8, 8, 12, 10, 10, 8, 6 });
 
 			// Add table headers
-			List<String> headers = Arrays.asList(ExcelUtil.HOSTEL_HEADERS);
-			headers.forEach(header -> {
+			ExcelUtil.HOSTEL_HEADERS.forEach(header -> {
 				PdfHelper.headerCell(mainTable, header, new BaseColor(229, 242, 255),
 						PdfHelper.getPoppinsFont(8, null));
 			});
@@ -469,12 +467,11 @@ public class HostelServiceImpl implements HostelService {
 			long intialTime = System.currentTimeMillis();
 
 			if (ExcelUtil.excelType(file)) {
-
 				workbook = new XSSFWorkbook(file.getInputStream());
-				XSSFSheet sheet = workbook.getSheetAt(0);
-				Row headerRow = sheet.getRow(0);
-
-				if (ExcelUtil.headerCheck(headerRow, ExcelUtil.HOSTEL_HEADERS)) {
+				String headerCheck = ExcelUtil.headerCheck(workbook,ExcelUtil.HOSTEL_HEADERS);
+				log.info(headerCheck);
+				if (headerCheck.isBlank()) {
+					XSSFSheet sheet = workbook.getSheetAt(0);
 					long totalRecords = sheet.getLastRowNum();
 					if (totalRecords > 0) {
 						// Method to Save the Data Synchronus
@@ -490,7 +487,7 @@ public class HostelServiceImpl implements HostelService {
 						result.setData("Empty Template Uploaded");
 					}
 				} else {
-					result.setErrorMessage("Headers not matched");
+					result.setErrorMessage(headerCheck);
 				}
 			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not an Excel file");
@@ -531,7 +528,7 @@ public class HostelServiceImpl implements HostelService {
 			if (row.getRowNum() == 0) {
 				return;
 			}
-			List<String> cellValues = IntStream.range(0, ExcelUtil.HOSTEL_HEADERS.length).mapToObj(i -> {
+			List<String> cellValues = IntStream.range(0, ExcelUtil.HOSTEL_HEADERS.size()).mapToObj(i -> {
 				Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 				return ExcelUtil.getCellValue(cell);
 			}).collect(Collectors.toList());
