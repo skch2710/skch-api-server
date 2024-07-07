@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,12 +12,18 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.language.Soundex;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
@@ -24,6 +31,7 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.skch.skchhostelservice.model.Audit;
+import com.skch.skchhostelservice.model.Resource;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -196,6 +204,43 @@ public class Utility {
 			e.printStackTrace();
 		}
 		return output;
+	}
+	
+	public static String mapToJson(Map<String,String> map) {
+		Gson gson = new Gson();
+        String json = gson.toJson(map);
+        return json;
+	}
+	
+	public static Map<String,String> jsonToMap(String json) {
+		Gson gson = new Gson();
+		Type type = new TypeToken<Map<String, String>>(){}.getType();
+        return gson.fromJson(json, type);
+	}
+	
+	public static void main(String[] args) {
+		Map<String, String> values = new HashMap<>();
+        values.put("clf_name", "value1");
+        values.put("mail", "value2");
+
+        String jsonData = mapToJson(values);
+        System.out.println(jsonData);
+        
+        String data = "[{\"resourceId\" : 1, \"resourceName\" : \"Home\", \"testName\" : \"Home\"}, {\"resourceId\" : 2, \"resourceName\" : \"Full Reports\", \"testName\" : \"Reports\"}]";
+
+        Gson gson = new Gson();
+//		Type type = new TypeToken<Map<Long, Resource>>(){}.getType();
+        Type type = new TypeToken<List<Resource>>(){}.getType();
+        
+//        Map<Long,Resource> mapData = gson.fromJson(data, type);
+        List<Resource> dataList = gson.fromJson(data, type);
+        System.out.println(dataList);
+//        for (Entry<Long, Resource> entry : mapData.entrySet()) {
+//			System.out.println(entry.getKey());
+//			System.out.println(entry.getValue());
+//			
+//		}
+        
 	}
 	
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 
 @Data
@@ -38,5 +39,8 @@ public class Resource {
 
     @Column(name = "is_active")
     private boolean isActive;
+    
+    @Transient
+    private String testName;
 
 }
