@@ -14,6 +14,8 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.skch.skchhostelservice.common.Constant;
+import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.FileUploadDTO;
 import com.skch.skchhostelservice.dto.JwtDTO;
 import com.skch.skchhostelservice.dto.LoginRequest;
@@ -84,6 +87,9 @@ public class LoginController {
 		}
 	}
 	
+	@Autowired
+	private UsersDAO usersDAO;
+	
 	@GetMapping("/soundex-test")
 	public ResponseEntity<?> soundexTest() {
 		Map<String,String> output = new HashMap<>();
@@ -92,7 +98,24 @@ public class LoginController {
 		output.put("Kumar", Utility.soundex("Kumar"));
 		output.put("kumaaar", Utility.soundex("kumaaar"));
 		
-		return ResponseEntity.ok(output);
+//		Map<Long,String> mapData = usersDAO.getUserPrivilegesMap();
+//		System.out.println(mapData.get(4L));
+		
+		int page = 0;
+        int size = 2; // Adjust the page size based on your memory constraints
+        Map<Long, String> resultMap = new HashMap<>();
+        
+        Page<String> jsonPage;
+        do {
+            jsonPage = usersDAO.getUserPrivilegesJson(PageRequest.of(page, size));
+            for (String jsonData : jsonPage) {
+                resultMap.putAll(Utility.parseJsonToMap(jsonData, Long.class, String.class));
+            }
+            page++;
+            System.out.println(resultMap);
+        } while (jsonPage.hasNext());
+		
+		return ResponseEntity.ok(jsonPage);
 	}
 	
     @PostMapping(path = "/upload-file", consumes = "multipart/form-data")

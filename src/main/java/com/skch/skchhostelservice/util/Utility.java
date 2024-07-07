@@ -3,6 +3,7 @@ package com.skch.skchhostelservice.util;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -13,9 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -24,6 +23,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
@@ -31,7 +31,6 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.skch.skchhostelservice.model.Audit;
-import com.skch.skchhostelservice.model.Resource;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -218,6 +217,32 @@ public class Utility {
         return gson.fromJson(json, type);
 	}
 	
+	public static <K, V> Map<K, V> parseJsonToMap(String jsonData, Class<K> keyClass, Class<V> valueClass) {
+		Gson gson = new Gson();
+        Type type = TypeToken.getParameterized(Map.class, keyClass, valueClass).getType();
+        return gson.fromJson(jsonData, type);
+    }
+	
+	public static <K, V> Map<K, V> parseJsonToMapTwo(String jsonData, Class<K> keyClass, Class<V> valueClass) {
+        Map<K, V> map = null;
+		try {
+			Gson gson = new Gson();
+			try (JsonReader reader = new JsonReader(new StringReader(jsonData))) {
+				map = new HashMap<>();
+				reader.beginObject();
+				while (reader.hasNext()) {
+				    K key = gson.fromJson(reader.nextName(), keyClass);
+				    V value = gson.fromJson(reader.nextString(), valueClass);
+				    map.put(key, value);
+				}
+				reader.endObject();
+			}
+		} catch (Exception e) {
+			log.error("Error in parseJsonToMapTwo :: ",e);
+		}
+        return map;
+    }
+	
 	public static void main(String[] args) {
 		Map<String, String> values = new HashMap<>();
         values.put("clf_name", "value1");
@@ -226,20 +251,10 @@ public class Utility {
         String jsonData = mapToJson(values);
         System.out.println(jsonData);
         
-        String data = "[{\"resourceId\" : 1, \"resourceName\" : \"Home\", \"testName\" : \"Home\"}, {\"resourceId\" : 2, \"resourceName\" : \"Full Reports\", \"testName\" : \"Reports\"}]";
-
-        Gson gson = new Gson();
-//		Type type = new TypeToken<Map<Long, Resource>>(){}.getType();
-        Type type = new TypeToken<List<Resource>>(){}.getType();
+        String data = "{\"1\":\"value1\", \"2\":\"value2\"}";
         
-//        Map<Long,Resource> mapData = gson.fromJson(data, type);
-        List<Resource> dataList = gson.fromJson(data, type);
-        System.out.println(dataList);
-//        for (Entry<Long, Resource> entry : mapData.entrySet()) {
-//			System.out.println(entry.getKey());
-//			System.out.println(entry.getValue());
-//			
-//		}
+        Map<Long, String> mapData = parseJsonToMap(data, Long.class, String.class);
+        mapData.forEach((key, value) -> System.out.println(key + " : " + value));
         
 	}
 	
