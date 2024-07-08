@@ -75,7 +75,8 @@ public class PdfHelper {
 			cell.setPaddingRight(right);
 			cell.setFixedHeight(heigt);
 			cell.setHorizontalAlignment(alignment);
-			cell.setBorderColor(BaseColor.GREEN);
+//			cell.setBorderColor(BaseColor.GREEN);
+			cell.setBorder(Rectangle.NO_BORDER);
 			table.addCell(cell);
 		} catch (Exception e) {
 			log.error("error in createImage", e);
@@ -88,7 +89,8 @@ public class PdfHelper {
 			Image image = Image.getInstance(path);
 			cell.setFixedHeight(hieht); //check once
 			cell.setCellEvent(new ImageBackgroundEvent(image));
-			cell.setBorderColor(BaseColor.RED);
+//			cell.setBorderColor(BaseColor.RED);
+			cell.setBorder(Rectangle.NO_BORDER);
 			table.addCell(cell);
 		} catch (Exception e) {
 			log.error("error in createImage", e);
@@ -115,6 +117,7 @@ public class PdfHelper {
 	
 	public static PdfPTable createTable(int size, float spacingBefore, float spacingAfter, int width) {
 		PdfPTable table = new PdfPTable(size);
+		table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 		table.setSpacingBefore(spacingBefore);
 		table.setSpacingAfter(spacingAfter);
 		table.setWidthPercentage(width);
@@ -123,7 +126,9 @@ public class PdfHelper {
 
 	public static PdfPTable createNoBorderTable(int size, float spacingBefore, float spacingAfter, int width) {
 		PdfPTable table = new PdfPTable(size);
-//		table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+		table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+		table.getDefaultCell().setBorder(1);
+		table.getDefaultCell().setBorderColor(new BaseColor(245,245,245));
 		table.setSpacingBefore(spacingBefore);
 		table.setSpacingAfter(spacingAfter);
 		table.setWidthPercentage(width);

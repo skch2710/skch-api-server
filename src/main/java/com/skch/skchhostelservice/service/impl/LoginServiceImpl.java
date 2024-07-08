@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.PageSize;
@@ -224,6 +225,8 @@ public class LoginServiceImpl implements LoginService {
 		String logoPath = "src/main/resources/images/logo-one.png";
 		
 		PdfPTable frontCard = PdfHelper.createTable(1,0f,0f,100);
+		frontCard.getDefaultCell().setBorder(1);
+		frontCard.getDefaultCell().setBorderColor(new BaseColor(245,245,245));
 		PdfPCell cell = new PdfPCell();
 		
 		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
