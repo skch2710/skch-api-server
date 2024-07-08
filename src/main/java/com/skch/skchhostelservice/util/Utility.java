@@ -19,6 +19,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.language.Soundex;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import com.google.gson.Gson;
@@ -170,6 +171,10 @@ public class Utility {
 		return input != null && !input.isBlank() ? true : false;
 	}
 	
+	public static String getRamdomString(int length) {
+		return RandomStringUtils.randomAlphabetic(length);
+	}
+	
 	public static int totalPages(Long totalElements,int pageSize) {
 		return (int) Math.ceil((double) totalElements / pageSize);
 	}
@@ -255,6 +260,9 @@ public class Utility {
         
         Map<Long, String> mapData = parseJsonToMap(data, Long.class, String.class);
         mapData.forEach((key, value) -> System.out.println(key + " : " + value));
+        
+        String randomString = RandomStringUtils.randomAlphabetic(14);
+        System.out.println(randomString);
         
 	}
 	
