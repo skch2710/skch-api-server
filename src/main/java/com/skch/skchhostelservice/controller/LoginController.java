@@ -3,6 +3,9 @@ package com.skch.skchhostelservice.controller;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,10 +15,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,6 +34,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.FileUploadDTO;
@@ -101,6 +109,7 @@ public class LoginController {
 //		Map<Long,String> mapData = usersDAO.getUserPrivilegesMap();
 //		System.out.println(mapData.get(4L));
 		
+		/*
 		int page = 0;
         int size = 2; // Adjust the page size based on your memory constraints
         Map<Long, String> resultMap = new HashMap<>();
@@ -113,9 +122,23 @@ public class LoginController {
             }
             page++;
             System.out.println(resultMap);
-        } while (jsonPage.hasNext());
+        } while (jsonPage.hasNext()); */
 		
-		return ResponseEntity.ok(jsonPage);
+		Object object = usersDAO.findByTest("skch@outlook.com");
+		Gson gson = new Gson();
+		String json = gson.toJson(object);
+		log.info(">>>>"+json);
+		JsonArray array = JsonParser.parseString(json).getAsJsonArray();
+		
+        Long id = array.get(0).getAsLong();
+        String email = array.get(1).getAsString();
+        
+        System.out.println("ID: " + id);
+        System.out.println("Email: " + email);
+		
+		log.info(">>>>"+array);
+		
+		return ResponseEntity.ok(object);
 	}
 	
     @PostMapping(path = "/upload-file", consumes = "multipart/form-data")
@@ -172,6 +195,59 @@ public class LoginController {
 			}else {
 				return ResponseEntity.badRequest().body("Not a CSV File");
 			}
+		} catch (Exception e) {
+			log.error("Error in csvToExcel....",e);
+			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+    
+    @PostMapping(path ="/csv-file-reader", consumes = "multipart/form-data")
+	public ResponseEntity<?> getCsvReader(@RequestPart(required = true, name="file") MultipartFile file){
+		try {
+			log.info(file.getContentType());
+			if(file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
+				
+				ExcelUtil.readFirstLine(file);
+				
+				return ResponseEntity.ok("File Details... ");
+			}else {
+				return ResponseEntity.ok("File Not a CSV: ");
+			}
+		} catch (Exception e) {
+			log.error("Error in csvToExcel....",e);
+			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+	}
+    
+    @PostMapping(path ="/excel-csv", consumes = "multipart/form-data")
+	public ResponseEntity<?> excelToCsv(@RequestPart(required = true, name="file") MultipartFile file){
+//    	SXSSFWorkbook workbook = null;
+    	File tempFile = null;
+		try {
+			log.info("Starting file.......");
+			// Save the file to a temporary location
+            tempFile = File.createTempFile("upload", ".tmp");
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(file.getBytes());
+            }
+			log.info(file.getContentType());
+			
+			InputStream inputStream = new FileInputStream(tempFile);
+            Workbook workbook = WorkbookFactory.create(inputStream);
+			log.info("Size of Records :: ");
+			ByteArrayOutputStream outputStream = ExcelUtil.getCsv(workbook);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			headers.setContentDispositionFormData("attachment", "Sample.csv");
+
+			InputStreamResource inputStreamResource = new InputStreamResource(
+					new ByteArrayInputStream(outputStream.toByteArray()));
+
+			outputStream.flush();// Flush the output stream
+
+			return ResponseEntity.ok().headers(headers).body(inputStreamResource);
 		} catch (Exception e) {
 			log.error("Error in csvToExcel....",e);
 			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);

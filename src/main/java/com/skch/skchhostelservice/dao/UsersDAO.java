@@ -37,5 +37,9 @@ public interface UsersDAO extends JpaRepository<Users, Long> {
 	@Query(value = "SELECT json_object_agg(hosteller_id,email_id) AS data_json\r\n"
 			+ "FROM hostel.hostellers;", nativeQuery = true)
 	Page<String> getUserPrivilegesJson(Pageable pageable);
+	
+	@Query(value = "SELECT hosteller_id,email_id \r\n"
+			+ "FROM hostel.hostellers limit 1;", nativeQuery = true)
+	Object findByTest(String emailId);
 
 }

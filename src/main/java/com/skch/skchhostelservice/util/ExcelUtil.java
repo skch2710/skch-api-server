@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,9 +16,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -32,6 +37,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -304,14 +310,111 @@ public class ExcelUtil {
 	
 	public static void csvReadData(MultipartFile csvFile) {
 		try (CSVReader csvReader = new CSVReader(new InputStreamReader(csvFile.getInputStream()))) {
-			List<String[]> csvData = csvReader.readAll();
 			csvReader.skip(1);
+			List<String[]> csvData = csvReader.readAll();
 			for (String[] strings : csvData) {
 				System.out.println(Arrays.asList(strings));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public long getRecordCount(MultipartFile file) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            return reader.lines().count() - 1; // Subtract 1 to exclude the header
+        }
+    }
+	
+	public static String[] readFirstLine(MultipartFile csvFile){
+		String[] header = null;
+        try (CSVReader reader = new CSVReader(new InputStreamReader(csvFile.getInputStream()))) {
+        	
+        	List<String[]> data = reader.readAll();
+        	
+        	log.info("Number Of Records :: "+(data.size()-1));
+        	
+        	log.info("Data :: "+data.size());
+        	
+        	if(ObjectUtils.isNotEmpty(data)) {
+        		header = data.get(0);
+        		System.out.println("Header :: "+Arrays.asList(header));
+				if (data.size() >= 2) {
+					System.out.println("Second Line :: " + Arrays.asList(data.get(1)));
+				}
+        	}
+//        	reader.skip(1);//this is skip the records
+//        	header = reader.readNext();
+        }catch(Exception e) {
+        	e.printStackTrace();
+        }
+		return header;
+    }
+
+    public String[] readSecondLine(MultipartFile csvFile){
+    	String[] header = null;
+        try (CSVReader reader = new CSVReader(new InputStreamReader(csvFile.getInputStream()))) {
+        	reader.readNext(); // Skip the first line
+            return reader.readNext(); // Read the second line
+        }catch(Exception e) {
+        	e.printStackTrace();
+        }
+		return header;
+    }
+	
+	private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
+
+	public static ByteArrayOutputStream getCsv(Workbook workbook) {
+		log.info("Starting at getCsv.......");
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(byteArrayOutputStream);
+				CSVWriter csvWriter = new CSVWriter(outputStreamWriter)) {
+			Sheet sheet = workbook.getSheetAt(0);
+
+			int chunkSize = 10000;
+			List<CompletableFuture<List<String[]>>> futures = new ArrayList<>();
+
+			for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i += chunkSize) {
+				int start = i;
+				int end = Math.min(start + chunkSize, sheet.getPhysicalNumberOfRows());
+				futures.add(CompletableFuture.supplyAsync(() -> processRows(sheet, start, end), 
+						executorService)
+						.exceptionally(ex -> {
+							ex.printStackTrace();
+							return new ArrayList<>();
+						}));
+			}
+
+			CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+			CompletableFuture<List<String[]>> allDataFuture = allOf.thenApply(
+					v -> futures.stream().flatMap(future -> future.join().stream())
+					.collect(Collectors.toList()));
+
+			List<String[]> csvData = allDataFuture.get();
+			log.info("Size :: "+csvData.size());
+			csvWriter.writeAll(csvData);
+			log.info("After Write All.....");
+			csvWriter.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				workbook.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return byteArrayOutputStream;
+	}
+
+	private static List<String[]> processRows(Sheet sheet, int start, int end) {
+		log.info("Process Rows :: " + start + " : " + end);
+		return IntStream.range(start, end).mapToObj(sheet::getRow).filter(row -> row != null)
+				.map(row -> IntStream.range(0, 21).mapToObj(
+						cellNum -> getCellValue(row.getCell(cellNum, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)))
+						.toArray(String[]::new))
+				.collect(Collectors.toList());
 	}
 	
 }
