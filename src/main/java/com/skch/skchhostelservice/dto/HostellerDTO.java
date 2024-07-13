@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.opencsv.bean.CsvBindByName;
 import com.skch.skchhostelservice.model.Audit;
 
 import jakarta.validation.constraints.Email;
@@ -28,39 +29,49 @@ public class HostellerDTO extends Audit {
 	@NotNull(message = "Name cannot be null")
 	@Size(min = 2, max = 150, message = "Name must be between 2 and 150 characters")
 	@Pattern(regexp = "^[a-zA-Z0-9\\s]*$", message = "Full Name Not a Valid")
+	@CsvBindByName(column = "Full Name")
 	private String fullName;
 
 	@NotNull(message = "Email cannot be null")
 	@Email(message = "Email should be valid")
+	@CsvBindByName(column = "Email Id")
 	private String emailId;
 
 	@Pattern(regexp = "^[0-9]*$", message = "Phone number is not valid")
+	@CsvBindByName(column = "Phone Number")
 	private String phoneNumber;
 	
 	@NotNull(message = "DOB cannot be null")
 	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "DOB(dd-MM-yyyy) is not valid")
+	@CsvBindByName(column = "DOB")
 	private String dob;
 
 	@NotNull(message = "Fee cannot be null")
 	@Pattern(regexp = "^-?\\d{1,3}(,\\d{3})*(\\.\\d{1,3})?$|^-?\\d+(\\.\\d{1,3})?$", message = "Fee is not valid")
+	@CsvBindByName(column = "Fee")
 	private String fee;
 
 	@NotNull(message = "Joining Date cannot be null")
 	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Joining Date(dd-MM-yyyy) is not valid")
+	@CsvBindByName(column = "Joining Date")
 	private String joiningDate;
 
+	@CsvBindByName(column = "Address")
 	private String address;
+	
+	@CsvBindByName(column = "Proof")
 	private String proof;
 
 	@NotNull(message = "Reason cannot be null")
 	@NotBlank(message = "Reason cannot be Blank")
+	@CsvBindByName(column = "Reason")
 	private String reason;
 
 	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Vacated Date(dd-MM-yyyy) is not valid")
+	@CsvBindByName(column = "Vacated Date")
 	private String vacatedDate;
 
-//	private Boolean active;
-	
+	@CsvBindByName(column = "Active")
 	private String active;
 	
 	@JsonIgnore

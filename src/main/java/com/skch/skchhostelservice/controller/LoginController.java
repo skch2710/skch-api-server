@@ -17,8 +17,6 @@ import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -178,7 +176,6 @@ public class LoginController {
 	public ResponseEntity<?> csvToExcel(@RequestPart(required = true, name="file") MultipartFile file){
 		try {
 			log.info(file.getContentType());
-			ExcelUtil.csvReadData(file);
 			if(file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
 				ByteArrayOutputStream outputStream = ExcelUtil.convertCsvToExcel(file);
 

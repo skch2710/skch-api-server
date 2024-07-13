@@ -66,6 +66,20 @@ public class ExcelUtil {
 	}
 
 	/**
+	 * Check the File is CSV or Not
+	 * 
+	 * @param fileType
+	 * @return Boolean
+	 */
+	public static Boolean csvType(MultipartFile file) {
+		if (file != null && !file.isEmpty() && CSV_TYPE.equals(file.getContentType())) {
+			return true;
+		}
+		return false;
+	}
+
+	
+	/**
 	 * This Method is check the Headers
 	 * 
 	 * @param headerRow
@@ -108,6 +122,45 @@ public class ExcelUtil {
 					} else {
 						List<String> additionalData = IntStream.range(headers.size(), excelHeaders.size())
 								.mapToObj(excelHeaders::get).filter(obj -> obj != null && !obj.isBlank())
+								.collect(Collectors.toList());
+						if (!additionalData.isEmpty()) {
+							error += "Extra Columns " + String.join(",", additionalData);
+						}
+					}
+				}
+			} else {
+				error += "Missing Columns " + String.join(",", headers);
+			}
+		} catch (Exception e) {
+			log.error("Error in Header Check :: " + e);
+			error += "Something Went Wrong";
+		}
+		return error;
+	}
+	
+	/**
+	 * HeaderCheck For CSV
+	 * @param csvReader
+	 * @param headers
+	 * @return String
+	 */
+	public static String headerCheckCsv(CSVReader csvReader, List<String> headers) {
+		String error = "";
+		try {
+			List<String> headersCsv = Arrays.asList(csvReader.readNext());
+			log.info("Headers :: "+headersCsv);
+			if (headersCsv.size() > 0) {
+				if (Arrays.equals(headers.toArray(), headersCsv.toArray())) {
+					return error;
+				} else {
+					List<String> unMatched = IntStream.range(0, headers.size())
+							.filter(i -> i >= headersCsv.size() || !headers.get(i).equals(headersCsv.get(i)))
+							.mapToObj(headers::get).collect(Collectors.toList());
+					if (!unMatched.isEmpty()) {
+						error += "Missing Columns " + String.join(",", unMatched);
+					} else {
+						List<String> additionalData = IntStream.range(headers.size(), headersCsv.size())
+								.mapToObj(headersCsv::get).filter(obj -> obj != null && !obj.isBlank())
 								.collect(Collectors.toList());
 						if (!additionalData.isEmpty()) {
 							error += "Extra Columns " + String.join(",", additionalData);
@@ -308,22 +361,34 @@ public class ExcelUtil {
 		return bao;
 	}
 	
-	public static void csvReadData(MultipartFile csvFile) {
-		try (CSVReader csvReader = new CSVReader(new InputStreamReader(csvFile.getInputStream()))) {
-			csvReader.skip(1);
+	/**
+	 * Read CSV Data as String[]
+	 * @param csvReader
+	 */
+	public static void csvReadData(CSVReader csvReader) {
+		try{
 			List<String[]> csvData = csvReader.readAll();
 			for (String[] strings : csvData) {
 				System.out.println(Arrays.asList(strings));
+				break;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Error in csvReadData :: ", e);
 		}
 	}
 	
-	public long getRecordCount(MultipartFile file) throws IOException {
+	/**
+	 * Get the no.of records in CSV file
+	 * @param file
+	 * @return long
+	 */
+	public static long getRecordCount(MultipartFile file){
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             return reader.lines().count() - 1; // Subtract 1 to exclude the header
+        }catch(Exception e) {
+        	log.error("Error in csvReadData :: ", e);
         }
+		return 0;
     }
 	
 	public static String[] readFirstLine(MultipartFile csvFile){

@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.opencsv.CSVReader;
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.HostellerDAO;
 import com.skch.skchhostelservice.dao.HostellerGridDAO;
@@ -489,8 +491,27 @@ public class HostelServiceImpl implements HostelService {
 				} else {
 					result.setErrorMessage(headerCheck);
 				}
-			} else {
-				result.setErrorMessage("The uploaded file is not Present or Not an Excel file");
+			}else if(ExcelUtil.csvType(file)) {
+				CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()));
+				
+				String headerCheck = ExcelUtil.headerCheckCsv(csvReader,ExcelUtil.HOSTEL_HEADERS);
+				log.info(headerCheck);
+				if (headerCheck.isBlank()) {
+					Long userId = JwtUtil.getUserId();
+					long totalRecords = ExcelUtil.getRecordCount(file);
+					
+					CompletableFuture.runAsync(() -> {
+		                ExcelUtil.csvReadData(csvReader);
+		            });
+					
+					log.info("Count of Records :: "+totalRecords);
+					
+					result.setData("Uploaded " + totalRecords + " records.");
+				} else {
+					result.setErrorMessage(headerCheck);
+				}
+			}else {
+				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
 			}
 		
 		long finalTime = System.currentTimeMillis();
