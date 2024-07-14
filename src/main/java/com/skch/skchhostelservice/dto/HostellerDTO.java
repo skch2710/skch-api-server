@@ -93,5 +93,21 @@ public class HostellerDTO extends Audit {
 		this.setModifiedById(userId);
 //		Utility.updateFields(this, "C");
 	}
+	
+	public HostellerDTO(String[] cellValues, Long userId) {
+        this.fullName = cellValues[0];
+        this.emailId = cellValues[1];
+        this.phoneNumber = cellValues[2];
+        this.dob = cellValues[3];
+        this.fee = cellValues[4];
+        this.joiningDate = cellValues[5];
+        this.address = cellValues[6];
+        this.proof = cellValues[7];
+        this.reason = cellValues[8];
+        this.vacatedDate = cellValues[9];
+        this.active = cellValues[10];
+        this.setCreatedById(userId);
+        this.setModifiedById(userId);
+    }
 
 }

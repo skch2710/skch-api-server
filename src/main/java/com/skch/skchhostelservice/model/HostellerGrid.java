@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.skch.skchhostelservice.util.DateUtility;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -53,5 +55,21 @@ public class HostellerGrid {
 
 	@Column(name = "total_count")
 	private Long totalCount;
+	
+	public String[] getData() {
+		return new String[] {
+	            this.fullName,
+	            this.emailId,
+	            this.phoneNumber,
+				DateUtility.dateToString(this.dob, "yyyy-MM-dd"),
+	            this.fee != null ? this.fee.toString() : "",
+	            DateUtility.dateToString(this.joiningDate, "yyyy-MM-dd"),
+	            this.address,
+	            this.proof,
+	            this.reason,
+	            DateUtility.dateToString(this.vacatedDate, "yyyy-MM-dd"),
+	            this.active != null && this.active ? "Yes" : "No"
+	        };
+	}
 
 }

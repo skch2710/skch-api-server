@@ -14,6 +14,7 @@ public class Pagination {
 	private String sortOrder;
 	private ColumnFilter[] columnFilters;
 	private boolean exportExcel;
+	private boolean exportCsv;
 	private boolean exportPdf;
 	private boolean exportZip;
 	private boolean fullLoad;

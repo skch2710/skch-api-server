@@ -68,7 +68,8 @@ public class HostelController {
 //	@PreAuthorize("@jwtUtil.checkAccess(#search.fullName)")
 	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
 		try {
-			if (!search.isExportExcel() && !search.isExportPdf() && !search.isExportZip()) {
+			if (!search.isExportExcel() && !search.isExportCsv() &&
+					!search.isExportPdf() && !search.isExportZip()) {
 				Result result = hostelService.getHostellers(search);
 				return ResponseEntity.ok(result);
 			}else {

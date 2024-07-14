@@ -5,6 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.HostellerDAO;
 import com.skch.skchhostelservice.dao.HostellerGridDAO;
@@ -205,7 +208,8 @@ public class HostelServiceImpl implements HostelService {
 		log.info("Starting at getHostellers.....");
 		Result result = new Result();
 		try {
-			if (!search.isExportExcel() && !search.isExportPdf() && !search.isExportZip()) {
+			if (!search.isExportExcel() && !search.isExportCsv() &&
+					!search.isExportPdf() && !search.isExportZip()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
 
 				if (!hostellerGridList.isEmpty()) {
@@ -231,7 +235,12 @@ public class HostelServiceImpl implements HostelService {
 				result.setBao(getHostelGridExcel(hostellerGridList));
 				result.setFileName("Hostel_Data.xlsx");
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
-			} else if (search.isExportPdf()) {
+			} else if (search.isExportCsv()) {
+				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
+				result.setBao(getHostelGridCsv(hostellerGridList));
+				result.setFileName("Hostel_Data.csv");
+				result.setType(MediaType.APPLICATION_OCTET_STREAM);
+			}else if (search.isExportPdf()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
 				result.setBao(getHostelGridPdf(hostellerGridList));
 				result.setFileName("Hostel_Data.pdf");
@@ -336,6 +345,31 @@ public class HostelServiceImpl implements HostelService {
 			}
 		}
 		return bao;
+	}
+	
+	/**
+	 * Get the Hostel Grid Excel
+	 * 
+	 * @param search
+	 * @return bao
+	 */
+	public ByteArrayOutputStream getHostelGridCsv(List<HostellerGrid> hostellerGridList) {
+	    ByteArrayOutputStream bao = new ByteArrayOutputStream();
+	    try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(bao, StandardCharsets.UTF_8);
+	         CSVWriter csvWriter = new CSVWriter(outputStreamWriter)) {
+
+	        // Write headers
+	        String[] headers = ExcelUtil.HOSTEL_HEADERS.toArray(new String[0]);
+	        csvWriter.writeNext(headers);
+
+	        // Write data rows
+	        hostellerGridList.forEach(model -> csvWriter.writeNext(model.getData()));
+	        
+	        csvWriter.flush();
+	    } catch (Exception e) {
+	        log.error("Error in getHostelGridCsv: ", e);
+	    }
+	    return bao;
 	}
 
 	/**
@@ -481,8 +515,15 @@ public class HostelServiceImpl implements HostelService {
 						
 						Long userId = JwtUtil.getUserId();
 						
-						//Run Method Async
-						runAsyncMethod(sheet,userId);
+						// Run Method Async
+						CompletableFuture.runAsync(() -> {
+							try {
+								getRowValues(sheet, userId);
+							} catch (Exception e) {
+								log.error("Error in saveRecordsInBatch :: " + e);
+								throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+							}
+						});
 						
 						result.setData("Uploaded " + totalRecords + " records.");
 					} else {
@@ -501,7 +542,7 @@ public class HostelServiceImpl implements HostelService {
 					long totalRecords = ExcelUtil.getRecordCount(file);
 					
 					CompletableFuture.runAsync(() -> {
-		                ExcelUtil.csvReadData(csvReader);
+						getCsvValues(csvReader,userId);
 		            });
 					
 					log.info("Count of Records :: "+totalRecords);
@@ -542,7 +583,6 @@ public class HostelServiceImpl implements HostelService {
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		int batchSize = 1000;
-//		Map<String,Integer> mapData = new HashMap<>();
 		List<Integer> succCount = new ArrayList<>();
 		
 		sheet.forEach(row -> {
@@ -601,17 +641,66 @@ public class HostelServiceImpl implements HostelService {
 		}, executor);
 	}
 	
-	public void runAsyncMethod(XSSFSheet sheet,Long userId) {
-		CompletableFuture.runAsync(() -> {
-			try {
-				getRowValues(sheet,userId);
-			} catch (Exception e) {
-				log.error("Error in saveRecordsInBatch :: " + e);
-				throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		});
-	}
+	/**
+	 * Method to Save Records Csv to DB
+	 */
+	public void getCsvValues(CSVReader csvReader ,Long userId) {
+		ArrayList<HostellerDTO> dataList = new ArrayList<>();
+		List<HostellerDTO> errorList = new ArrayList<>();
+		List<CompletableFuture<Void>> features = new ArrayList<>();
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
+		int batchSize = 1000;
+		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
+		
+		try {
+			List<String[]> csvDataList = csvReader.readAll();
+			
+			csvDataList.forEach(data ->{
+				
+				HostellerDTO dto = new HostellerDTO(data,userId);
+				Map<String, String> errors = ValidationUtils.validate(dto);
+
+				if (errors.isEmpty()) {
+					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+						features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+						Integer count = countMap.get("S") + dataList.size();
+						countMap.put("S", count);
+						dataList.clear();
+					}
+					dataList.add(dto);
+				} else {
+					String error = errors.values().stream().collect(Collectors.joining(","));
+					dto.setError(error);
+					errorList.add(dto);
+//					Integer count = countMap.get("F") + errorList.size();
+//					countMap.put("F", count);
+					log.info("Error :: " + error);
+				}
+				
+			});
+			
+			if (!dataList.isEmpty()) {
+				features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+				Integer count = countMap.get("S") + dataList.size();
+				countMap.put("S", count);
+			}
+
+//			CompletableFuture<Void> allFeatures = CompletableFuture.allOf(features.toArray(new CompletableFuture[0]));
+//			allFeatures.join();
+			
+			log.info("List Success Count :: " + countMap.get("S"));
+			log.info("List Error Count :: " + errorList.size());
+//			log.info("List Error Size :: " + errorList);
+
+			executor.shutdown();
+			
+		} catch (Exception e) {
+			log.error("Error in getCsvValues :: " + e);
+		}
+	}
+	
+	
 	/**
 	 * Download the Hostel Template
 	 */

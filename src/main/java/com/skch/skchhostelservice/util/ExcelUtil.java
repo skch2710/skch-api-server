@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.poi.ss.usermodel.Cell;
@@ -147,7 +148,11 @@ public class ExcelUtil {
 	public static String headerCheckCsv(CSVReader csvReader, List<String> headers) {
 		String error = "";
 		try {
-			List<String> headersCsv = Arrays.asList(csvReader.readNext());
+//			List<String> headersCsv = Arrays.asList(csvReader.readNext());
+			// Read the next line (header) and trim each header element
+            List<String> headersCsv = Stream.of(csvReader.readNext())
+                                            .map(String::trim)
+                                            .collect(Collectors.toList());
 			log.info("Headers :: "+headersCsv);
 			if (headersCsv.size() > 0) {
 				if (Arrays.equals(headers.toArray(), headersCsv.toArray())) {
