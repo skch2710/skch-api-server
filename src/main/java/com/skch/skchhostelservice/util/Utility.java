@@ -13,7 +13,9 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -31,6 +33,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.skch.skchhostelservice.dto.JsonTest;
 import com.skch.skchhostelservice.model.Audit;
 
 import lombok.extern.slf4j.Slf4j;
@@ -249,20 +252,17 @@ public class Utility {
     }
 	
 	public static void main(String[] args) {
-		Map<String, String> values = new HashMap<>();
-        values.put("clf_name", "value1");
-        values.put("mail", "value2");
-
-        String jsonData = mapToJson(values);
-        System.out.println(jsonData);
+		
+		JsonTest test = new JsonTest("sathish","s@mail.com");
+		
+		List<JsonTest> listTest = new ArrayList<>();
+		listTest.add(test);
+		
+		Gson gson = new Gson();
+        String json = gson.toJson(listTest);
         
-        String data = "{\"1\":\"value1\", \"2\":\"value2\"}";
-        
-        Map<Long, String> mapData = parseJsonToMap(data, Long.class, String.class);
-        mapData.forEach((key, value) -> System.out.println(key + " : " + value));
-        
-        String randomString = RandomStringUtils.randomAlphabetic(14);
-        System.out.println(randomString);
+        System.out.println(json);
+		
         
 	}
 	

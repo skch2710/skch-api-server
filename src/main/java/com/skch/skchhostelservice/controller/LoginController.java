@@ -10,6 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,8 +26,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -309,6 +315,13 @@ public class LoginController {
     @Autowired
     private JwtUtil jwtUtil;
     
+    private final JwtDecoder jwtDecoder;
+
+    @Autowired
+    public LoginController(JwtDecoder jwtDecoder) {
+        this.jwtDecoder = jwtDecoder;
+    }
+    
     @PostMapping("/get-jwt-refresh-token")
 	public ResponseEntity<?> getRefreshToken(@RequestBody JwtDTO dto) {
     	JwtDTO result = jwtUtil.getRefreshToken(dto.getRefresh_token());
@@ -320,5 +333,18 @@ public class LoginController {
     	LoginRequest dto = new LoginRequest("skch@outlook.com","S@th!$h","");
        	JwtDTO result = jwtUtil.getToken(dto);
    		return ResponseEntity.ok(result);
+   	}
+    
+    
+    @GetMapping("/jwt-token-time")
+   	public ResponseEntity<?> getTokenTime() {
+    	
+    	Jwt jwt = jwtDecoder.decode("eyJraWQiOiI0NTk4MjNhZC04OTdiLTRmNjYtYjJlMS0xMmJhMjU0MDI1MjkiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJza2NoQG91dGxvb2suY29tIiwiYXVkIjoic2F0aGlzaF9jaCIsIm5iZiI6MTcyMTI4MTY4MywidXNlcl9uYW1lIjoic2tjaEBvdXRsb29rLmNvbSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA2MCIsImV4cCI6MTcyMTMyNDg4MywiaWF0IjoxNzIxMjgxNjgzLCJqdGkiOiIzNzg3YjRkYy01NWY2LTRmMmUtOTZjYy0wYzE0ODI2YzI5YjQiLCJhdXRob3JpdGllcyI6WyJVc2VyLVIiLCJNb250aGx5LVIiLCJZZWFybHktUiIsIlN1cGVyIFVzZXIiLCJGdWxsIFJlcG9ydHMtUiIsIkhvc3RlbGxlcnMtUiIsIlVTRVJfSUQgOiA1RXhFZ0MxU0RocHROSEtuUVpwSDZnPT0iLCJIb21lLVIiLCJVU0VSIFVVSUQgOiBudWxsIl19.bqo4K5qUNVVzMrj-ed1IWaAQY0OCVw2_LEYcNjCW5xg04-MvJzaAwIHW2-yq_B2vFg8c-llUjOMej8hecLGQrjjjgNUgH0a6fklux1y1VWCQ143Oan519EdCOTuIilzv_LHteUGWuW523ZqX1yVxGfK_vivbRDA1qF4Lvw1LbgZZgg9LGXZ4aJm0l99YsAbq91opHPZ8lOhtBz1Vc-ekLH482ABdGvjYTQtem1JSELRBE7vRxVa9s3TMYn8ck2z19R2vN9hdXKMWr9hMDEShjZyb76j-1QqBVL8LFnVnWJHq6ZkAtkgtqZzqM-car5miBvNP-wR60KVBfAWvkib4sQ");
+    	
+    	log.info("Time Expire :: "+jwt.getExpiresAt().isBefore(LocalDateTime.now().plusSeconds(30).atZone(ZoneId.systemDefault()).toInstant()));
+    	
+    	log.info("Time Expire :: "+DateUtility.dateToString(LocalDateTime.ofInstant(jwt.getExpiresAt(),ZoneId.systemDefault()), "yyyy-MM-dd HH:mm:ss a"));
+    	
+   		return ResponseEntity.ok(jwt);
    	}
 }

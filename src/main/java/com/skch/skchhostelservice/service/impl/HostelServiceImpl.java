@@ -25,6 +25,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -499,6 +500,7 @@ public class HostelServiceImpl implements HostelService {
 	public Result uploadFile(MultipartFile file) {
 		Result result = new Result();
 		XSSFWorkbook workbook = null;
+//		IOUtils.setByteArrayMaxOverride(250000000);
 		try {
 			long intialTime = System.currentTimeMillis();
 
@@ -518,7 +520,7 @@ public class HostelServiceImpl implements HostelService {
 						// Run Method Async
 						CompletableFuture.runAsync(() -> {
 							try {
-								getRowValues(sheet, userId);
+//								getRowValues(sheet, userId);
 							} catch (Exception e) {
 								log.error("Error in saveRecordsInBatch :: " + e);
 								throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
