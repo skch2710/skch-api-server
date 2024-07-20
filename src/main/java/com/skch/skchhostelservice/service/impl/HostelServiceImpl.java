@@ -124,6 +124,9 @@ public class HostelServiceImpl implements HostelService {
 				} else {
 					Hosteller serverHosteller = hostellerDAO.findByHostellerId(dto.getHostellerId());
 
+//					String[] ignore = { "active", "createdById", "createdDate" };
+//					BeanUtils.copyProperties(dto, hosteller,ignore);
+					
 					hosteller = MAPPER.fromHostellerDTO(dto);
 					hosteller.setActive(serverHosteller.getActive());
 					hosteller.setCreatedDate(serverHosteller.getCreatedDate());
