@@ -53,6 +53,8 @@ public class ExcelUtil {
 
 	public static final String CSV_TYPE = "text/csv";
 	
+	private static final char BOM = '\uFEFF';
+	
 	/**
 	 * Check the File is Excel or Not
 	 * 
@@ -104,6 +106,7 @@ public class ExcelUtil {
 	public static String headerCheck(Workbook workbook, List<String> headers) {
 		String error = "";
 		try {
+//			Sheet sheet = workbook.getSheet("Template");
 			if (workbook.getNumberOfSheets() > 0 && workbook.getSheetAt(0).getRow(0) != null
 					&& workbook.getSheetAt(0).getRow(0).getPhysicalNumberOfCells() > 0) {
 				Row headerRow = workbook.getSheetAt(0).getRow(0);
@@ -150,11 +153,13 @@ public class ExcelUtil {
 		try {
 //			List<String> headersCsv = Arrays.asList(csvReader.readNext());
 			// Read the next line (header) and trim each header element
-            List<String> headersCsv = Stream.of(csvReader.readNext())
-                                            .map(String::trim)
-                                            .collect(Collectors.toList());
-			log.info("Headers :: "+headersCsv);
-			if (headersCsv.size() > 0) {
+			String[] headerLine = csvReader.readNext();
+			if (ObjectUtils.isNotEmpty(headerLine)) {
+				if (headerLine[0].charAt(0) == BOM) {
+	                headerLine[0] = headerLine[0].substring(1);
+	            }
+				List<String> headersCsv = Stream.of(headerLine).map(String::trim)
+                        .collect(Collectors.toList());
 				if (Arrays.equals(headers.toArray(), headersCsv.toArray())) {
 					return error;
 				} else {

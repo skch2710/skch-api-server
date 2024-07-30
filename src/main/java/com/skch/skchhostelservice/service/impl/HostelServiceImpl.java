@@ -25,7 +25,6 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -523,7 +522,7 @@ public class HostelServiceImpl implements HostelService {
 						// Run Method Async
 						CompletableFuture.runAsync(() -> {
 							try {
-//								getRowValues(sheet, userId);
+								getRowValues(sheet, userId);
 							} catch (Exception e) {
 								log.error("Error in saveRecordsInBatch :: " + e);
 								throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -538,7 +537,8 @@ public class HostelServiceImpl implements HostelService {
 					result.setErrorMessage(headerCheck);
 				}
 			}else if(ExcelUtil.csvType(file)) {
-				CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()));
+				CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(),
+						StandardCharsets.UTF_8));
 				
 				String headerCheck = ExcelUtil.headerCheckCsv(csvReader,ExcelUtil.HOSTEL_HEADERS);
 				log.info(headerCheck);
