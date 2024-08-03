@@ -446,13 +446,19 @@ public class ExcelUtil {
 		return header;
     }
 	
-	private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
 
 	public static ByteArrayOutputStream getCsv(Workbook workbook) {
 		log.info("Starting at getCsv.......");
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(byteArrayOutputStream);
-				CSVWriter csvWriter = new CSVWriter(outputStreamWriter)) {
+		ByteArrayOutputStream bao = new ByteArrayOutputStream();
+//		ExecutorService executorService = Executors.newFixedThreadPool(5);
+		ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+		try (OutputStreamWriter osw = new OutputStreamWriter(bao);
+				
+			CSVWriter csvWriter = new CSVWriter(osw, CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, 
+	        		 CSVWriter.NO_ESCAPE_CHARACTER,CSVWriter.DEFAULT_LINE_END)) {
+			
+			//CSVWriter.DEFAULT_SEPARATOR is ',' if want change that to '|' also
+			
 			Sheet sheet = workbook.getSheetAt(0);
 
 			int chunkSize = 10000;
@@ -483,13 +489,16 @@ public class ExcelUtil {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			executorService.shutdown();
 			try {
+				if(workbook != null) {
 				workbook.close();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		return byteArrayOutputStream;
+		return bao;
 	}
 
 	private static List<String[]> processRows(Sheet sheet, int start, int end) {

@@ -358,9 +358,12 @@ public class HostelServiceImpl implements HostelService {
 	 */
 	public ByteArrayOutputStream getHostelGridCsv(List<HostellerGrid> hostellerGridList) {
 	    ByteArrayOutputStream bao = new ByteArrayOutputStream();
-	    try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(bao, StandardCharsets.UTF_8);
-	         CSVWriter csvWriter = new CSVWriter(outputStreamWriter)) {
+	    try (OutputStreamWriter osw = new OutputStreamWriter(bao, StandardCharsets.UTF_8);
+	         CSVWriter csvWriter = new CSVWriter(osw, CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, 
+	        		 CSVWriter.NO_ESCAPE_CHARACTER,CSVWriter.DEFAULT_LINE_END)) {
 
+	    	//CSVWriter.DEFAULT_SEPARATOR is ',' if want change that to '|' also
+	    	
 	        // Write headers
 	        String[] headers = ExcelUtil.HOSTEL_HEADERS.toArray(new String[0]);
 	        csvWriter.writeNext(headers);
@@ -369,6 +372,7 @@ public class HostelServiceImpl implements HostelService {
 	        hostellerGridList.forEach(model -> csvWriter.writeNext(model.getData()));
 	        
 	        csvWriter.flush();
+	        
 	    } catch (Exception e) {
 	        log.error("Error in getHostelGridCsv: ", e);
 	    }
