@@ -502,6 +502,7 @@ public class HostelServiceImpl implements HostelService {
 	public Result uploadFile(MultipartFile file) {
 		Result result = new Result();
 		XSSFWorkbook workbook = null;
+		CSVReader csvReader = null;
 //		IOUtils.setByteArrayMaxOverride(250000000);
 		try {
 			long intialTime = System.currentTimeMillis();
@@ -537,17 +538,20 @@ public class HostelServiceImpl implements HostelService {
 					result.setErrorMessage(headerCheck);
 				}
 			}else if(ExcelUtil.csvType(file)) {
-				CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream(),
+				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(),
 						StandardCharsets.UTF_8));
 				
-				String headerCheck = ExcelUtil.headerCheckCsv(csvReader,ExcelUtil.HOSTEL_HEADERS);
+				List<String[]> csvDataList = csvReader.readAll();
+				
+				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList,ExcelUtil.HOSTEL_HEADERS);
 				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
 					Long userId = JwtUtil.getUserId();
-					long totalRecords = ExcelUtil.getRecordCount(file);
+//					long totalRecords = ExcelUtil.getRecordCount(file);
+					long totalRecords = csvDataList.size() - 1;
 					
 					CompletableFuture.runAsync(() -> {
-						getCsvValues(csvReader,userId);
+						getCsvValues(csvDataList,userId);
 		            });
 					
 					log.info("Count of Records :: "+totalRecords);
@@ -571,8 +575,11 @@ public class HostelServiceImpl implements HostelService {
 				if (workbook != null) {
 					workbook.close();
 				}
-			} catch (IOException e) {
-				e.printStackTrace();
+				if(csvReader != null) {
+					csvReader.close();
+				}
+			} catch (Exception e) {
+				log.error("Error in Closing workbook or csvReader :: ",e);
 			}
 		}
 		return result;
@@ -649,7 +656,7 @@ public class HostelServiceImpl implements HostelService {
 	/**
 	 * Method to Save Records Csv to DB
 	 */
-	public void getCsvValues(CSVReader csvReader ,Long userId) {
+	public void getCsvValues(List<String[]> csvDataList ,Long userId) {
 		ArrayList<HostellerDTO> dataList = new ArrayList<>();
 		List<HostellerDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
@@ -659,7 +666,9 @@ public class HostelServiceImpl implements HostelService {
 		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
 		
 		try {
-			List<String[]> csvDataList = csvReader.readAll();
+			//Remove Headers
+			csvDataList.removeFirst(); //From Java 21
+//			csvDataList.remove(0);
 			
 			csvDataList.forEach(data ->{
 				
@@ -698,10 +707,10 @@ public class HostelServiceImpl implements HostelService {
 			log.info("List Error Count :: " + errorList.size());
 //			log.info("List Error Size :: " + errorList);
 
-			executor.shutdown();
-			
 		} catch (Exception e) {
 			log.error("Error in getCsvValues :: " + e);
+		} finally {
+			executor.shutdown();
 		}
 	}
 	

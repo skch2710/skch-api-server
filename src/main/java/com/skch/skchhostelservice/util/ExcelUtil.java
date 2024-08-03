@@ -148,13 +148,12 @@ public class ExcelUtil {
 	 * @param headers
 	 * @return String
 	 */
-	public static String headerCheckCsv(CSVReader csvReader, List<String> headers) {
+	public static String headerCheckCsv(List<String[]> csvDataList, List<String> headers) {
 		String error = "";
 		try {
-//			List<String> headersCsv = Arrays.asList(csvReader.readNext());
-			// Read the next line (header) and trim each header element
-			String[] headerLine = csvReader.readNext();
-			if (ObjectUtils.isNotEmpty(headerLine)) {
+			if (ObjectUtils.isNotEmpty(csvDataList) && csvDataList.size() > 1) {
+				String[] headerLine = csvDataList.get(0);
+				
 				if (headerLine[0].charAt(0) == BOM) {
 	                headerLine[0] = headerLine[0].substring(1);
 	            }
@@ -180,6 +179,16 @@ public class ExcelUtil {
 			} else {
 				error += "Missing Columns " + String.join(",", headers);
 			}
+			
+			if (error.isBlank() && csvDataList.size() >= 2) {
+				String[] dataFirst = csvDataList.get(1);
+				if(ObjectUtils.isEmpty(dataFirst) || dataFirst.length <= 0) {
+					error += "Empty Template";
+				}
+			}else {
+				error += "Empty Template";
+			}
+			
 		} catch (Exception e) {
 			log.error("Error in Header Check :: " + e);
 			error += "Something Went Wrong";
