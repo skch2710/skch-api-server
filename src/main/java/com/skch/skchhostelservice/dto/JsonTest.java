@@ -12,9 +12,19 @@ import lombok.NoArgsConstructor;
 public class JsonTest {
 
 	@SerializedName(value = "first_name")
-	private String firstName;
+	private String firstName = "";
 
 	@SerializedName(value = "email_id")
-	private String emailId;
+	private String emailId = "";
+	
+	// Custom setter for firstName
+    public void setFirstName(String firstName) {
+        this.firstName = (firstName != null) ? firstName : "";
+    }
+
+    // Custom setter for emailId
+    public void setEmailId(String emailId) {
+        this.emailId = (emailId != null) ? emailId : "";
+    }
 
 }

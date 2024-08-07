@@ -21,6 +21,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.language.Soundex;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
@@ -200,6 +201,25 @@ public class Utility {
 		} 
 	}
 	
+	/**
+	 * Trim the String variables in Class
+	 */
+	public static <T> void trimFields(T obj) {
+	    try {
+	        Field[] fields = obj.getClass().getDeclaredFields();
+	        for (Field field : fields) {
+	            field.setAccessible(true);
+	            if (field.getType().equals(String.class) && ObjectUtils.isNotEmpty(field.get(obj))) {
+	                String trimmedValue = ((String) field.get(obj)).trim();
+	                System.out.println(trimmedValue);
+	                field.set(obj, trimmedValue);
+	            }
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+	
 	public static String soundex(String input) {
 		String output = "";
 		try {
@@ -253,7 +273,10 @@ public class Utility {
 	
 	public static void main(String[] args) {
 		
-		JsonTest test = new JsonTest("sathish","s@mail.com");
+		JsonTest test = new JsonTest();
+		test.setEmailId("");
+		
+		trimFields(test);
 		
 		List<JsonTest> listTest = new ArrayList<>();
 		listTest.add(test);
@@ -262,6 +285,8 @@ public class Utility {
         String json = gson.toJson(listTest);
         
         System.out.println(json);
+        
+        System.out.println(test);
 		
         
 	}
