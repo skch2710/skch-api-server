@@ -513,10 +513,10 @@ public class HostelServiceImpl implements HostelService {
 
 			if (ExcelUtil.excelType(file)) {
 				workbook = new XSSFWorkbook(file.getInputStream());
-				String headerCheck = ExcelUtil.headerCheck(workbook,ExcelUtil.HOSTEL_HEADERS);
+				XSSFSheet sheet = workbook.getSheetAt(0);
+				String headerCheck = ExcelUtil.headerCheck(sheet,ExcelUtil.HOSTEL_HEADERS);
 				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
-					XSSFSheet sheet = workbook.getSheetAt(0);
 					long totalRecords = sheet.getLastRowNum();
 					if (totalRecords > 0) {
 						// Method to Save the Data Synchronus

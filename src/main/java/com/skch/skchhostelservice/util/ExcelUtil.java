@@ -37,7 +37,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 
 import lombok.extern.slf4j.Slf4j;
@@ -103,20 +106,22 @@ public class ExcelUtil {
 		return false;
 	}
 
-	public static String headerCheck(Workbook workbook, List<String> headers) {
+	public static String headerCheck(Sheet sheet, List<String> headers) {
 		String error = "";
 		try {
 //			Sheet sheet = workbook.getSheet("Template");
-			if (workbook.getNumberOfSheets() > 0 && workbook.getSheetAt(0).getRow(0) != null
-					&& workbook.getSheetAt(0).getRow(0).getPhysicalNumberOfCells() > 0) {
-				Row headerRow = workbook.getSheetAt(0).getRow(0);
+//			if (workbook.getNumberOfSheets() > 0 && workbook.getSheetAt(0).getRow(0) != null
+//					&& workbook.getSheetAt(0).getRow(0).getPhysicalNumberOfCells() > 0) {
+			if(sheet != null && sheet.getRow(0) != null
+					&& sheet.getRow(0).getPhysicalNumberOfCells() > 0) {
+				Row headerRow = sheet.getRow(0);
 				List<String> excelHeaders = new ArrayList<>();
 				for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
 					String header = getCellValue(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
 					excelHeaders.add(header.trim());
 				}
 				if (Arrays.equals(headers.toArray(), excelHeaders.toArray())) {
-					return error;
+					error = "";
 				} else {
 					List<String> unMatched = IntStream.range(0, headers.size())
 							.filter(i -> i >= excelHeaders.size() || !headers.get(i).equals(excelHeaders.get(i)))
@@ -135,6 +140,14 @@ public class ExcelUtil {
 			} else {
 				error += "Missing Columns " + String.join(",", headers);
 			}
+			
+			if(error.isBlank() && sheet != null) {
+				if(sheet.getPhysicalNumberOfRows() <= 1 || sheet.getRow(1) == null || 
+						sheet.getRow(1).getPhysicalNumberOfCells() == 0) {
+					error += "Empty Template Uploaded";
+				}
+			}
+			
 		} catch (Exception e) {
 			log.error("Error in Header Check :: " + e);
 			error += "Something Went Wrong";
@@ -378,6 +391,36 @@ public class ExcelUtil {
 			}
 		}
 		return bao;
+	}
+	
+	/**
+	 * Read CSV file with Pipe | delimiter
+	 * @param csvFile
+	 */
+	public static void readCsvFile(MultipartFile csvFile) {
+		CSVReader csvReader = null;
+		try {
+			CSVParser parser = new CSVParserBuilder()
+					.withSeparator('|').build();
+			csvReader = new CSVReaderBuilder(new InputStreamReader(csvFile.getInputStream()))
+					.withCSVParser(parser).build();
+
+			List<String[]> dataList = csvReader.readAll();
+
+			log.info("Data :: " + dataList);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (csvReader != null) {
+					csvReader.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
 	}
 	
 	/**
