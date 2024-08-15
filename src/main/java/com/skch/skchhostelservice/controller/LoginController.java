@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -230,16 +231,17 @@ public class LoginController {
 		try {
 			log.info("Starting file.......");
 			// Save the file to a temporary location
-            tempFile = File.createTempFile("upload", ".tmp");
-            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                fos.write(file.getBytes());
-            }
-			log.info(file.getContentType());
-			
-			InputStream inputStream = new FileInputStream(tempFile);
-            Workbook workbook = WorkbookFactory.create(inputStream);
+//            tempFile = File.createTempFile("upload", ".tmp");
+//            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+//                fos.write(file.getBytes());
+//            }
+//			log.info(file.getContentType());
+//			
+//			InputStream inputStream = new FileInputStream(tempFile);
+            Workbook workbook = WorkbookFactory.create(file.getInputStream());
+            Sheet sheet = workbook.getSheetAt(0);
 			log.info("Size of Records :: ");
-			ByteArrayOutputStream outputStream = ExcelUtil.getCsv(workbook);
+			ByteArrayOutputStream outputStream = ExcelUtil.getCsvFile(sheet);
 
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);

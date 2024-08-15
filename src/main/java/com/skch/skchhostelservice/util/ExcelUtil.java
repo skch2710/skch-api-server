@@ -1,6 +1,7 @@
 package com.skch.skchhostelservice.util;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,11 +31,15 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DataValidation;
+import org.apache.poi.ss.usermodel.DataValidationConstraint;
+import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -237,6 +243,36 @@ public class ExcelUtil {
 		return output;
 	}
 
+	public static String getCellValue(Row row,int cellIndex) {
+		String output = "";
+		Cell cell = row.getCell(cellIndex, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+		try {
+			CellType cellType = cell.getCellType();
+			switch (cellType) {
+			case STRING:
+				return cell.getStringCellValue();
+			case NUMERIC:
+				if (DateUtil.isCellDateFormatted(cell)) {
+					return DateUtility.dateToString(cell.getLocalDateTimeCellValue(), "dd-MM-yyyy");
+				} else {
+					return new DecimalFormat("#").format(cell.getNumericCellValue());
+				}
+			case BOOLEAN:
+				return String.valueOf(cell.getBooleanCellValue());
+			case FORMULA:
+				return cell.getCellFormula();
+			case BLANK:
+				return "";
+			default:
+				return "Unsupported Cell Type";
+			}
+		} catch (Exception e) {
+			log.info("Error in get Cell Value :: " + e);
+		}
+		return output;
+	}
+
+	
 	public static String getCellValues(Cell cell) {
 		DataFormatter df = new DataFormatter();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
@@ -553,4 +589,108 @@ public class ExcelUtil {
 				.collect(Collectors.toList());
 	}
 	
+	public static ByteArrayOutputStream getCsvFile(Sheet sheet) {
+		log.info("Starting at getCsvFile.......");
+		long intialTime = System.currentTimeMillis();
+		ByteArrayOutputStream bao = new ByteArrayOutputStream();
+//		ExecutorService executorService = Executors.newFixedThreadPool(5);
+		ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+		List<CompletableFuture<StringBuilder>> futures = new ArrayList<>();
+		
+		try (OutputStreamWriter osw = new OutputStreamWriter(bao);
+				BufferedWriter bufferedWriter = new BufferedWriter(osw)) {
+			
+			int chunkSize = 10000;
+
+			for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i += chunkSize) {
+	            int start = i;
+	            int end = Math.min(start + chunkSize, sheet.getPhysicalNumberOfRows());
+	            futures.add(CompletableFuture.supplyAsync(() -> 
+	            	processRows(sheet, start, end, 11), executorService));
+	        }
+
+	        // Wait for all threads to finish and collect their results
+	        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+	        
+			for (CompletableFuture<StringBuilder> future : futures) {
+				bufferedWriter.write(future.join().toString());
+			}
+			
+            bufferedWriter.flush();
+            
+            long finalTime = System.currentTimeMillis();
+            log.info("Total to convert the CSV :: "+(finalTime - intialTime));
+            
+		} catch (Exception e) {
+			log.error("Error in getCsvFile :: ",e);
+		} finally {
+			executorService.shutdown();
+		}
+		return bao;
+	}
+
+	public static StringBuilder processRows(Sheet sheet, int start, int end,int lenght) {
+	    StringBuilder sb = new StringBuilder();
+	    try {
+	        for (int rowIndex = start; rowIndex < end; rowIndex++) {
+	            Row row = sheet.getRow(rowIndex);
+	            if (row == null) continue;
+	            for (int cellIndex = 0; cellIndex < lenght; cellIndex++) {
+	                if (cellIndex > 0) {
+	                    sb.append('|');
+	                }
+					sb.append(getCellValue(row, cellIndex));
+	            }
+	            sb.append(System.lineSeparator());
+	        }
+	    } catch (Exception e) {
+	       log.error("Error in Process Rows :: ",e);
+	    }
+	    return sb;
+	}
+	
+	public static StringBuilder processRowsParallelStream(Sheet sheet, int start, int end, int length) {
+	    return IntStream.range(start, end).parallel()
+	            .mapToObj(rowIndex -> {
+	                Row row = sheet.getRow(rowIndex);
+	                if (row == null) return "";
+	                StringJoiner joiner = new StringJoiner("|");
+	                for (int cellIndex = 0; cellIndex < length; cellIndex++) {
+	                    joiner.add(getCellValue(row, cellIndex));
+	                }
+	                return joiner.toString() + System.lineSeparator();
+	            })
+	            .collect(Collectors.collectingAndThen(Collectors.joining(), StringBuilder::new));
+	}
+
+	/**
+	 * Write the Drop Down Values to Excel Sheet
+	 * @param sheet
+	 * @param dropdownValues
+	 * @param firstRow
+	 * @param lastRow
+	 * @param firstColumn
+	 * @param lastColumn
+	 */
+	public static void dropDownValues(Sheet sheet, String[] dropdownValues,
+			int firstRow, int lastRow, int firstCol, int lastCol) {
+		try {
+			// Define the range of cells where the dropdown should be added
+			CellRangeAddressList addressList = new CellRangeAddressList(firstRow, lastRow, firstCol, lastCol);
+			// Create DataValidationHelper and DataValidationConstraint
+			DataValidationHelper validationHelper = sheet.getDataValidationHelper();
+			DataValidationConstraint constraint = validationHelper.createExplicitListConstraint(dropdownValues);
+			// Create the DataValidation object
+			DataValidation dataValidation = validationHelper.createValidation(constraint, addressList);
+			dataValidation.setSuppressDropDownArrow(true); // Optional
+			dataValidation.setShowErrorBox(true); // Ensure that an error box is shown if an invalid value is entered
+			dataValidation.setErrorStyle(DataValidation.ErrorStyle.STOP); // Stops invalid data entry
+			dataValidation.createErrorBox("Microsoft Excel",
+					"This value doesn't match the data validation restrictions defined for this cell.");
+			// Add the validation to the sheet
+			sheet.addValidationData(dataValidation);
+		} catch (Exception e) {
+			log.error("Error in Excel Dropdown Values :: ",e);
+		}
+	}
 }

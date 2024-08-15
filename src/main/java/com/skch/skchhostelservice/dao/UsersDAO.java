@@ -41,5 +41,8 @@ public interface UsersDAO extends JpaRepository<Users, Long> {
 	@Query(value = "SELECT hosteller_id,email_id \r\n"
 			+ "FROM hostel.hostellers limit 1;", nativeQuery = true)
 	Object findByTest(String emailId);
+	
+	@Query(value = "SELECT email_id FROM hostel.users order by email_id asc", nativeQuery = true)
+	String[] findAllEmailId();
 
 }

@@ -7,6 +7,7 @@ public class Constant {
 	public static final String SUPER_USER = "Super User";
 	public static final String UPLOAD_DIR = "D:/uploads/";
 	public static final String HOSTEL_TEMPLATE = "src/main/resources/templates/Hostel_Template.xlsx";
+	public static final String USER_TEMPLATE = "src/main/resources/templates/User_Template.xlsx";
 	
 	public static final String CURRENCY_FORMAT = "₹ #,##0.00";
 	public static final String CURRENCY_FORMAT_NEGITIVE = "₹ #,##0.00; ₹ (#,##0.00)";

@@ -1,6 +1,10 @@
 package com.skch.skchhostelservice.service.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -9,11 +13,15 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.Navigation;
 import com.skch.skchhostelservice.dto.Result;
@@ -28,6 +36,7 @@ import com.skch.skchhostelservice.model.UserPrivilege;
 import com.skch.skchhostelservice.model.UserRole;
 import com.skch.skchhostelservice.model.Users;
 import com.skch.skchhostelservice.service.UserService;
+import com.skch.skchhostelservice.util.ExcelUtil;
 import com.skch.skchhostelservice.util.Utility;
 
 import lombok.extern.slf4j.Slf4j;
@@ -217,6 +226,46 @@ public class UserServiceImpl implements UserService {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Download the User Template
+	 */
+	@Override
+	public ByteArrayOutputStream getUserTemplate() {
+		ByteArrayOutputStream bao = null;
+		Workbook workbook = null;
+		try {
+			FileInputStream inputStream = new FileInputStream(Constant.USER_TEMPLATE);
+			workbook = new XSSFWorkbook(inputStream);
+			Sheet sheet = workbook.getSheetAt(0);
+			
+			// Create the dropdown list values
+			String[] dropdownValuesRoles = { "Admin", "Super User" };
+			String[] dropdownValuesActive = { "No", "Yes" };
+			
+			String[] emailIds = usersDAO.findAllEmailId();
+			log.info("List :: "+ Arrays.asList(emailIds));
+			
+			// Define the range of cells where the dropdown should be added
+			ExcelUtil.dropDownValues(sheet, dropdownValuesRoles, 1, 1048575, 5, 5);
+			ExcelUtil.dropDownValues(sheet, dropdownValuesActive, 1, 1048575, 6, 6);
+
+			bao = new ByteArrayOutputStream();
+			workbook.write(bao); // Write the workbook to temp byte array
+		} catch (Exception e) {
+			log.error("Error in get User Template :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		} finally {
+			try {
+				if (workbook != null) {
+					workbook.close();// close the workbook
+				}
+			} catch (IOException e) {
+				log.error("Error in Closing Workbook :: ", e);
+			}
+		}
+		return bao;
 	}
 
 }
