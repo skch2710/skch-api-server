@@ -6,6 +6,7 @@ import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.stereotype.Component;
@@ -105,21 +106,33 @@ public class BatchInsert {
 			jdbcTemplate.batchUpdate(this.insertQueryUsers, list, this.batchSize,
 					new ParameterizedPreparedStatementSetter<UsersFileDTO>() {
 						@Override
-						public void setValues(PreparedStatement ps, UsersFileDTO model) throws SQLException {
-							ps.setObject(1, model.getFirstName(), Types.VARCHAR);
-							ps.setObject(2, model.getLastName(), Types.VARCHAR);
-							ps.setObject(3, model.getEmailId(), Types.VARCHAR);
-							ps.setObject(4, model.getPhoneNumber(), Types.VARCHAR);
-							ps.setObject(5, model.getDob(), Types.VARCHAR);
-							ps.setObject(6, model.getRoleName(), Types.VARCHAR);
-							ps.setObject(7, model.getActive(), Types.VARCHAR);
-							ps.setObject(8, model.getUploadFileId(), Types.VARCHAR);
-							ps.setObject(9, model.getStatus(), Types.VARCHAR);
-							ps.setObject(10, model.getErrorMessage(), Types.VARCHAR);
+						public void setValues(PreparedStatement ps, UsersFileDTO model){
+							setPsObject(ps, 1, model.getFirstName(), Types.VARCHAR);
+							setPsObject(ps, 2, model.getLastName(), Types.VARCHAR);
+							setPsObject(ps, 3, model.getEmailId(), Types.VARCHAR);
+							setPsObject(ps, 4, model.getPhoneNumber(), Types.VARCHAR);
+							setPsObject(ps, 5, model.getDob(), Types.VARCHAR);
+							setPsObject(ps, 6, model.getRoleName(), Types.VARCHAR);
+							setPsObject(ps, 7, model.getActive(), Types.VARCHAR);
+							setPsObject(ps, 8, model.getUploadFileId(), Types.BIGINT);
+							setPsObject(ps, 9, model.getStatus(), Types.VARCHAR);
+							setPsObject(ps, 10, model.getErrorMessage(), Types.VARCHAR);
 						}
 					});
 		} catch (Exception e) {
 			log.error("Error in Batch saveInBatchUsers :: ", e);
+		}
+	}
+	
+	public void setPsObject(PreparedStatement ps, int parameterIndex, Object x, int targetSqlType) {
+		try {
+			if (ObjectUtils.isNotEmpty(x)) {
+				ps.setObject(parameterIndex, x, targetSqlType);
+			} else {
+				ps.setObject(parameterIndex, null, Types.NULL);
+			}
+		} catch (SQLException e) {
+			log.error("Error in setPsObject :: ", e);
 		}
 	}
 

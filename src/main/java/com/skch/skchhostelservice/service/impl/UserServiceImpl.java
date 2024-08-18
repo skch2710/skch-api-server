@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.opencsv.CSVReader;
 import com.skch.skchhostelservice.common.Constant;
+import com.skch.skchhostelservice.dao.UploadFileDAO;
 import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.Navigation;
 import com.skch.skchhostelservice.dto.Result;
@@ -46,10 +48,12 @@ import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.mapper.ObjectMapper;
 import com.skch.skchhostelservice.model.Resource;
 import com.skch.skchhostelservice.model.Roles;
+import com.skch.skchhostelservice.model.UploadFile;
 import com.skch.skchhostelservice.model.UserPrivilege;
 import com.skch.skchhostelservice.model.UserRole;
 import com.skch.skchhostelservice.model.Users;
 import com.skch.skchhostelservice.service.UserService;
+import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.ExcelUtil;
 import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.Utility;
@@ -68,6 +72,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private BatchInsert batchInsert;
+	
+	@Autowired
+	private UploadFileDAO uploadFileDAO;
 
 	/**
 	 * User Save Or Update Method
@@ -305,46 +312,56 @@ public class UserServiceImpl implements UserService {
 				workbook = new XSSFWorkbook(file.getInputStream());
 				XSSFSheet sheet = workbook.getSheetAt(0);
 				String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
-				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
 					long totalRecords = sheet.getLastRowNum();
-						// Run Method Async
-						CompletableFuture.runAsync(() -> {
-								getRowValues(sheet, userId);
-						});
-						
-						result.setData("Uploaded " + totalRecords + " records.");
-					}{
+					
+					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
+					
+					// Run Method Async
+					CompletableFuture.runAsync(() -> {
+						getRowValues(sheet, uploadFile);
+						log.info("Before calling SP...");
+						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); //Calling SP
+					});
+
+					result.setData("Uploaded " + totalRecords + " records.");
+					result.setStatusCode(HttpStatus.OK.value());
+					result.setSuccessMessage("SuccesFully Uploaded");
+				} else {
 					result.setErrorMessage(headerCheck);
+					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 				}
-			}else if(ExcelUtil.csvType(file)) {
-				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(),
-						StandardCharsets.UTF_8));
-				
+			} else if (ExcelUtil.csvType(file)) {
+				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
+
 				List<String[]> csvDataList = csvReader.readAll();
-				
-				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList,ExcelUtil.USER_HEADERS);
+
+				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList, ExcelUtil.USER_HEADERS);
 				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
 					long totalRecords = csvDataList.size() - 1;
-					
+
 					CompletableFuture.runAsync(() -> {
-						getCsvValues(csvDataList,userId);
-		            });
-					
-					log.info("Count of Records :: "+totalRecords);
-					
+						getCsvValues(csvDataList, userId);
+					});
+
+					log.info("Count of Records :: " + totalRecords);
+
 					result.setData("Uploaded " + totalRecords + " records.");
+					result.setStatusCode(HttpStatus.OK.value());
+					result.setSuccessMessage("SuccesFully Uploaded");
 				} else {
 					result.setErrorMessage(headerCheck);
+					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 				}
-			}else {
+			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
+				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 			}
-		
-		long finalTime = System.currentTimeMillis();
-		log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
-		
+
+			long finalTime = System.currentTimeMillis();
+			log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
+
 		} catch (Exception e) {
 			log.error("Error in uploadFile :: " + e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -353,14 +370,37 @@ public class UserServiceImpl implements UserService {
 				if (workbook != null) {
 					workbook.close();
 				}
-				if(csvReader != null) {
+				if (csvReader != null) {
 					csvReader.close();
 				}
 			} catch (Exception e) {
-				log.error("Error in Closing workbook or csvReader :: ",e);
+				log.error("Error in Closing workbook or csvReader :: ", e);
 			}
 		}
 		return result;
+	}
+	
+	/**
+	 * To Save to Upload File
+	 * @param userId
+	 * @return uploadFile
+	 */
+	public UploadFile saveUploadFile(MultipartFile file,Long userId,Long totalCount) {
+		UploadFile uploadFile = null;
+		try {
+			uploadFile = new UploadFile();
+			uploadFile.setUploadedById(userId);
+			uploadFile.setUploadType("Users");
+			String fileType = file.getOriginalFilename().split("\\.")[1];
+			String fileName = "Users_"+DateUtility.dateToString(LocalDateTime.now(), "yyyyMMddHHmmss")+fileType;
+			uploadFile.setFileName(fileName);
+			uploadFile.setTotalCount(totalCount);
+			
+			uploadFile = uploadFileDAO.save(uploadFile);
+		} catch (Exception e) {
+			log.error("Error in saveUploadFile :: ",e);
+		}
+		return uploadFile;
 	}
 	
 	/**
@@ -368,15 +408,13 @@ public class UserServiceImpl implements UserService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(XSSFSheet sheet,Long userId) {
+	public void getRowValues(XSSFSheet sheet, UploadFile uploadFile) {
 		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
-		List<UsersFileDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		int batchSize = 1000;
-		List<Integer> succCount = new ArrayList<>();
-		
+		log.info("Starting getRowValues.....");
 		try {
 			sheet.forEach(row -> {
 				if (row.getRowNum() == 0) {
@@ -390,35 +428,31 @@ public class UserServiceImpl implements UserService {
 				UsersFileDTO dto = new UsersFileDTO(cellValues);
 				Map<String, String> errors = ValidationUtils.validate(dto);
 
-				if (errors.isEmpty()) {
-					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-						
-						features.add(CompletableFuture.runAsync(() -> 
-							batchInsert.saveInBatchUsers(dataList), executor));
-						
-						succCount.add(dataList.size());
-						dataList.clear();
-					}
-					dataList.add(dto);
-				} else {
-					String error = errors.values().stream().collect(Collectors.joining(","));
+				dto.setUploadFileId(uploadFile.getUploadFileId());
+				dto.setStatus("success");
+				if (!errors.isEmpty()) {
+					String error = errors.values().stream().collect(Collectors.joining(", "));
 					dto.setErrorMessage(error);
-					errorList.add(dto);
-					log.info("Error :: " + error);
+					dto.setStatus("fail");
+				}
+				dataList.add(dto);
+				
+				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+					features.add(CompletableFuture.runAsync(() -> 
+						batchInsert.saveInBatchUsers(dataList), executor));
+					dataList.clear();
 				}
 			});
 			
 			if (!dataList.isEmpty()) {
 				features.add(CompletableFuture.runAsync(() -> 
 					batchInsert.saveInBatchUsers(dataList), executor));
-				succCount.add(dataList.size());
 			}
 
 			// Wait for all threads to finish and collect their results
-//        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
-			
-			int sum = succCount.stream().mapToInt(Integer::intValue).sum();
-			log.info("List DTO Size :: " + sum);
+        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+		
+        log.info("Ending getRowValues.....");
 		} catch (Exception e) {
 			log.error("Error in get Row Values :: ",e);
 		} finally {
@@ -458,7 +492,7 @@ public class UserServiceImpl implements UserService {
 					}
 					dataList.add(dto);
 				} else {
-					String error = errors.values().stream().collect(Collectors.joining(","));
+					String error = errors.values().stream().collect(Collectors.joining(", "));
 					dto.setErrorMessage(error);
 					errorList.add(dto);
 //					Integer count = countMap.get("F") + errorList.size();

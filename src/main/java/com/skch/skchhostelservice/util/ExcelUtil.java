@@ -57,8 +57,8 @@ public class ExcelUtil {
 	public static final List<String> HOSTEL_HEADERS = Arrays.asList("Full Name", "Email Id", "Phone Number", "DOB",
 			"Fee", "Joining Date", "Address", "Proof", "Reason", "Vacated Date", "Active");
 	
-	public static final List<String> USER_HEADERS = Arrays.asList("Full Name", "Email Id", "Phone Number", "DOB",
-			"Fee", "Joining Date", "Address", "Proof", "Reason", "Vacated Date", "Active");
+	public static final List<String> USER_HEADERS = Arrays.asList("First Name", "Last Name", "Email Id", "Phone Number",
+			"DOB", "Role Name", "Active");
 
 	public static final List<String> EXCEL_MIME_TYPES = Arrays.asList("application/vnd.ms-excel",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
