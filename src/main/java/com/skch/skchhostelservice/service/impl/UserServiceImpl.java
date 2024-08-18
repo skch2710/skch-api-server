@@ -3,24 +3,37 @@ package com.skch.skchhostelservice.service.impl;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.opencsv.CSVReader;
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.Navigation;
@@ -28,6 +41,7 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.SubNavigarion;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.dto.UserPrivilegeDTO;
+import com.skch.skchhostelservice.dto.UsersFileDTO;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.mapper.ObjectMapper;
 import com.skch.skchhostelservice.model.Resource;
@@ -37,7 +51,9 @@ import com.skch.skchhostelservice.model.UserRole;
 import com.skch.skchhostelservice.model.Users;
 import com.skch.skchhostelservice.service.UserService;
 import com.skch.skchhostelservice.util.ExcelUtil;
+import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.Utility;
+import com.skch.skchhostelservice.util.ValidationUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,6 +65,9 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private UsersDAO usersDAO;
+	
+	@Autowired
+	private BatchInsert batchInsert;
 
 	/**
 	 * User Save Or Update Method
@@ -266,6 +285,208 @@ public class UserServiceImpl implements UserService {
 			}
 		}
 		return bao;
+	}
+
+	/**
+	 * Upload User File 
+	 * @param file
+	 * @return result
+	 */
+	@Override
+	public Result uploadUserFile(MultipartFile file) {
+		Result result = new Result();
+		XSSFWorkbook workbook = null;
+		CSVReader csvReader = null;
+		try {
+			long intialTime = System.currentTimeMillis();
+			Long userId = JwtUtil.getUserId();
+
+			if (ExcelUtil.excelType(file)) {
+				workbook = new XSSFWorkbook(file.getInputStream());
+				XSSFSheet sheet = workbook.getSheetAt(0);
+				String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
+				log.info(headerCheck);
+				if (headerCheck.isBlank()) {
+					long totalRecords = sheet.getLastRowNum();
+						// Run Method Async
+						CompletableFuture.runAsync(() -> {
+								getRowValues(sheet, userId);
+						});
+						
+						result.setData("Uploaded " + totalRecords + " records.");
+					}{
+					result.setErrorMessage(headerCheck);
+				}
+			}else if(ExcelUtil.csvType(file)) {
+				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(),
+						StandardCharsets.UTF_8));
+				
+				List<String[]> csvDataList = csvReader.readAll();
+				
+				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList,ExcelUtil.USER_HEADERS);
+				log.info(headerCheck);
+				if (headerCheck.isBlank()) {
+					long totalRecords = csvDataList.size() - 1;
+					
+					CompletableFuture.runAsync(() -> {
+						getCsvValues(csvDataList,userId);
+		            });
+					
+					log.info("Count of Records :: "+totalRecords);
+					
+					result.setData("Uploaded " + totalRecords + " records.");
+				} else {
+					result.setErrorMessage(headerCheck);
+				}
+			}else {
+				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
+			}
+		
+		long finalTime = System.currentTimeMillis();
+		log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
+		
+		} catch (Exception e) {
+			log.error("Error in uploadFile :: " + e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		} finally {
+			try {
+				if (workbook != null) {
+					workbook.close();
+				}
+				if(csvReader != null) {
+					csvReader.close();
+				}
+			} catch (Exception e) {
+				log.error("Error in Closing workbook or csvReader :: ",e);
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * Method to Excel Sheet Data in Threads Batch Update
+	 * @param sheet
+	 * @param userId
+	 */
+	public void getRowValues(XSSFSheet sheet,Long userId) {
+		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
+		List<UsersFileDTO> errorList = new ArrayList<>();
+		List<CompletableFuture<Void>> features = new ArrayList<>();
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+		int batchSize = 1000;
+		List<Integer> succCount = new ArrayList<>();
+		
+		try {
+			sheet.forEach(row -> {
+				if (row.getRowNum() == 0) {
+					return;
+				}
+				List<String> cellValues = IntStream.range(0, ExcelUtil.USER_HEADERS.size()).mapToObj(i -> {
+					Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+					return ExcelUtil.getCellValue(cell);
+				}).collect(Collectors.toList());
+				
+				UsersFileDTO dto = new UsersFileDTO(cellValues);
+				Map<String, String> errors = ValidationUtils.validate(dto);
+
+				if (errors.isEmpty()) {
+					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+						
+						features.add(CompletableFuture.runAsync(() -> 
+							batchInsert.saveInBatchUsers(dataList), executor));
+						
+						succCount.add(dataList.size());
+						dataList.clear();
+					}
+					dataList.add(dto);
+				} else {
+					String error = errors.values().stream().collect(Collectors.joining(","));
+					dto.setErrorMessage(error);
+					errorList.add(dto);
+					log.info("Error :: " + error);
+				}
+			});
+			
+			if (!dataList.isEmpty()) {
+				features.add(CompletableFuture.runAsync(() -> 
+					batchInsert.saveInBatchUsers(dataList), executor));
+				succCount.add(dataList.size());
+			}
+
+			// Wait for all threads to finish and collect their results
+//        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+			
+			int sum = succCount.stream().mapToInt(Integer::intValue).sum();
+			log.info("List DTO Size :: " + sum);
+		} catch (Exception e) {
+			log.error("Error in get Row Values :: ",e);
+		} finally {
+			executor.shutdown();
+		}
+	}
+	
+	/**
+	 * Method to Save Records Csv to DB
+	 */
+	public void getCsvValues(List<String[]> csvDataList ,Long userId) {
+		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
+		List<UsersFileDTO> errorList = new ArrayList<>();
+		List<CompletableFuture<Void>> features = new ArrayList<>();
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+		int batchSize = 1000;
+		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
+		
+		try {
+			//Remove Headers
+			csvDataList.removeFirst(); //From Java 21
+//			csvDataList.remove(0);
+			
+			csvDataList.forEach(data ->{
+				
+				UsersFileDTO dto = new UsersFileDTO(Arrays.asList(data));
+				Map<String, String> errors = ValidationUtils.validate(dto);
+
+				if (errors.isEmpty()) {
+					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+						features.add(CompletableFuture.runAsync(() -> 
+							batchInsert.saveInBatchUsers(dataList), executor));
+						Integer count = countMap.get("S") + dataList.size();
+						countMap.put("S", count);
+						dataList.clear();
+					}
+					dataList.add(dto);
+				} else {
+					String error = errors.values().stream().collect(Collectors.joining(","));
+					dto.setErrorMessage(error);
+					errorList.add(dto);
+//					Integer count = countMap.get("F") + errorList.size();
+//					countMap.put("F", count);
+					log.info("Error :: " + error);
+				}
+				
+			});
+			
+			if (!dataList.isEmpty()) {
+				features.add(CompletableFuture.runAsync(() -> 
+					batchInsert.saveInBatchUsers(dataList), executor));
+				Integer count = countMap.get("S") + dataList.size();
+				countMap.put("S", count);
+			}
+
+			// Wait for all threads to finish and collect their results
+//	        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+			
+			log.info("List Success Count :: " + countMap.get("S"));
+			log.info("List Error Count :: " + errorList.size());
+//			log.info("List Error Size :: " + errorList);
+
+		} catch (Exception e) {
+			log.error("Error in getCsvValues :: " + e);
+		} finally {
+			executor.shutdown();
+		}
 	}
 
 }

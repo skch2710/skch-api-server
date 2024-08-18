@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.skch.skchhostelservice.dto.HostellerDTO;
+import com.skch.skchhostelservice.dto.UsersFileDTO;
 import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.Utility;
 
@@ -19,24 +20,30 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class HostelBatch {
+public class BatchInsert {
 
 	private final JdbcTemplate jdbcTemplate;
+	
 	private final int batchSize = 1000;
 
-	public HostelBatch(JdbcTemplate jdbcTemplate) {
+	public BatchInsert(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
 
-	private String insertQuery = "INSERT INTO hostel.hostellers(full_name, email_id, phone_number,dob, fee, "
+	private String insertQueryHostellers = "INSERT INTO hostel.hostellers(full_name, email_id, phone_number,dob, fee, "
 			+ "joining_date, address, proof, reason, vacated_date, active, "
 			+ "created_by_id, created_date, modified_by_id, modified_date)\r\n"
 			+ "	VALUES (?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+	private String insertQueryUsers = "INSERT INTO hostel.users_file_data(\r\n"
+			+ "	first_name, last_name, email_id, phone_number, dob, role_name, is_active, upload_file_id, status, error_message)\r\n"
+			+ "	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	
+	
 	@Transactional
-    public void saveInBatch(ArrayList<HostellerDTO> list) {
+    public void saveInBatchHostellers(ArrayList<HostellerDTO> list) {
         try {
-            jdbcTemplate.batchUpdate(this.insertQuery, list, this.batchSize,
+            jdbcTemplate.batchUpdate(this.insertQueryHostellers, list, this.batchSize,
                     new ParameterizedPreparedStatementSetter<HostellerDTO>() {
                         @Override
                         public void setValues(PreparedStatement ps, HostellerDTO model) throws SQLException {
@@ -87,5 +94,33 @@ public class HostelBatch {
 //			}
 //		});
 //	}
+	
+	/**
+	 * Method to Insert Users in Batch Update
+	 * @param list
+	 */
+	@Transactional
+	public void saveInBatchUsers(ArrayList<UsersFileDTO> list) {
+		try {
+			jdbcTemplate.batchUpdate(this.insertQueryUsers, list, this.batchSize,
+					new ParameterizedPreparedStatementSetter<UsersFileDTO>() {
+						@Override
+						public void setValues(PreparedStatement ps, UsersFileDTO model) throws SQLException {
+							ps.setObject(1, model.getFirstName(), Types.VARCHAR);
+							ps.setObject(2, model.getLastName(), Types.VARCHAR);
+							ps.setObject(3, model.getEmailId(), Types.VARCHAR);
+							ps.setObject(4, model.getPhoneNumber(), Types.VARCHAR);
+							ps.setObject(5, model.getDob(), Types.VARCHAR);
+							ps.setObject(6, model.getRoleName(), Types.VARCHAR);
+							ps.setObject(7, model.getActive(), Types.VARCHAR);
+							ps.setObject(8, model.getUploadFileId(), Types.VARCHAR);
+							ps.setObject(9, model.getStatus(), Types.VARCHAR);
+							ps.setObject(10, model.getErrorMessage(), Types.VARCHAR);
+						}
+					});
+		} catch (Exception e) {
+			log.error("Error in Batch saveInBatchUsers :: ", e);
+		}
+	}
 
 }

@@ -82,6 +82,9 @@ public class HostelServiceImpl implements HostelService {
 
 	@Autowired
 	private PaymentHistoryDAO paymentHistoryDAO;
+	
+	@Autowired
+	private BatchInsert batchInsert;
 
 	/**
 	 * Save Or Update the Hosteller
@@ -589,9 +592,11 @@ public class HostelServiceImpl implements HostelService {
 		return result;
 	}
 
-	@Autowired
-	private HostelBatch hostelBatch;
-	
+	/**
+	 * Method to Excel Sheet Data in Threads Batch Update
+	 * @param sheet
+	 * @param userId
+	 */
 	public void getRowValues(XSSFSheet sheet,Long userId) {
 		ArrayList<HostellerDTO> dataList = new ArrayList<>();
 		List<HostellerDTO> errorList = new ArrayList<>();
@@ -601,60 +606,54 @@ public class HostelServiceImpl implements HostelService {
 		int batchSize = 1000;
 		List<Integer> succCount = new ArrayList<>();
 		
-		sheet.forEach(row -> {
-			if (row.getRowNum() == 0) {
-				return;
-			}
-			List<String> cellValues = IntStream.range(0, ExcelUtil.HOSTEL_HEADERS.size()).mapToObj(i -> {
-				Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-				return ExcelUtil.getCellValue(cell);
-			}).collect(Collectors.toList());
-			
-			HostellerDTO dto = new HostellerDTO(cellValues,userId);
-			Map<String, String> errors = ValidationUtils.validate(dto);
-
-			if (errors.isEmpty()) {
-				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-					features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
-					succCount.add(dataList.size());
-					dataList.clear();
+		try {
+			sheet.forEach(row -> {
+				if (row.getRowNum() == 0) {
+					return;
 				}
-				dataList.add(dto);
-			} else {
-				String error = errors.values().stream().collect(Collectors.joining(","));
-				dto.setError(error);
-				errorList.add(dto);
-				log.info("Error :: " + error);
+				List<String> cellValues = IntStream.range(0, ExcelUtil.HOSTEL_HEADERS.size()).mapToObj(i -> {
+					Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+					return ExcelUtil.getCellValue(cell);
+				}).collect(Collectors.toList());
+				
+				HostellerDTO dto = new HostellerDTO(cellValues,userId);
+				Map<String, String> errors = ValidationUtils.validate(dto);
+
+				if (errors.isEmpty()) {
+					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+						
+						features.add(CompletableFuture.runAsync(() -> 
+							batchInsert.saveInBatchHostellers(dataList), executor));
+						
+						succCount.add(dataList.size());
+						dataList.clear();
+					}
+					dataList.add(dto);
+				} else {
+					String error = errors.values().stream().collect(Collectors.joining(","));
+					dto.setError(error);
+					errorList.add(dto);
+					log.info("Error :: " + error);
+				}
+			});
+			
+			if (!dataList.isEmpty()) {
+				features.add(CompletableFuture.runAsync(() -> 
+					batchInsert.saveInBatchHostellers(dataList), executor));
+				succCount.add(dataList.size());
 			}
-		});
-		
-		if (!dataList.isEmpty()) {
-			features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
-			succCount.add(dataList.size());
+
+			// Wait for all threads to finish and collect their results
+//        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+			
+			int sum = succCount.stream().mapToInt(Integer::intValue).sum();
+			log.info("List DTO Size :: " + sum);
+//		log.info("List Error Size :: " + errorList.size() + errorList);
+		} catch (Exception e) {
+			log.error("Error in get Row Values :: ",e);
+		} finally {
+			executor.shutdown();
 		}
-
-//		CompletableFuture<Void> allFeatures = CompletableFuture.allOf(features.toArray(new CompletableFuture[0]));
-//		allFeatures.join();
-		
-		int sum = succCount.stream().mapToInt(Integer::intValue).sum();
-		log.info("List DTO Size :: " + sum);
-//		log.info("List Error Size :: " + errorList.size());
-//		log.info("List Error Size :: " + errorList);
-
-		executor.shutdown();
-	}
-	
-	public CompletableFuture<Void> saveRecordsInBatch(ArrayList<HostellerDTO> records, 
-			ExecutorService executor) {
-//		log.info("Started method.... Batch size: " + records.size());
-		return CompletableFuture.runAsync(() -> {
-			try {
-				hostelBatch.saveInBatch(records);
-			} catch (Exception e) {
-				log.error("Error in saveRecordsInBatch :: " + e);
-				throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-			}
-		}, executor);
 	}
 	
 	/**
@@ -681,7 +680,8 @@ public class HostelServiceImpl implements HostelService {
 
 				if (errors.isEmpty()) {
 					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-						features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+						features.add(CompletableFuture.runAsync(() -> 
+							batchInsert.saveInBatchHostellers(dataList), executor));
 						Integer count = countMap.get("S") + dataList.size();
 						countMap.put("S", count);
 						dataList.clear();
@@ -699,13 +699,14 @@ public class HostelServiceImpl implements HostelService {
 			});
 			
 			if (!dataList.isEmpty()) {
-				features.add(saveRecordsInBatch(new ArrayList<>(dataList), executor));
+				features.add(CompletableFuture.runAsync(() -> 
+					batchInsert.saveInBatchHostellers(dataList), executor));
 				Integer count = countMap.get("S") + dataList.size();
 				countMap.put("S", count);
 			}
 
-//			CompletableFuture<Void> allFeatures = CompletableFuture.allOf(features.toArray(new CompletableFuture[0]));
-//			allFeatures.join();
+			// Wait for all threads to finish and collect their results
+//	        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
 			
 			log.info("List Success Count :: " + countMap.get("S"));
 			log.info("List Error Count :: " + errorList.size());

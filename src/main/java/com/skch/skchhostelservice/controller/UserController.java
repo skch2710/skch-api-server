@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skchhostelservice.dto.FileUploadDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.exception.CustomException;
@@ -58,6 +61,10 @@ public class UserController {
 		return ResponseEntity.ok(result);
 	}
 	
+	/**
+	 * Get the User Bulk Upload Template
+	 * @return
+	 */
 	@GetMapping("/user-template")
 	public ResponseEntity<?> getUserTemplate() {
 		try {
@@ -74,5 +81,19 @@ public class UserController {
 			log.error("Error in getUserTemplate Controller :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+	
+	/**
+	* This Method is validate the file and Upload
+	*
+	* @param file
+	* @param dto
+	* @return result
+	*/
+	@PostMapping(path = "/upload-user-file", consumes = "multipart/form-data")
+	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
+			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
+		Result result = userService.uploadUserFile(file);
+		return ResponseEntity.ok(result);
 	}
 }
