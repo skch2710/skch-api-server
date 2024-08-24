@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.skch.skchhostelservice.model.Users;
 import com.skch.skchhostelservice.util.Utility;
@@ -24,14 +25,12 @@ public interface UsersDAO extends JpaRepository<Users, Long> {
 	
 	Long countByIsActiveTrue();
 	
-	@Query(value = "SELECT json_object_agg(up.resource_id, r.resource_name) AS data_json\r\n"
-			+ "FROM hostel.user_privileges up \r\n"
-			+ "JOIN hostel.resource r ON up.resource_id = r.resource_id\r\n"
-			+ "WHERE up.user_id =1;", nativeQuery = true)
-	String getUserPrivilegesJson();
+	@Query(value = "SELECT json_object_agg(lower(email_id),user_id) AS mail_data FROM hostel.users \r\n"
+			+ "	WHERE email_id ILIKE ANY (:emailList);", nativeQuery = true)
+	String getExistUsers(@Param("emailList") String[] emailList);
 	
-	default Map<Long, String> getUserPrivilegesMap() {
-        return Utility.parseJsonToMap(getUserPrivilegesJson(), Long.class, String.class);
+	default Map<String, Long> getExistUsersMap(String[] emailList) {
+        return Utility.parseJsonToMap(getExistUsers(emailList), String.class, Long.class);
     }
 	
 	@Query(value = "SELECT json_object_agg(hosteller_id,email_id) AS data_json\r\n"
