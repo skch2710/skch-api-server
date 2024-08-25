@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -340,9 +339,13 @@ public class UserServiceImpl implements UserService {
 				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
 					long totalRecords = csvDataList.size() - 1;
+					
+					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
 
 					CompletableFuture.runAsync(() -> {
-						getCsvValues(csvDataList, userId);
+						getCsvValues(csvDataList, uploadFile);
+						log.info("Before calling SP...");
+						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); //Calling SP
 					});
 
 					log.info("Count of Records :: " + totalRecords);
@@ -463,58 +466,44 @@ public class UserServiceImpl implements UserService {
 	/**
 	 * Method to Save Records Csv to DB
 	 */
-	public void getCsvValues(List<String[]> csvDataList ,Long userId) {
+	public void getCsvValues(List<String[]> csvDataList, UploadFile uploadFile) {
 		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
-		List<UsersFileDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		int batchSize = 1000;
-		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
-		
 		try {
 			//Remove Headers
-			csvDataList.removeFirst(); //From Java 21
-//			csvDataList.remove(0);
+			csvDataList.removeFirst(); //From Java 21 //csvDataList.remove(0);
 			
 			csvDataList.forEach(data ->{
 				
 				UsersFileDTO dto = new UsersFileDTO(Arrays.asList(data));
 				Map<String, String> errors = ValidationUtils.validate(dto);
-
-				if (errors.isEmpty()) {
-					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-						features.add(CompletableFuture.runAsync(() -> 
-							batchInsert.saveInBatchUsers(dataList), executor));
-						Integer count = countMap.get("S") + dataList.size();
-						countMap.put("S", count);
-						dataList.clear();
-					}
-					dataList.add(dto);
-				} else {
+				
+				dto.setUploadFileId(uploadFile.getUploadFileId());
+				dto.setStatus("success");
+				if (!errors.isEmpty()) {
 					String error = errors.values().stream().collect(Collectors.joining(", "));
 					dto.setErrorMessage(error);
-					errorList.add(dto);
-//					Integer count = countMap.get("F") + errorList.size();
-//					countMap.put("F", count);
-					log.info("Error :: " + error);
+					dto.setStatus("fail");
 				}
+				dataList.add(dto);
 				
+				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+					features.add(CompletableFuture.runAsync(() -> 
+						batchInsert.saveInBatchUsers(dataList), executor));
+					dataList.clear();
+				}
 			});
 			
 			if (!dataList.isEmpty()) {
 				features.add(CompletableFuture.runAsync(() -> 
 					batchInsert.saveInBatchUsers(dataList), executor));
-				Integer count = countMap.get("S") + dataList.size();
-				countMap.put("S", count);
 			}
 
 			// Wait for all threads to finish and collect their results
-//	        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
-			
-			log.info("List Success Count :: " + countMap.get("S"));
-			log.info("List Error Count :: " + errorList.size());
-//			log.info("List Error Size :: " + errorList);
+	        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
 
 		} catch (Exception e) {
 			log.error("Error in getCsvValues :: " + e);
