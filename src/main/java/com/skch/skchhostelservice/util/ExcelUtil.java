@@ -62,6 +62,8 @@ public class ExcelUtil {
 
 	public static final List<String> EXCEL_MIME_TYPES = Arrays.asList("application/vnd.ms-excel",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+	
+	public static final String XLS_TYPE = "application/vnd.ms-excel";
 
 	public static final String CSV_TYPE = "text/csv";
 	

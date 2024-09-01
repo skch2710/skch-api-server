@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -508,19 +508,26 @@ public class HostelServiceImpl implements HostelService {
 	@Override
 	public Result uploadFile(MultipartFile file) {
 		Result result = new Result();
-		XSSFWorkbook workbook = null;
+		Workbook workbook = null;
 		CSVReader csvReader = null;
 //		IOUtils.setByteArrayMaxOverride(250000000);
 		try {
 			long intialTime = System.currentTimeMillis();
 
 			if (ExcelUtil.excelType(file)) {
-				workbook = new XSSFWorkbook(file.getInputStream());
-				XSSFSheet sheet = workbook.getSheetAt(0);
+				if(file.getContentType().equals(ExcelUtil.XLS_TYPE)) {
+					workbook = new HSSFWorkbook(file.getInputStream());
+				}else {
+					workbook = new XSSFWorkbook(file.getInputStream());
+				}
+				Sheet sheet = workbook.getSheetAt(0);
 				String headerCheck = ExcelUtil.headerCheck(sheet,ExcelUtil.HOSTEL_HEADERS);
 				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
 					long totalRecords = sheet.getLastRowNum();
+					
+					log.info("Total Records :: "+totalRecords);
+					
 					if (totalRecords > 0) {
 						// Method to Save the Data Synchronus
 //						getRowValues(sheet);
@@ -597,7 +604,7 @@ public class HostelServiceImpl implements HostelService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(XSSFSheet sheet,Long userId) {
+	public void getRowValues(Sheet sheet,Long userId) {
 		ArrayList<HostellerDTO> dataList = new ArrayList<>();
 		List<HostellerDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
