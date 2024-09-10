@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +26,6 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -301,7 +301,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Result uploadUserFile(MultipartFile file) {
 		Result result = new Result();
-		XSSFWorkbook workbook = null;
+		Workbook workbook = null;
 		CSVReader csvReader = null;
 		try {
 			long intialTime = System.currentTimeMillis();
@@ -309,7 +309,7 @@ public class UserServiceImpl implements UserService {
 
 			if (ExcelUtil.excelType(file)) {
 				workbook = new XSSFWorkbook(file.getInputStream());
-				XSSFSheet sheet = workbook.getSheetAt(0);
+				Sheet sheet = workbook.getSheetAt(0);
 				String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
 				if (headerCheck.isBlank()) {
 					long totalRecords = sheet.getLastRowNum();
@@ -395,7 +395,9 @@ public class UserServiceImpl implements UserService {
 			uploadFile.setUploadedById(userId);
 			uploadFile.setUploadType("Users");
 			String fileType = file.getOriginalFilename().split("\\.")[1];
-			String fileName = "Users_"+DateUtility.dateToString(LocalDateTime.now(), "yyyyMMddHHmmss")+fileType;
+			String fileName = "Users_" + 
+					DateUtility.dateToString(LocalDateTime.now(ZoneId.of("Asia/Kolkata")), "yyyyMMddHHmmss") 
+						+"."+ fileType;
 			uploadFile.setFileName(fileName);
 			uploadFile.setTotalCount(totalCount);
 			
@@ -411,7 +413,7 @@ public class UserServiceImpl implements UserService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(XSSFSheet sheet, UploadFile uploadFile) {
+	public void getRowValues(Sheet sheet, UploadFile uploadFile) {
 		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
