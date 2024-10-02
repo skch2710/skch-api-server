@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
@@ -116,13 +117,64 @@ public class ExcelUtil {
 		}
 		return false;
 	}
-
+	
 	public static String headerCheck(Sheet sheet, List<String> headers) {
+	    String error = "";
+	    try {
+	        if (sheet != null) {
+	            Iterator<Row> rowIterator = sheet.rowIterator();
+	            if (rowIterator.hasNext()) {
+	                Row headerRow = rowIterator.next();
+	                if (headerRow.getPhysicalNumberOfCells() > 0) {
+	                    List<String> excelHeaders = new ArrayList<>();
+	                    for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
+	                        String header = getCellValue(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
+	                        excelHeaders.add(header.trim());
+	                    }
+	                    
+	                    System.out.println(excelHeaders);
+	                    
+	                    // Compare the headers with the expected headers
+	                    if (Arrays.equals(headers.toArray(), excelHeaders.toArray())) {
+	                        error = "";
+	                    } else {
+	                        List<String> unMatched = IntStream.range(0, headers.size())
+	                                .filter(i -> i >= excelHeaders.size() || !headers.get(i).equals(excelHeaders.get(i)))
+	                                .mapToObj(headers::get).collect(Collectors.toList());
+	                        if (!unMatched.isEmpty()) {
+	                            error += "Missing Columns " + String.join(",", unMatched);
+	                        } else {
+	                            List<String> additionalData = IntStream.range(headers.size(), excelHeaders.size())
+	                                    .mapToObj(excelHeaders::get).filter(obj -> obj != null && !obj.isBlank())
+	                                    .collect(Collectors.toList());
+	                            if (!additionalData.isEmpty()) {
+	                                error += "Extra Columns " + String.join(",", additionalData);
+	                            }
+	                        }
+	                    }
+	                }
+	            } else {
+	                error += "Missing Columns " + String.join(",", headers);
+	            }
+
+	            // Check if the sheet has more than just the header row
+	            if (error.isBlank() && !rowIterator.hasNext()) {
+	                error += "Empty Template Uploaded";
+	            }
+	        } else {
+	            error += "Missing Columns " + String.join(",", headers);
+	        }
+	    } catch (Exception e) {
+	        log.error("Error in Header Check :: " + e);
+	        error += "Something Went Wrong";
+	    }
+	    return error;
+	}
+
+
+	public static String headerCheckOld(Sheet sheet, List<String> headers) {
 		String error = "";
 		try {
-//			Sheet sheet = workbook.getSheet("Template");
-//			if (workbook.getNumberOfSheets() > 0 && workbook.getSheetAt(0).getRow(0) != null
-//					&& workbook.getSheetAt(0).getRow(0).getPhysicalNumberOfCells() > 0) {
 			if(sheet != null && sheet.getRow(0) != null
 					&& sheet.getRow(0).getPhysicalNumberOfCells() > 0) {
 				Row headerRow = sheet.getRow(0);
@@ -607,11 +659,11 @@ public class ExcelUtil {
 			
 			int chunkSize = 10000;
 
-			for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i += chunkSize) {
+			for (int i = 0; i < sheet.getLastRowNum(); i += chunkSize) {
 	            int start = i;
-	            int end = Math.min(start + chunkSize, sheet.getPhysicalNumberOfRows());
+	            int end = Math.min(start + chunkSize, sheet.getLastRowNum());
 	            futures.add(CompletableFuture.supplyAsync(() -> 
-	            	processRows(sheet, start, end, 11), executorService));
+	            processRows(sheet, start, end, 11), executorService));
 	        }
 
 	        // Wait for all threads to finish and collect their results
@@ -625,7 +677,8 @@ public class ExcelUtil {
             
             long finalTime = System.currentTimeMillis();
             log.info("Total to convert the CSV :: "+(finalTime - intialTime));
-            
+            Path filePath = Paths.get("C:/Users/HP/Downloads/", "largeOne.csv");
+			Files.write(filePath, bao.toByteArray());
 		} catch (Exception e) {
 			log.error("Error in getCsvFile :: ",e);
 		} finally {
@@ -653,6 +706,59 @@ public class ExcelUtil {
 	    }
 	    return sb;
 	}
+	
+	public static ByteArrayOutputStream getCsvFileNew(Sheet sheet) {
+	    log.info("Starting at getCsvFile.......");
+
+	    long initialTime = System.currentTimeMillis();
+	    ByteArrayOutputStream bao = new ByteArrayOutputStream();
+
+	    try (OutputStreamWriter osw = new OutputStreamWriter(bao);
+	         BufferedWriter bufferedWriter = new BufferedWriter(osw)) {
+
+	        // Process all rows in the sheet
+	        StringBuilder sb = processRowsNew(sheet); 
+	        bufferedWriter.write(sb.toString());
+
+	        bufferedWriter.flush();
+	        
+	        long finalTime = System.currentTimeMillis();
+	        log.info("Total time to convert the CSV :: " + (finalTime - initialTime));
+	        Path filePath = Paths.get("C:/Users/HP/Downloads/", "largeOne.csv");
+	        Files.write(filePath, bao.toByteArray());
+	    } catch (Exception e) {
+	        log.error("Error in getCsvFile :: ", e);
+	    }
+
+	    return bao;
+	}
+
+	public static StringBuilder processRowsNew(Sheet sheet) {
+		StringBuilder sb = new StringBuilder();
+		try {
+			Iterator<Row> rowIterator = sheet.rowIterator();
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				if (row != null) {
+					for (int cellIndex = 0; cellIndex < 11; cellIndex++) {
+						if (cellIndex > 0) {
+							sb.append('|');
+						}
+						sb.append(getCellValue(row, cellIndex));
+					}
+					sb.append(System.lineSeparator());
+				}
+			}
+		} catch (Exception e) {
+			log.error("Error in Process Rows :: ", e);
+		}
+		return sb;
+	}
+
+
+
+
 	
 	public static StringBuilder processRowsParallelStream(Sheet sheet, int start, int end, int length) {
 	    return IntStream.range(start, end).parallel()

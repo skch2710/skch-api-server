@@ -33,10 +33,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.github.pjfanning.xlsx.StreamingReader;
 import com.opencsv.CSVReader;
 import com.skch.skchhostelservice.common.Constant;
 import com.skch.skchhostelservice.dao.UploadFileDAO;
 import com.skch.skchhostelservice.dao.UsersDAO;
+import com.skch.skchhostelservice.dto.FileUploadDTO;
 import com.skch.skchhostelservice.dto.Navigation;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.SubNavigarion;
@@ -299,7 +301,7 @@ public class UserServiceImpl implements UserService {
 	 * @return result
 	 */
 	@Override
-	public Result uploadUserFile(MultipartFile file) {
+	public Result uploadUserFile(MultipartFile file,FileUploadDTO dto) {
 		Result result = new Result();
 		Workbook workbook = null;
 		CSVReader csvReader = null;
@@ -308,27 +310,41 @@ public class UserServiceImpl implements UserService {
 			Long userId = JwtUtil.getUserId();
 
 			if (ExcelUtil.excelType(file)) {
-				workbook = new XSSFWorkbook(file.getInputStream());
+//				workbook = new XSSFWorkbook(file.getInputStream());
+				workbook = StreamingReader.builder()
+			                     .rowCacheSize(10000)    // Number of rows to keep in memory at once
+			                     .bufferSize(40960)      // Buffer size to use while reading the file
+			                     .open(file.getInputStream());
 				Sheet sheet = workbook.getSheetAt(0);
-				String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
-				if (headerCheck.isBlank()) {
+				if(dto.isValidation()) {
+					log.info("Total Rows :: "+sheet.getLastRowNum());
+					String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
+					if (headerCheck.isBlank()) {
+						long totalRecords = sheet.getLastRowNum();
+
+						result.setData("Uploaded " + totalRecords + " records.");
+						result.setStatusCode(HttpStatus.OK.value());
+						result.setSuccessMessage("SuccesFully Uploaded");
+					} else {
+						result.setErrorMessage(headerCheck);
+						result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+					}
+				}else {
+					ExcelUtil.getCsvFileNew(sheet);
+					
+//					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
+//					
+//					// Run Method Async
+//					CompletableFuture.runAsync(() -> {
+//						getRowValues(sheet, uploadFile);
+//						log.info("Before calling SP...");
+//						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); //Calling SP
+//					});
 					long totalRecords = sheet.getLastRowNum();
-					
-					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
-					
-					// Run Method Async
-					CompletableFuture.runAsync(() -> {
-						getRowValues(sheet, uploadFile);
-						log.info("Before calling SP...");
-						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); //Calling SP
-					});
 
 					result.setData("Uploaded " + totalRecords + " records.");
 					result.setStatusCode(HttpStatus.OK.value());
 					result.setSuccessMessage("SuccesFully Uploaded");
-				} else {
-					result.setErrorMessage(headerCheck);
-					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 				}
 			} else if (ExcelUtil.csvType(file)) {
 				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));

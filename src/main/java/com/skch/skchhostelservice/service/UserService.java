@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skchhostelservice.dto.FileUploadDTO;
 import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 
@@ -15,6 +16,6 @@ public interface UserService {
 	
 	ByteArrayOutputStream getUserTemplate();
 	
-	Result uploadUserFile(MultipartFile file);
+	Result uploadUserFile(MultipartFile file,FileUploadDTO dto);
 
 }

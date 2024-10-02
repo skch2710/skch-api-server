@@ -11,5 +11,6 @@ public class FileUploadDTO {
 	
 	private String id;
 	private String fileName;
+	private boolean isValidation;
 
 }

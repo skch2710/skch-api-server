@@ -93,7 +93,7 @@ public class UserController {
 	@PostMapping(path = "/upload-user-file", consumes = "multipart/form-data")
 	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
 			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
-		Result result = userService.uploadUserFile(file);
+		Result result = userService.uploadUserFile(file,dto);
 		return ResponseEntity.ok(result);
 	}
 }
