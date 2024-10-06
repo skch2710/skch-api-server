@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -312,10 +313,18 @@ public class UserServiceImpl implements UserService {
 			if (ExcelUtil.excelType(file)) {
 //				workbook = new XSSFWorkbook(file.getInputStream());
 				workbook = StreamingReader.builder()
-			                     .rowCacheSize(10000)    // Number of rows to keep in memory at once
-			                     .bufferSize(40960)      // Buffer size to use while reading the file
+			                     .rowCacheSize(100)    // Number of rows to keep in memory at once
+			                     .bufferSize(4096)      // Buffer size to use while reading the file
 			                     .open(file.getInputStream());
-				Sheet sheet = workbook.getSheetAt(0);
+//				Sheet sheet = workbook.getSheetAt(0);
+				Sheet sheet = null;
+				Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+				while(sheetIterator.hasNext()) {
+					Sheet existingSheet = sheetIterator.next();
+					if(existingSheet.getSheetName().trim().equals("Data Sheet")) {
+						sheet = existingSheet;
+					}
+				}
 				if(dto.isValidation()) {
 					log.info("Total Rows :: "+sheet.getLastRowNum());
 					String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
@@ -330,17 +339,27 @@ public class UserServiceImpl implements UserService {
 						result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 					}
 				}else {
-					ExcelUtil.getCsvFileNew(sheet);
-					
-//					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
-//					
-//					// Run Method Async
-//					CompletableFuture.runAsync(() -> {
-//						getRowValues(sheet, uploadFile);
-//						log.info("Before calling SP...");
-//						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); //Calling SP
-//					});
+					ExcelUtil.getCsvFileNew(sheet,ExcelUtil.USER_HEADERS.size());
 					long totalRecords = sheet.getLastRowNum();
+					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
+					
+//					Workbook toAsync = workbook;
+					
+					// Run Method Async
+//					CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+						getRowValues(workbook, uploadFile);
+						log.info("Before calling SP...");
+//						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); // Calling SP
+//					});
+					
+//					future.thenRun(() -> {
+//					    try {
+//					        toAsync.close();
+//					        log.info("Workbook closed successfully after async process.");
+//					    } catch (IOException e) {
+//					        log.error("Error closing the workbook: ", e);
+//					    }
+//					});
 
 					result.setData("Uploaded " + totalRecords + " records.");
 					result.setStatusCode(HttpStatus.OK.value());
@@ -429,7 +448,7 @@ public class UserServiceImpl implements UserService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(Sheet sheet, UploadFile uploadFile) {
+	public void getRowValues(Workbook workbook, UploadFile uploadFile) {
 		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -437,45 +456,60 @@ public class UserServiceImpl implements UserService {
 		int batchSize = 1000;
 		log.info("Starting getRowValues.....");
 		try {
-			sheet.forEach(row -> {
-				if (row.getRowNum() == 0) {
-					return;
+			Sheet sheet = null;
+			Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+			while (sheetIterator.hasNext()) {
+				Sheet existingSheet = sheetIterator.next();
+				if (existingSheet.getSheetName().trim().equals("Data Sheet")) {
+					sheet = existingSheet;
 				}
-				List<String> cellValues = IntStream.range(0, ExcelUtil.USER_HEADERS.size()).mapToObj(i -> {
-					Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-					return ExcelUtil.getCellValue(cell);
-				}).collect(Collectors.toList());
-				
-				UsersFileDTO dto = new UsersFileDTO(cellValues);
-				Map<String, String> errors = ValidationUtils.validate(dto);
+			}
+			Iterator<Row> rowIterator = sheet.rowIterator();
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				try {
+					if (row.getRowNum() == 0) {
+						return;
+					}
+					List<String> cellValues = IntStream.range(0, ExcelUtil.USER_HEADERS.size()).mapToObj(i -> {
+						Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+						return ExcelUtil.getCellValue(cell);
+					}).collect(Collectors.toList());
 
-				dto.setUploadFileId(uploadFile.getUploadFileId());
-				dto.setStatus("success");
-				if (!errors.isEmpty()) {
-					String error = errors.values().stream().collect(Collectors.joining(", "));
-					dto.setErrorMessage(error);
-					dto.setStatus("fail");
+					UsersFileDTO dto = new UsersFileDTO(cellValues);
+					Map<String, String> errors = ValidationUtils.validate(dto);
+
+					dto.setUploadFileId(uploadFile.getUploadFileId());
+					dto.setStatus("success");
+					if (!errors.isEmpty()) {
+						String error = errors.values().stream().collect(Collectors.joining(", "));
+						dto.setErrorMessage(error);
+						dto.setStatus("fail");
+					}
+					dataList.add(dto);
+
+					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+//					features.add(CompletableFuture.runAsync(() -> 
+//						batchInsert.saveInBatchUsers(dataList), executor));
+						dataList.clear();
+					}
+				} catch (Exception e) {
+					log.error("Error processing row: " + row.getRowNum(), e);
 				}
-				dataList.add(dto);
-				
-				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-					features.add(CompletableFuture.runAsync(() -> 
-						batchInsert.saveInBatchUsers(dataList), executor));
-					dataList.clear();
-				}
-			});
-			
+			}
+			;
+
 			if (!dataList.isEmpty()) {
-				features.add(CompletableFuture.runAsync(() -> 
-					batchInsert.saveInBatchUsers(dataList), executor));
+//				features.add(CompletableFuture.runAsync(() -> 
+//					batchInsert.saveInBatchUsers(dataList), executor));
 			}
 
 			// Wait for all threads to finish and collect their results
-        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
-		
-        log.info("Ending getRowValues.....");
+			CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+
+			log.info("Ending getRowValues.....");
 		} catch (Exception e) {
-			log.error("Error in get Row Values :: ",e);
+			log.error("Error in get Row Values :: ", e);
 		} finally {
 			executor.shutdown();
 		}
