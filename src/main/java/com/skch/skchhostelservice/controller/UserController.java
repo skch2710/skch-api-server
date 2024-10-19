@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,10 +56,18 @@ public class UserController {
 //	@PreAuthorize("hasAnyAuthority('Super User','Admin')")
 //	@PreAuthorize("hasAnyAuthority('User-R')")
 	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
-	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId){
-		Result result = userService.navigations(userId);
+	public ResponseEntity<?> getNav(@PathVariable("userId") String userId){
+//		Result result = userService.navigations(userId);
 		System.out.println(JwtUtil.getUserId());
-		return ResponseEntity.ok(result);
+		return ResponseEntity.ok("Access");
+	}
+	
+	@GetMapping("/nav-two")
+	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
+	public ResponseEntity<?> getNavTwo(@RequestParam("userId") String userId){
+//		Result result = userService.navigations(userId);
+		System.out.println(JwtUtil.getUserId());
+		return ResponseEntity.ok("Access");
 	}
 	
 	/**

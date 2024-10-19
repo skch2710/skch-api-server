@@ -140,6 +140,36 @@ public class SmbService {
             }
         }
     }
+    
+    public static void moveFiles(String filePath) {
+        SmbFile sourceFile = null;
+        SmbFile targetFile = null;
+        try {
+        	String smbUrl = "smb://" + domain +"//"+ filePath;
+        	sourceFile = new SmbFile(smbUrl, SmbService.getAuthContext());
+        	targetFile = new SmbFile(smbUrl.replaceAll("Queue", "Success"), SmbService.getAuthContext());
+        	
+        	if(sourceFile.exists()) {
+        		System.out.println("Connected to SMB share!");
+        		sourceFile.renameTo(targetFile);
+        	}else {
+        		System.out.println("Folder Not Found...");
+        	}
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (sourceFile != null) {
+                	sourceFile.close();
+                }
+                if(targetFile != null) {
+                	targetFile.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public static void main(String[] args) {
         try {
@@ -150,9 +180,12 @@ public class SmbService {
         	String fileName = "example_excel_3.xlsx";
         	ByteArrayOutputStream bao = Utility.createExcel();
         	
-        	writeFileToSmbFolder(folder,fileName,bao.toByteArray());
-        	readFiles(folder);
-        	deleteFiles(folder);
+//        	writeFileToSmbFolder(folder,fileName,bao.toByteArray());
+//        	readFiles(folder);
+//        	deleteFiles(folder);
+        	
+        	String queuefile = "SharedFolder/Queue/example_excel_1.xlsx";
+        	moveFiles(queuefile);
            
         } catch (Exception e) {
             e.printStackTrace();
