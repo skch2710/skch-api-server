@@ -16,14 +16,17 @@ public class Address {
     @SerializedName("country_name")
     private String countryName;
 
-//    @SerializedName("address_purpose")
-//    private String addressPurpose;
+    @SerializedName("address_purpose")
+    private String addressPurpose;
 
     @SerializedName("address_type")
     private String addressType;
 
     @SerializedName("address_1")
     private String address1;
+    
+    @SerializedName("address_2")
+    private String address2;
 
     @SerializedName("city")
     private String city;
@@ -34,7 +37,7 @@ public class Address {
     @SerializedName("postal_code")
     private String postalCode;
 
-//    @SerializedName("telephone_number")
-//    private String telephoneNumber;
+    @SerializedName("telephone_number")
+    private String telephoneNumber;
 }
 

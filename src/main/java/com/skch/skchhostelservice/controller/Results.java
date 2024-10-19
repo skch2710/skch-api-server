@@ -1,7 +1,6 @@
 package com.skch.skchhostelservice.controller;
 
 import java.util.List;
-import java.util.Set;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -30,7 +29,10 @@ public class Results {
     private Basic basic;
 
     @SerializedName("addresses")
-    private Set<Address> addresses;
+    private List<Address> addresses;
+    
+    @SerializedName("practiceLocations")
+    private List<Address> practiceLocations;
 
     @SerializedName("taxonomies")
     private List<Taxonomy> taxonomies;

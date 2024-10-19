@@ -1,12 +1,15 @@
 package com.skch.skchhostelservice.util;
 
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
@@ -18,6 +21,31 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RestClientHelper {
 	
+	public static RetryTemplate retryTemplate() {
+		Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
+		retryableExceptions.put(Exception.class, true);
+		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions);
+		return RetryTemplate.builder().customPolicy(retryPolicy).fixedBackoff(2000).build();
+	}
+	
+	public static <T> T getRetry(String url, Class<T> responseType) {
+		try {
+			return retryTemplate().execute(context -> {
+				try {
+					ResponseEntity<T> response = RestClient.create().get().uri(url)
+							.retrieve().toEntity(responseType);
+					return response.getBody();
+				} catch (Exception e) {
+					int count = context.getRetryCount() + 1;
+					log.error("Error in getRetry #{} attempt failed : {}", count, e.getMessage(), e);
+					throw e;
+				}
+			});
+		} catch (Exception e) {
+			log.error("Error in getRetry ", e);
+			return null;
+		}
+	}
 	
 	public static <T> T get(String url, String auth, Class<T> responseType) {
 		ResponseEntity<T> response = RestClient.create().get()
@@ -85,5 +113,5 @@ public class RestClientHelper {
 		}
 		return response!=null ? response.getBody() : null;
 	}
-
+	
 }

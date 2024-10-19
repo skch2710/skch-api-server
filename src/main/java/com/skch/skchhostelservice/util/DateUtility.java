@@ -2,6 +2,7 @@ package com.skch.skchhostelservice.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -113,6 +114,10 @@ public class DateUtility {
 			}
 		}
 		return result;
+	}
+	
+	public static LocalDateTime getLongMilli(long timeMilli) {
+		return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMilli), ZoneId.systemDefault());
 	}
 	
 //	public static void main(String[] args) {

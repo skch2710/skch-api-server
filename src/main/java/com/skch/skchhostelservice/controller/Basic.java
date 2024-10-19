@@ -9,11 +9,14 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Basic {
+	
+	@SerializedName("organization_name")
+	private String organizationName;
 
-    @SerializedName("first_name")
+    @SerializedName(value = "first_name", alternate = "authorized_official_first_name")
     private String firstName;
 
-    @SerializedName("last_name")
+    @SerializedName(value = "last_name", alternate = "authorized_official_last_name")
     private String lastName;
 
     @SerializedName("gender")
