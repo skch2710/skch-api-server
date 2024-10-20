@@ -1,4 +1,4 @@
-package com.skch.skchhostelservice.controller;
+package com.skch.skchhostelservice.dto;
 
 import java.util.List;
 

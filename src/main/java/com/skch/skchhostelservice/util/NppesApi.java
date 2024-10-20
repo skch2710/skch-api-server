@@ -1,10 +1,9 @@
-package com.skch.skchhostelservice.controller;
+package com.skch.skchhostelservice.util;
 
 import org.apache.commons.lang3.ObjectUtils;
 
 import com.google.gson.Gson;
-import com.skch.skchhostelservice.util.RestClientHelper;
-import com.skch.skchhostelservice.util.RestHelper;
+import com.skch.skchhostelservice.dto.NppesResponse;
 
 import lombok.extern.slf4j.Slf4j;
 

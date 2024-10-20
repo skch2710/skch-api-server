@@ -1,4 +1,4 @@
-package com.skch.skchhostelservice.controller;
+package com.skch.skchhostelservice.dto;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
