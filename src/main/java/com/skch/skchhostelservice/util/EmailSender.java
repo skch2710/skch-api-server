@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -63,21 +64,24 @@ public class EmailSender {
 	 * @param bos
 	 */
 	public void sendEmail(Map<String, Object> model,ByteArrayOutputStream bos) {
-		log.info("Staring at sendEmail ...... "+model);
+		log.info("Staring at sendEmail ...... " + model);
 		MimeMessage message = mailSender.createMimeMessage();
 		try {
 			
 			MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
 					StandardCharsets.UTF_8.name());
-
-			helper.setTo(model.get("toMail").toString());
+			if(ObjectUtils.isNotEmpty(model.get("toMailType")) && model.get("toMailType").equals("Array")) {
+				helper.setTo(model.get("toMail").toString().split(","));
+			}else {
+				helper.setTo(model.get("toMail").toString());
+			}
 			helper.setText(createTemplate(model.get("htmlFile").toString(), model), true);
 			helper.setSubject(model.get("subject").toString());
 			helper.setFrom(fromEmail, personalMessage);
 			// Add the embedded image signature to the email message.
 			FileSystemResource rsc = new FileSystemResource("src/main/resources/images/image.png");
 			helper.addInline("signature", rsc);
-			if(bos!=null) {
+			if (bos != null) {
 				// Attach the file
 				ByteArrayDataSource dataSource = new ByteArrayDataSource(bos.toByteArray(), model.get("type").toString());
 				helper.addAttachment(model.get("fileName").toString(), dataSource);	
