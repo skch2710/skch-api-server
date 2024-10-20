@@ -34,9 +34,9 @@ spring:
 #          jwk-set-uri: http://localhost:8060/.well-known/jwks.json
 
   mail:
-    host: smtp.office365.com
-    username: temp2710@outlook.com
-    password: Temp@2710
+    host: smtp.gmail.com
+    username: test@gmail.com
+    password: mypass
     protocol: smtp
     port: 587
     properties:

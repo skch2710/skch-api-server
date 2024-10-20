@@ -52,7 +52,7 @@ public class EmailSender {
 	        String result = FreeMarkerTemplateUtils.processTemplateIntoString(t, model); 
 	        return result;
 	    } catch (IOException | TemplateException e) {
-	        log.error("Error in createTemplate....::",e);
+			log.error("Error in createTemplate....:: {} ", e.getMessage(), e);
 	        return "";
 	    }
 	}
@@ -79,7 +79,7 @@ public class EmailSender {
 			helper.setSubject(model.get("subject").toString());
 			helper.setFrom(fromEmail, personalMessage);
 			// Add the embedded image signature to the email message.
-			FileSystemResource rsc = new FileSystemResource("src/main/resources/images/image.png");
+			FileSystemResource rsc = new FileSystemResource("src/main/resources/images/logo-one.png");
 			helper.addInline("signature", rsc);
 			if (bos != null) {
 				// Attach the file
@@ -89,7 +89,7 @@ public class EmailSender {
 			mailSender.send(message);
 			log.info("Ending at sendEmail ...... ");
 		} catch (Exception e) {
-			log.error("Error in sendMail....::",e);
+			log.error("Error in sendMail....:: {} ", e.getMessage(), e);
 		}
 	}
 
@@ -100,7 +100,7 @@ public class EmailSender {
 	 * @param toMail the to mail
 	 */
 	@Async
-	public void sendEmailWelcome(Map<String, Object> model) {
+	public void sendEmail(Map<String, Object> model) {
 		sendEmail(model, null);
 	}
 	

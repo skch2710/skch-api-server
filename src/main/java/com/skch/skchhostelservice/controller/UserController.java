@@ -2,6 +2,12 @@ package com.skch.skchhostelservice.controller;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -24,6 +30,7 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.UserService;
+import com.skch.skchhostelservice.util.EmailSender;
 import com.skch.skchhostelservice.util.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -104,5 +111,28 @@ public class UserController {
 			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
 		Result result = userService.uploadUserFile(file,dto);
 		return ResponseEntity.ok(result);
+	}
+	
+	@Autowired
+	private EmailSender emailSender;
+	
+	@GetMapping("/user-mail")
+	public ResponseEntity<?> getUserMail() throws UnsupportedEncodingException {
+
+		Map<String, Object> mapModel = new HashMap<>();
+		mapModel.put("toMail", "temp2710@outlook.com");
+		mapModel.put("htmlFile", "create-password.ftlh");
+		mapModel.put("subject", "Create Password");
+
+		String uuid = UUID.randomUUID().toString();
+		Long timeMilli = System.currentTimeMillis();
+		System.out.println(uuid);
+		String link = "https://localhost:8080/createPassword?uuid=" + uuid + "#" + timeMilli;
+//        String encodedLink = URLEncoder.encode(link, StandardCharsets.UTF_8.name());
+		mapModel.put("createPasswordLink", link);
+
+		emailSender.sendEmail(mapModel);
+		
+		return ResponseEntity.ok("Mail Sent.");
 	}
 }
