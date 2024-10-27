@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 
 import com.skch.skchhostelservice.dto.LoginRequest;
 import com.skch.skchhostelservice.dto.Result;
+import com.skch.skchhostelservice.dto.ValidateLinkDTO;
 
 public interface LoginService {
 
@@ -12,5 +13,7 @@ public interface LoginService {
 	Result verifyOTP(LoginRequest request);
 	
 	ByteArrayOutputStream getPdf();
+	
+	Result validateUuid(ValidateLinkDTO dto);
 	
 }

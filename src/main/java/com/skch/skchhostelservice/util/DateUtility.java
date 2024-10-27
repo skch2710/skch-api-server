@@ -116,8 +116,10 @@ public class DateUtility {
 		return result;
 	}
 	
-	public static LocalDateTime getLongMilli(long timeMilli) {
-		return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMilli), ZoneId.systemDefault());
+	public static LocalDateTime getLongMilli(Long timeMilli) {
+		return timeMilli != null ? 
+			LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMilli), ZoneId.systemDefault())
+		: null ;
 	}
 	
 //	public static void main(String[] args) {

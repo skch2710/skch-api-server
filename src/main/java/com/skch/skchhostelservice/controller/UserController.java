@@ -30,6 +30,7 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.UserService;
+import com.skch.skchhostelservice.util.AESUtils;
 import com.skch.skchhostelservice.util.EmailSender;
 import com.skch.skchhostelservice.util.JwtUtil;
 
@@ -124,10 +125,11 @@ public class UserController {
 		mapModel.put("htmlFile", "create-password.ftlh");
 		mapModel.put("subject", "Create Password");
 
-		String uuid = UUID.randomUUID().toString();
+		String uuid = UUID.randomUUID().toString().split("-")[0];
 		Long timeMilli = System.currentTimeMillis();
 		System.out.println(uuid);
-		String link = "https://localhost:8080/createPassword?uuid=" + uuid + "#" + timeMilli;
+		
+		String link = "https://localhost:8080/createPassword?uuid=" + AESUtils.encrypt(uuid + "#" + timeMilli);
 //        String encodedLink = URLEncoder.encode(link, StandardCharsets.UTF_8.name());
 		mapModel.put("createPasswordLink", link);
 

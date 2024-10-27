@@ -66,5 +66,8 @@ public class Users extends Audit{
     
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "users", cascade = CascadeType.ALL)
 	private List<UserPrivilege> userPrivilege;
+    
+    @OneToOne(fetch = FetchType.EAGER, mappedBy = "users", cascade = CascadeType.ALL)
+   	private UserValidation userValidation;
 
 }

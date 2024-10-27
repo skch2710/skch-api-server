@@ -14,9 +14,7 @@ public class LinkUtil {
 		
 		Long timeMilli = System.currentTimeMillis();
 		
-		System.out.println(uuid);
-		
-		String link = "https://localhost:8080/createPassword?uuid="+uuid+"#"+timeMilli;
+		String link = "https://localhost:8080/createPassword?uuid="+ AESUtils.encrypt(uuid+"#"+timeMilli);
 		
 		System.out.println(link);
 		

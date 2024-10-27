@@ -1,12 +1,14 @@
 package com.skch.skchhostelservice.service.impl;
 
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,10 +20,10 @@ import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.skch.skchhostelservice.dao.UserValidationDAO;
 import com.skch.skchhostelservice.dao.UsersDAO;
 import com.skch.skchhostelservice.dto.JwtDTO;
 import com.skch.skchhostelservice.dto.LoginRequest;
@@ -31,11 +33,15 @@ import com.skch.skchhostelservice.dto.Result;
 import com.skch.skchhostelservice.dto.SubNavigarion;
 import com.skch.skchhostelservice.dto.UserDTO;
 import com.skch.skchhostelservice.dto.UserPrivilegeDTO;
+import com.skch.skchhostelservice.dto.ValidateLinkDTO;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.mapper.ObjectMapper;
+import com.skch.skchhostelservice.model.UserValidation;
 import com.skch.skchhostelservice.model.Users;
 import com.skch.skchhostelservice.service.LoginService;
+import com.skch.skchhostelservice.util.AESUtils;
 import com.skch.skchhostelservice.util.CacheService;
+import com.skch.skchhostelservice.util.DateUtility;
 import com.skch.skchhostelservice.util.JwtUtil;
 import com.skch.skchhostelservice.util.PdfHelper;
 
@@ -52,6 +58,9 @@ public class LoginServiceImpl implements LoginService {
 
 	@Autowired
 	private UsersDAO userDAO;
+	
+	@Autowired
+	private UserValidationDAO userValidationDAO;
 
 	/** The otp service. */
 	@Autowired
@@ -255,6 +264,59 @@ public class LoginServiceImpl implements LoginService {
 		
 		PdfHelper.imageBgm(bgmPath, backCard,cell, 158);
 		return backCard;
+	}
+
+	/**
+	 * Validate the Email Link
+	 * 
+	 * @param dto
+	 * @return result
+	 */
+	@Override
+	public Result validateUuid(ValidateLinkDTO dto) {
+		Result result = new Result();
+		try {
+			if (ObjectUtils.isNotEmpty(dto.getEnv()) && dto.getEnv().equals("Dev")
+					&& ObjectUtils.isNotEmpty(dto.getUuid())) {
+				String decryptedUuid = "";
+				try {
+					decryptedUuid = AESUtils.decrypt(dto.getUuid());
+				}catch(Exception e) {
+					log.error("Error in UUID decrypt :: {}", e.getMessage(), e);
+					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+					result.setErrorMessage("Link not valid.");
+					return result;
+				}
+				UserValidation userValidation = userValidationDAO
+						.findByUuidTypeAndUuidLink(dto.getLinkType(),decryptedUuid);
+				String[] uuidData = decryptedUuid.split("#");
+				Long timeMilli = uuidData.length > 1 ?  Long.valueOf(uuidData[1]) : null;
+				LocalDateTime generateTime = DateUtility.getLongMilli(timeMilli);
+
+				log.info("Generated Date :: {}",generateTime);
+				
+				if (generateTime != null && !generateTime.isBefore(LocalDateTime.now().minusDays(1)) 
+						&& ObjectUtils.isNotEmpty(userValidation)) {
+					result.setStatusCode(HttpStatus.OK.value());
+					result.setErrorMessage("Link Valid.");
+				} else {
+					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+					result.setErrorMessage("Link expired.");
+				}
+				if (ObjectUtils.isNotEmpty(userValidation) 
+						&& ObjectUtils.isNotEmpty(userValidation.getUuidLink())) {
+					userValidation.setUuidLink(null);
+					userValidationDAO.save(userValidation);
+				}
+			} else {
+				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+				result.setErrorMessage("Link not valid.");
+			}
+		} catch (Exception e) {
+			log.error("Error in validateUuid :: {}", e.getMessage(), e);
+			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
 	}
 	
 }

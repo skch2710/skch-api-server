@@ -27,7 +27,7 @@ public class UserPrivilege  extends Audit{
     @Column(name = "user_privileges_id")
     private Long userPrivilegesId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = true)
 	private Users users;
 

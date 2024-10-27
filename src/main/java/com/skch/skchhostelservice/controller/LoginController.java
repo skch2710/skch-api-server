@@ -42,6 +42,7 @@ import com.skch.skchhostelservice.dto.JwtDTO;
 import com.skch.skchhostelservice.dto.LoginRequest;
 import com.skch.skchhostelservice.dto.ReqSearch;
 import com.skch.skchhostelservice.dto.Result;
+import com.skch.skchhostelservice.dto.ValidateLinkDTO;
 import com.skch.skchhostelservice.exception.CustomException;
 import com.skch.skchhostelservice.service.LoginService;
 import com.skch.skchhostelservice.util.DateUtility;
@@ -347,4 +348,16 @@ public class LoginController {
     	
    		return ResponseEntity.ok(jwt);
    	}
+    
+    /**
+	 * Validate the Email Link
+	 * @param dto
+	 * @return result
+	 */
+    @PostMapping("/validate-uuid")
+	public ResponseEntity<?> validateUuid(@RequestBody ValidateLinkDTO dto) {
+    	Result result = loginService.validateUuid(dto);
+		return ResponseEntity.ok(result);
+	}
+    
 }
