@@ -61,13 +61,13 @@ public class Users extends Audit{
     @Column(name = "last_password_reset_date")
     private LocalDateTime lastPasswordResetDate;
     
-    @OneToOne(fetch = FetchType.EAGER, mappedBy = "users", cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "users", cascade = CascadeType.ALL)
 	private UserRole userRole;
     
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "users", cascade = CascadeType.ALL)
 	private List<UserPrivilege> userPrivilege;
     
-    @OneToOne(fetch = FetchType.EAGER, mappedBy = "users", cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "users", cascade = CascadeType.ALL)
    	private UserValidation userValidation;
 
 }

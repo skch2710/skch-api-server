@@ -17,7 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class AESUtils {
 
-	private static String ENCRYPTION_KEY;
+	private static String aesValue;
+	
 	private static final String AES_PADDING = "AES/GCM/NoPadding";
 	private static final String AES = "AES";
 	private static final int GCM_IV_LENGTH = 12; // 12 bytes recommended for GCM
@@ -25,9 +26,9 @@ public class AESUtils {
 
 	@Value("${app.aes-key}")
 	public void aesKey(String aesKey) {
-		AESUtils.ENCRYPTION_KEY = aesKey;
+		aesValue = aesKey;
 	}
-
+	
 	public static String encrypt(String data) {
 		String result = "";
 		try {
@@ -87,7 +88,7 @@ public class AESUtils {
 	public static SecretKeySpec getSecretKeySpec() {
 		SecretKeySpec secretKey = null;
 		try {
-			byte[] key = Base64.getDecoder().decode(ENCRYPTION_KEY);
+			byte[] key = Base64.getDecoder().decode(aesValue);
 			secretKey = new SecretKeySpec(key, AES);
 		} catch (Exception e) {
 			log.error("getSecretKeySpec error: {}", e.getMessage(), e);

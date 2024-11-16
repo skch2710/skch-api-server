@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,7 +26,7 @@ public class BatchInsert {
 
 	private final JdbcTemplate jdbcTemplate;
 	
-	private final int batchSize = 1000;
+	private int batchSize = 1000;
 
 	public BatchInsert(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
@@ -33,16 +34,16 @@ public class BatchInsert {
 
 	private String insertQueryHostellers = "INSERT INTO hostel.hostellers(full_name, email_id, phone_number,dob, fee, "
 			+ "joining_date, address, proof, reason, vacated_date, active, "
-			+ "created_by_id, created_date, modified_by_id, modified_date)\r\n"
-			+ "	VALUES (?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			+ "created_by_id, created_date, modified_by_id, modified_date)"
+			+ "VALUES (?, ?, ?, ?,? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-	private String insertQueryUsers = "INSERT INTO hostel.users_file_data(\r\n"
-			+ "	first_name, last_name, email_id, phone_number, dob, role_name, is_active, upload_file_id, status, error_message)\r\n"
-			+ "	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	private String insertQueryUsers = "INSERT INTO hostel.users_file_data"
+			+ "(first_name, last_name, email_id, phone_number, dob, role_name, is_active, upload_file_id, status, error_message)"
+			+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	
 	
 	@Transactional
-    public void saveInBatchHostellers(ArrayList<HostellerDTO> list) {
+    public void saveInBatchHostellers(List<HostellerDTO> list) {
         try {
             jdbcTemplate.batchUpdate(this.insertQueryHostellers, list, this.batchSize,
                     new ParameterizedPreparedStatementSetter<HostellerDTO>() {
@@ -101,7 +102,7 @@ public class BatchInsert {
 	 * @param list
 	 */
 	@Transactional
-	public void saveInBatchUsers(ArrayList<UsersFileDTO> list) {
+	public void saveInBatchUsers(List<UsersFileDTO> list) {
 		try {
 			jdbcTemplate.batchUpdate(this.insertQueryUsers, list, this.batchSize,
 					new ParameterizedPreparedStatementSetter<UsersFileDTO>() {

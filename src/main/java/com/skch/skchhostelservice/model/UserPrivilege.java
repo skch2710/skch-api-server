@@ -31,7 +31,7 @@ public class UserPrivilege  extends Audit{
 	@JoinColumn(name = "user_id", nullable = true)
 	private Users users;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "resource_id", nullable = true)
 	private Resource resource;
 

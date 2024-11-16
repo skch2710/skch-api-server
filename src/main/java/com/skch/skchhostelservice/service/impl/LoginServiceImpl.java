@@ -77,6 +77,8 @@ public class LoginServiceImpl implements LoginService {
 		Result result = null;
 		LoginResponse loginResponse = null;
 		try {
+			log.info("Decrypted Password :: {} ",AESUtils.decrypt(request.getPassword()));
+			request.setPassword(AESUtils.decrypt(request.getPassword()));
 			result = new Result();
 			loginResponse = new LoginResponse();
 			Users user = userDAO.findByEmailIdIgnoreCase(request.getEmailId().toLowerCase());
@@ -93,6 +95,7 @@ public class LoginServiceImpl implements LoginService {
 					if (isOtpEnable) {
 						String otp = cacheService.generateOTP(request.getEmailId().toLowerCase().trim());
 						loginResponse.setOtp(otp);
+						
 						result.setData(loginResponse);
 						result.setSuccessMessage("OTP has been send to Mail");
 						result.setStatusCode(HttpStatus.OK.value());
@@ -104,6 +107,7 @@ public class LoginServiceImpl implements LoginService {
 						loginResponse.setUser(userDto);
 						loginResponse.setNavigations(getNavigations(user));
 						loginResponse.setJwtDTO(jwtDTO);
+						
 						result.setData(loginResponse);
 						result.setSuccessMessage("Login Succesfully.....");
 						result.setStatusCode(HttpStatus.OK.value());

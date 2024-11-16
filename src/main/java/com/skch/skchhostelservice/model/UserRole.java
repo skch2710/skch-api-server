@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,11 +26,11 @@ public class UserRole extends Audit{
     @Column(name = "user_role_id")
     private Long userRoleId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = true)
 	private Users users;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "role_id", nullable = true)
 	private Roles roles;
 

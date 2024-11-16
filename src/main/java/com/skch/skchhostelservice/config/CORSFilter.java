@@ -23,9 +23,11 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@Slf4j
 public class CORSFilter implements Filter {
 
 	private static final Pattern XSS_PATTERN = Pattern.compile("<[^>]+>", Pattern.CASE_INSENSITIVE);
@@ -67,11 +69,17 @@ public class CORSFilter implements Filter {
             }
 
 			chain.doFilter(wrappedRequest, res);
-		} catch (Exception e) {
+		} catch (ServletException e) {
 			response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
 			response.setContentType("application/json");
 			ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_ACCEPTABLE.value(),
 					"Potential XSS detected in request body!", e.getMessage());
+			response.getWriter().write(new Gson().toJson(errorResponse));
+		}catch (Exception e) {
+			response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+			response.setContentType("application/json");
+			ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+					"Internal Server Error.", e.getMessage());
 			response.getWriter().write(new Gson().toJson(errorResponse));
 		}
 	}
@@ -95,7 +103,7 @@ public class CORSFilter implements Filter {
         // Check request parameters
         for (String[] paramValue : request.getParameterMap().values()) {
             for (String value : paramValue) {
-            	System.out.println("Param Value : "+value);
+            	log.info("Param Value : "+value);
                 if (hasXSS(value)) {
                     return true;
                 }
@@ -104,7 +112,7 @@ public class CORSFilter implements Filter {
         // Check path variables (from the URI)
         try {
             String decodedPath = URLDecoder.decode(request.getRequestURI(), StandardCharsets.UTF_8.name());
-            System.out.println(decodedPath);
+            log.info(decodedPath);
             if (hasXSS(decodedPath)) {
                 return true;
             }

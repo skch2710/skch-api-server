@@ -81,6 +81,7 @@ public class SmbService {
                 SmbFile[] listFiles = smbFolder.listFiles();
                 for (SmbFile file : listFiles) {
                 	System.out.println("File Name : "+file.getName());
+                	
 				}
         		
         	}else {
@@ -115,7 +116,7 @@ public class SmbService {
                 	LocalDateTime dateTime = DateUtility.getLongMilli(file.lastModified());
                 	System.out.println("Last Modified Date: " + dateTime);
                 	
-                	if(dateTime.isBefore(LocalDateTime.now().minusDays(10))) {
+                	if(file.isFile() && dateTime.isBefore(LocalDateTime.now().minusDays(10))) {
                 		System.out.println("File is 10 Days Old " + dateTime);
                 		try {
 							file.delete();
