@@ -6,12 +6,20 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.util.Date;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DateUtility {
-	
+
+	private DateUtility() {
+		throw new IllegalStateException("DateUtility class");
+	}
+
 	/**
 	 * FORMATS 
 	 * 
@@ -122,8 +130,28 @@ public class DateUtility {
 		: null ;
 	}
 	
-//	public static void main(String[] args) {
-//		System.out.println(stringToDateTimes("21-01-2024","dd-MM-yyyy"));
-//	}
+	public static void main(String[] args) {
+		long value = System.currentTimeMillis();
+		
+		log.info("DateTime in UTC :: {}",toLocalDateTimeUtc(value));
+		
+		log.info("Date in UTC :: {}",toLocalDateUtc(value));
+		
+		long date = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli();
+		
+		log.info("Long Date in UTC :: {}",date);
+	}
+	
+	public static LocalDateTime toLocalDateTimeUtc(Long timeMilli) {
+		return timeMilli != null ? 
+			LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMilli), ZoneOffset.UTC)
+		: null ;
+	}
+	
+	public static LocalDate toLocalDateUtc(Long timeMilli) {
+		return timeMilli != null ? 
+			LocalDate.ofInstant(Instant.ofEpochMilli(timeMilli), ZoneOffset.UTC)
+		: null ;
+	}
 	
 }
