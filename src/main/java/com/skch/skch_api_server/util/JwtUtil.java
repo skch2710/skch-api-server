@@ -45,6 +45,7 @@ public class JwtUtil {
 	
 	public JwtDTO getRefreshToken(String token) {
 		JwtDTO dto = null;
+		log.info(">>>>>Starting at get refresh token...");
 		try {
 			Map<String,String> values = new HashMap<>();
 			values.put("url", url);

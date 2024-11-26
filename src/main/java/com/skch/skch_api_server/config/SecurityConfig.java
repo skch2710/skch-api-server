@@ -37,9 +37,9 @@ public class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		return http
+		return http.securityMatcher("/api/v1/**")
 				.authorizeHttpRequests(
-						auth -> auth.requestMatchers("/api/authenticate/**", "/swagger-ui/**", "/v3/api-docs/**")
+						auth -> auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
 								.permitAll().anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
