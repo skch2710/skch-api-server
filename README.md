@@ -1,2 +1,0 @@
-# skch-hostel-service
- 

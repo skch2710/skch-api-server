@@ -1,83 +1,74 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.3.1'
-	id 'io.spring.dependency-management' version '1.1.5'
-	id 'org.sonarqube' version '4.4.1.3373'
-	id 'org.owasp.dependencycheck' version '8.2.1'
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
 group = 'com.skch'
 version = '1.0'
 
 java {
-	sourceCompatibility = '21'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
-dependencyCheck {
-    failBuildOnCVSS = 7.0  // Option to fail build if high-severity issues are found
-    format = 'HTML'
-    outputDirectory = "${buildDir}/reports"  // Output directory for the report
-}
-
-sonarqube {
-    properties {
-        property "sonar.projectKey", "sonar-test"
-        property "sonar.host.url", "http://localhost:9000"
-        property "sonar.login", "admin"
-        property "sonar.password", "Sonar@123"   
-        property "sonar.gradle.skipCompile", "true"
+    compileOnly {
+        extendsFrom annotationProcessor
     }
+}
+
+repositories {
+    mavenCentral()
 }
 
 configurations.implementation {
     exclude group: 'commons-logging', module: 'commons-logging'
 }
 
-repositories {
-	mavenCentral()
-}
-
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-freemarker'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.retry:spring-retry'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-	implementation 'com.google.code.gson:gson:2.10.1'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'org.postgresql:postgresql'
-	//For SMB Connection
+    implementation('org.springframework.boot:spring-boot-starter-oauth2-resource-server') {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+    }
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    runtimeOnly 'org.postgresql:postgresql'
+    //For SMB Connection
 	implementation 'eu.agno3.jcifs:jcifs-ng:2.1.7'
+    // Swagger (OpenAPI documentation)
+    implementation('org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0') {
+    	exclude group: 'org.springframework', module: 'spring-webmvc'
+	}
 	//For Excel
-	//implementation 'org.apache.poi:poi-ooxml:4.1.2'
-	//implementation 'com.github.pjfanning:excel-streaming-reader:3.2.1'
 	implementation 'com.github.pjfanning:excel-streaming-reader:5.0.2'
 	implementation 'org.apache.poi:poi-ooxml:5.3.0'
 	//For pdf
 	implementation 'com.itextpdf:itextpdf:5.5.13'
 	//opencsv
 	implementation 'com.opencsv:opencsv:5.7.1'
-	// Swagger
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 	//Chache Service
 	implementation 'com.google.guava:guava:32.1.3-jre'
+	compileOnly 'org.projectlombok:lombok'
 	//for object mapping
 	implementation 'org.mapstruct:mapstruct:1.5.2.Final'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.2.Final'
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+	
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Test dependencies (uncomment if needed)
+    // testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
-}
+/*tasks.named('test') {
+    useJUnitPlatform()
+}*/

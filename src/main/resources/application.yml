@@ -7,6 +7,8 @@ server:
     max-swallow-size: 200000000
 
 spring:
+  application:
+    name: skch-api-server
   datasource:
     url: ${JDBC_CONNECTION_STRING}
     username: ${DB_USERNAME}
@@ -34,8 +36,8 @@ spring:
 #          jwk-set-uri: http://localhost:8060/.well-known/jwks.json
 
   mail:
-    host: smtp.gmail.com
-    username: test@gmail.com
+    host: smtp.office365.com #smtp.gmail.com
+    username: skch@outlook.com
     password: mypass
     protocol: smtp
     port: 587
@@ -44,7 +46,7 @@ spring:
         smtp:
           starttls:
             enable: true
-          auth: true
+          auth: false
   threads:
     virtual:
       enabled: true
@@ -64,15 +66,12 @@ app:
   
 #logging:
 #  level:
+#    web: DEBUG
 #    org:
 #      hibernate:
 #        SQL: DEBUG
 #        type: TRACE
-#      springframework:
-#        jdbc:
-#          core:
-#            JdbcTemplate: DEBUG
-#            StatementCreatorUtils: TRACE
+#      springframework: DEBUG
 #        security: DEBUG
 #        cache: DEBUG
 #        aop: DEBUG

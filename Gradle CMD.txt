@@ -1,0 +1,9 @@
+>> gradlew clean build --refresh-dependencies
+
+>> gradle clean build
+
+>> gradlew dependencies
+
+>> gradlew dependencies > dependencies.txt
+
+>> gradlew dependencyInsight --dependency spring-web
