@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -278,7 +279,7 @@ public class HostelServiceImpl implements HostelService {
 		try {
 			Map<String, String> clf = new HashMap<>(Map.of(Constant.FULL_NAME, ""));
 
-			if (search.getColumnFilters() != null) {
+			if (ObjectUtils.isNotEmpty(search.getColumnFilters())) {
 				for (ColumnFilter filter : search.getColumnFilters()) {
 					if (clf.containsKey(filter.getColumn().getField())) {
 						clf.put(filter.getColumn().getField(), filter.getValue());
@@ -292,7 +293,7 @@ public class HostelServiceImpl implements HostelService {
 					clf.get(Constant.FULL_NAME));
 
 		} catch (Exception e) {
-			log.error("Error at getHostelRecords :: " + e);
+			log.error("Error at getHostelRecords :: { }", e.getMessage(),e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return hostellerGridList;
