@@ -277,7 +277,9 @@ public class HostelServiceImpl implements HostelService {
 	public List<HostellerGrid> getHostelRecords(HostellerSearch search) {
 		List<HostellerGrid> hostellerGridList = new ArrayList<>();
 		try {
-			Map<String, String> clf = new HashMap<>(Map.of(Constant.FULL_NAME, ""));
+//			Map<String, String> clf = new HashMap<>(Map.of(Constant.FULL_NAME, ""));
+			Map<String, String> clf = new HashMap<>(
+					Map.ofEntries(Map.entry(Constant.FULL_NAME, "")));
 
 			if (ObjectUtils.isNotEmpty(search.getColumnFilters())) {
 				for (ColumnFilter filter : search.getColumnFilters()) {
