@@ -43,6 +43,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import com.opencsv.ICSVWriter;
 import com.skch.skch_api_server.common.Constant;
 import com.skch.skch_api_server.dao.HostellerDAO;
 import com.skch.skch_api_server.dao.HostellerGridDAO;
@@ -212,7 +213,7 @@ public class HostelServiceImpl implements HostelService {
 	 */
 	@Override
 	public Result getHostellers(HostellerSearch search) {
-		log.info("Starting at getHostellers.....");
+		log.info("Starting at getHostellers.....:: {}",System.currentTimeMillis());
 		Result result = new Result();
 		try {
 			if (!search.isExportExcel() && !search.isExportCsv() &&
@@ -239,7 +240,7 @@ public class HostelServiceImpl implements HostelService {
 				}
 			} else if (search.isExportExcel()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
-				result.setBao(getHostelGridExcel(hostellerGridList));
+				result.setBao(getHostelGridExcelNew(hostellerGridList));
 				result.setFileName("Hostel_Data.xlsx");
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			} else if (search.isExportCsv()) {
@@ -259,9 +260,9 @@ public class HostelServiceImpl implements HostelService {
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			}
 
-			log.info("Ending at getHostellers.....");
+			log.info("Ending at getHostellers.....:: {}",System.currentTimeMillis());
 		} catch (Exception e) {
-			log.error("Error at getHostellers :: " + e);
+			log.error("Error at getHostellers :: {} ",e.getMessage(), e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;
@@ -295,11 +296,74 @@ public class HostelServiceImpl implements HostelService {
 					clf.get(Constant.FULL_NAME));
 
 		} catch (Exception e) {
-			log.error("Error at getHostelRecords :: { }", e.getMessage(),e);
+			log.error("Error at getHostelRecords :: {}", e.getMessage(), e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return hostellerGridList;
 	}
+	
+	public ByteArrayOutputStream getHostelGridExcelNew(List<HostellerGrid> hostellerGridList) {
+
+	    try (FileInputStream inputStream = new FileInputStream(Constant.HOSTEL_TEMPLATE);
+	         Workbook workbook = new XSSFWorkbook(inputStream);
+	         ByteArrayOutputStream bao = new ByteArrayOutputStream()) {
+
+	        Sheet sheet = workbook.getSheetAt(0);
+	        CellStyle currencyStyle = ExcelUtil.cellStyle(workbook, Constant.CURRENCY_FORMAT);
+
+	        Map<String, Integer> headerIndexMap = new HashMap<>();
+			for (int i = 0; i < ExcelUtil.HOSTEL_HEADERS.size(); i++) {
+				headerIndexMap.put(ExcelUtil.HOSTEL_HEADERS.get(i), i);
+			}
+
+	        int rowid = 1;
+	        for (HostellerGrid hosteller : hostellerGridList) {
+	            Row row = sheet.createRow(rowid++);
+	            
+	            row.createCell(headerIndexMap.get("Full Name"))
+	                .setCellValue(Utility.nullCheck(hosteller.getFullName()));
+
+	            row.createCell(headerIndexMap.get("Email Id"))
+	                .setCellValue(Utility.nullCheck(hosteller.getEmailId()));
+
+	            row.createCell(headerIndexMap.get("Phone Number"))
+	                .setCellValue(Utility.nullCheck(hosteller.getPhoneNumber()));
+
+	            row.createCell(headerIndexMap.get("DOB"))
+	                .setCellValue(DateUtility.dateToString(hosteller.getDob(), Constant.DATE_FORMAT));
+
+	            Cell feeCell = row.createCell(headerIndexMap.get("Fee"));
+	            feeCell.setCellStyle(currencyStyle);
+	            feeCell.setCellValue(Utility.toDouble(hosteller.getFee()));
+
+	            row.createCell(headerIndexMap.get("Joining Date"))
+	                .setCellValue(DateUtility.dateToString(hosteller.getJoiningDate(), Constant.DATE_FORMAT));
+
+	            row.createCell(headerIndexMap.get("Address"))
+	                .setCellValue(Utility.nullCheck(hosteller.getAddress()));
+
+	            row.createCell(headerIndexMap.get("Proof"))
+	                .setCellValue(Utility.nullCheck(hosteller.getProof()));
+
+	            row.createCell(headerIndexMap.get("Reason"))
+	                .setCellValue(Utility.nullCheck(hosteller.getReason()));
+
+	            row.createCell(headerIndexMap.get("Vacated Date"))
+	                .setCellValue(DateUtility.dateToString(hosteller.getVacatedDate(), Constant.DATE_FORMAT));
+
+	            row.createCell(headerIndexMap.get("Active"))
+	                .setCellValue(Utility.nullCheck(hosteller.getActive()) ? "Yes" : "No");
+	        }
+
+	        workbook.write(bao); // Write the workbook data to the output stream
+	        return bao;
+
+	    } catch (Exception e) {
+	        log.error("Error in getHostelGridExcelNew :: ", e);
+	        return new ByteArrayOutputStream(); // Return an empty stream on error
+	    }
+	}
+
 
 	/**
 	 * Get the Hostel Grid Excel
@@ -365,8 +429,8 @@ public class HostelServiceImpl implements HostelService {
 	public ByteArrayOutputStream getHostelGridCsv(List<HostellerGrid> hostellerGridList) {
 	    ByteArrayOutputStream bao = new ByteArrayOutputStream();
 	    try (OutputStreamWriter osw = new OutputStreamWriter(bao, StandardCharsets.UTF_8);
-	         CSVWriter csvWriter = new CSVWriter(osw, CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, 
-	        		 CSVWriter.NO_ESCAPE_CHARACTER,CSVWriter.DEFAULT_LINE_END)) {
+	         CSVWriter csvWriter = new CSVWriter(osw, ICSVWriter.DEFAULT_SEPARATOR, ICSVWriter.NO_QUOTE_CHARACTER, 
+	        		 ICSVWriter.NO_ESCAPE_CHARACTER,ICSVWriter.DEFAULT_LINE_END)) {
 
 	    	//CSVWriter.DEFAULT_SEPARATOR is ',' if want change that to '|' also
 	    	
@@ -468,7 +532,7 @@ public class HostelServiceImpl implements HostelService {
 					log.info(">>Thread Name: " + Thread.currentThread());
 					return getHostelGridExcel(hostellerGridList);
 				} catch (Exception e) {
-					log.error("error in getHostelZip :: ", e);
+					log.error("Error in Excel getHostelZip :: ", e);
 					throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			}, executor);
@@ -478,7 +542,7 @@ public class HostelServiceImpl implements HostelService {
 					log.info(">>Thread Name: " + Thread.currentThread());
 					return getHostelGridPdf(hostellerGridList);
 				} catch (Exception e) {
-					log.error("error in getHostelZip :: ", e);
+					log.error("Error in PDF getHostelZip :: ", e);
 					throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			}, executor);
@@ -497,6 +561,8 @@ public class HostelServiceImpl implements HostelService {
 		} catch (Exception e) {
 			log.error("error in getHostelZip :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}finally {
+			executor.shutdown();
 		}
 		return baos;
 	}

@@ -22,6 +22,9 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.codec.language.Soundex;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import com.google.gson.Gson;
@@ -33,6 +36,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.skch.skch_api_server.common.Constant;
 import com.skch.skch_api_server.dto.JsonTest;
 import com.skch.skch_api_server.model.Audit;
 
@@ -155,8 +159,8 @@ public class Utility {
 		return input != null ? input : "";
 	}
 	
-	public static Boolean nullCheck(Boolean input) {
-		return input != null ? input : false;
+	public static boolean nullCheck(Boolean input) {
+		return input != null ? input : Boolean.FALSE;
 	}
 	
 	public static BigDecimal toBigDecimal(String input) {
@@ -215,6 +219,38 @@ public class Utility {
 	    }
 	}
 	
+	public static <T> void setFieldsRow(T obj, Cell cell,String fieldName,Workbook workbook) {
+	    try {
+//	    	 Field field = obj.getClass().getDeclaredField(RegexUtil.camelCase(fieldName));
+	    	 Field field = obj.getClass().getDeclaredField(fieldName);
+	         field.setAccessible(true);
+	         if (field.getType().equals(String.class)) {
+	             String value = ObjectUtils.isNotEmpty(field.get(obj)) ? ((String) field.get(obj)).trim() : "";
+	             cell.setCellValue(value);
+	         }else if(field.getType().equals(BigDecimal.class)) {
+	        	 Double value = ObjectUtils.isNotEmpty(field.get(obj)) ? 
+	        			 toDouble(((BigDecimal) field.get(obj))) : 0d;
+	        	 CellStyle currencyStyle = ExcelUtil.cellStyle(workbook, Constant.CURRENCY_FORMAT);
+	        	 cell.setCellStyle(currencyStyle);
+	             cell.setCellValue(value);
+	         }else if (field.getType().equals(LocalDate.class)) {
+	             String value = ObjectUtils.isNotEmpty(field.get(obj)) ? 
+	            		 DateUtility.dateToString((LocalDate) field.get(obj),"MM/dd/yyyy") : "";
+	             cell.setCellValue(value);
+	         }else if (field.getType().equals(LocalDateTime.class)) {
+	             String value = ObjectUtils.isNotEmpty(field.get(obj)) ? 
+	            		 DateUtility.dateToString((LocalDateTime) field.get(obj),"MM/dd/yyyy") : "";
+	             cell.setCellValue(value);
+	         }else if (field.getType().equals(Boolean.class)) {
+	        	 String value = ObjectUtils.isNotEmpty(field.get(obj)) ? 
+	            		 ((Boolean) field.get(obj)).toString() : "";
+	             cell.setCellValue(value);
+	         }
+	    } catch (Exception e) {
+			log.error("Error in set Fields :: {}", e.getMessage(), e);
+	    }
+	}
+	
 	public static String soundex(String input) {
 		String output = "";
 		try {
@@ -230,8 +266,7 @@ public class Utility {
 	
 	public static String mapToJson(Map<String,String> map) {
 		Gson gson = new Gson();
-        String json = gson.toJson(map);
-        return json;
+        return gson.toJson(map);
 	}
 	
 	public static Map<String,String> jsonToMap(String json) {

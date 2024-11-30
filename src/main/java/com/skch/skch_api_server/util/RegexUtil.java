@@ -185,7 +185,7 @@ public class RegexUtil {
         return Pattern.matches(NUMBER_PATTERN, number);
     }
 
-//    public static void main(String[] args) {
+    public static void main(String[] args) {
 //        String[] testNumbers = {
 //            "1200", "1200.00", "-1200", "-1200.00",
 //            "1,200", "-1,200.00", "-1,200", "12,00",
@@ -195,5 +195,6 @@ public class RegexUtil {
 //        for (String number : testNumbers) {
 //            System.out.println(number + " is valid: " + isValidNumber(number));
 //        }
-//    }
+    	System.out.println(camelCase("First Name"));
+    }
 }
