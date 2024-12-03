@@ -17,54 +17,58 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    implementation {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
 }
 
 repositories {
     mavenCentral()
 }
 
-configurations.implementation {
-    exclude group: 'commons-logging', module: 'commons-logging'
-}
-
 dependencies {
+    // Spring Boot Dependencies
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-freemarker'
-	implementation 'org.springframework.boot:spring-boot-starter-mail'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.retry:spring-retry'
     implementation('org.springframework.boot:spring-boot-starter-oauth2-resource-server') {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
     }
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    implementation 'com.google.code.gson:gson:2.11.0'
-    runtimeOnly 'org.postgresql:postgresql'
-    //For SMB Connection
-	implementation 'eu.agno3.jcifs:jcifs-ng:2.1.7'
-    // Swagger (OpenAPI documentation)
-    implementation('org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0') {
-    	exclude group: 'org.springframework', module: 'spring-webmvc'
-	}
-	//For Excel
-	implementation 'com.github.pjfanning:excel-streaming-reader:5.0.2'
-	implementation 'org.apache.poi:poi-ooxml:5.3.0'
-	//For pdf
-	implementation 'com.itextpdf:itextpdf:5.5.13'
-	//opencsv
-	implementation 'com.opencsv:opencsv:5.7.1'
-	//Chache Service
-	implementation 'com.google.guava:guava:32.1.3-jre'
-	compileOnly 'org.projectlombok:lombok'
-	//for object mapping
-	implementation 'org.mapstruct:mapstruct:1.5.2.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.2.Final'
-	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-	
-	annotationProcessor 'org.projectlombok:lombok'
 
-    // Test dependencies (uncomment if needed)
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Utility Libraries
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.guava:guava:32.1.3-jre'
+
+    // File Processing
+    implementation 'com.github.pjfanning:excel-streaming-reader:5.0.2'
+    implementation 'org.apache.poi:poi-ooxml:5.3.0'
+    implementation 'com.itextpdf:itextpdf:5.5.13'
+    implementation 'com.opencsv:opencsv:5.7.1'
+
+    // SMB Connection
+    implementation 'eu.agno3.jcifs:jcifs-ng:2.1.7'
+
+    // Swagger (OpenAPI)
+    implementation('org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0') {
+        exclude group: 'org.springframework', module: 'spring-webmvc'
+    }
+
+    // Object Mapping and Annotations
+    implementation 'org.mapstruct:mapstruct:1.5.2.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.2.Final'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Test Dependencies
     // testImplementation 'org.springframework.boot:spring-boot-starter-test'
     // testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
