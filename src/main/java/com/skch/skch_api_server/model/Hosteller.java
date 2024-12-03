@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.DynamicUpdate;
+
 import com.skch.skch_api_server.util.DateUtility;
 import com.skch.skch_api_server.util.Utility;
 
@@ -23,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@DynamicUpdate
 @Entity
 @Table(name = "hostellers", schema = "hostel")
 public class Hosteller extends Audit{

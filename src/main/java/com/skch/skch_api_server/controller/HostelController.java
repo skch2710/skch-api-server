@@ -29,8 +29,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-//@RequestMapping("/api/v1/hostel")
-@RequestMapping("/hostel")
+@RequestMapping("/api/v1/hostel")
+//@RequestMapping("/hostel")
 @SecurityRequirement(name = "bearerAuth")
 @Slf4j
 public class HostelController {

@@ -37,15 +37,19 @@ public class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		return http.securityMatcher("/api/v1/**")
-				.authorizeHttpRequests(
-						auth -> auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
-								.permitAll().anyRequest().authenticated())
-				.oauth2ResourceServer(oauth2 -> oauth2
-						.jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-						.authenticationEntryPoint(this.customBearerTokenAuthenticationEntryPoint)
-						.accessDeniedHandler(this.customBearerTokenAccessDeniedHandler))
-				.csrf(Customizer.withDefaults()).build();
+	    return http.securityMatcher("/api/v1/**")
+	            .authorizeHttpRequests(auth -> auth
+	                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+	                    .anyRequest().authenticated())
+	            .oauth2ResourceServer(oauth2 -> oauth2
+	                    .jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
+	                    .authenticationEntryPoint(this.customBearerTokenAuthenticationEntryPoint)
+	                    .accessDeniedHandler(this.customBearerTokenAccessDeniedHandler))
+	            .csrf(Customizer.withDefaults())
+	            .headers(headers -> headers
+	                    .xssProtection(Customizer.withDefaults())
+	                    .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'; object-src 'none'")))
+	            .build();
 	}
 
 	@Bean

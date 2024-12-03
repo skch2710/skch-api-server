@@ -50,7 +50,9 @@ public class CORSFilter implements Filter {
 				response.setStatus(HttpServletResponse.SC_OK);
 				return;
 			}
-
+			
+			CachedBodyHttpServletRequest wrappedRequest = new CachedBodyHttpServletRequest(request);
+			
 			// Bypass XSS validation for multipart requests
 			if (request.getContentType() != null && request.getContentType().toLowerCase().startsWith("multipart/")) {
 				chain.doFilter(req, res);
@@ -58,18 +60,17 @@ public class CORSFilter implements Filter {
 			}
 
 			// XSS validation logic
-			CachedBodyHttpServletRequest wrappedRequest = new CachedBodyHttpServletRequest(request);
 			if (hasXSS(wrappedRequest.getRequestBody())) {
-				throw new ServletException("Potential XSS detected in request body!");
+				throw new RuntimeException("Potential XSS detected in request body!");
 			}
 			
 			// XSS validation for path variables and request parameters
             if (hasXSSInParamsOrPath(request)) {
-                throw new ServletException("Potential XSS detected in path or request parameters!");
+                throw new RuntimeException("Potential XSS detected in path or request parameters!");
             }
 
 			chain.doFilter(wrappedRequest, res);
-		} catch (ServletException e) {
+		} catch (RuntimeException e) {
 			response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
 			response.setContentType("application/json");
 			ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_ACCEPTABLE.value(),
