@@ -49,8 +49,7 @@ public class EmailSender {
 	    try {
 	    	log.info("inside createTemplate ...... ");
 	        Template t = config.getTemplate(htmlFile);
-	        String result = FreeMarkerTemplateUtils.processTemplateIntoString(t, model); 
-	        return result;
+	        return FreeMarkerTemplateUtils.processTemplateIntoString(t, model); 
 	    } catch (IOException | TemplateException e) {
 			log.error("Error in createTemplate....:: {} ", e.getMessage(), e);
 	        return "";
@@ -94,7 +93,7 @@ public class EmailSender {
 	}
 
 	/**
-	 * Send email welcome.
+	 * Send email.
 	 *
 	 * @param model  the model
 	 * @param toMail the to mail

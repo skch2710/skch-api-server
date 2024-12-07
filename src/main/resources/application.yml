@@ -46,7 +46,7 @@ spring:
         smtp:
           starttls:
             enable: true
-          auth: false
+          auth: true
   threads:
     virtual:
       enabled: true
@@ -81,3 +81,13 @@ springdoc:
     enabled: true
   api-docs:
     enabled: true
+  show-actuator: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*' #openapi, swagger-ui, health
+  endpoint:
+    health:
+      show-details: always
