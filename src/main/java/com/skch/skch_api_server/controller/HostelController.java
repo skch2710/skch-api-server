@@ -76,6 +76,7 @@ public class HostelController {
 				HttpHeaders headers = new HttpHeaders();
 				headers.setContentType(result.getType());
 				headers.setContentDispositionFormData("attachment", result.getFileName());
+				headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
 				InputStreamResource inputStreamResource = new InputStreamResource(
 						new ByteArrayInputStream(result.getBao().toByteArray()));
 				result.getBao().flush();// Flush the output stream
@@ -111,6 +112,7 @@ public class HostelController {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 			headers.setContentDispositionFormData("attachment", "Hostel_Template.xlsx");
+			headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
 			InputStreamResource inputStreamResource = new InputStreamResource(
 					new ByteArrayInputStream(bao.toByteArray()));
 			bao.flush();// Flush the output stream
