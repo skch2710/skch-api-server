@@ -709,7 +709,7 @@ public class HostelServiceImpl implements HostelService {
 					String error = errors.values().stream().collect(Collectors.joining(","));
 					dto.setError(error);
 					errorList.add(dto);
-					log.info("Error :: " + error);
+					log.info("Error :: {}", error);
 				}
 			});
 			

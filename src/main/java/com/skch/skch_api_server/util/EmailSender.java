@@ -74,6 +74,7 @@ public class EmailSender {
 			}else {
 				helper.setTo(model.get("toMail").toString());
 			}
+//			helper.setCc("CC MAIL");
 			helper.setText(createTemplate(model.get("htmlFile").toString(), model), true);
 			helper.setSubject(model.get("subject").toString());
 			helper.setFrom(fromEmail, personalMessage);

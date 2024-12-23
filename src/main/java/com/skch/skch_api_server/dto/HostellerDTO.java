@@ -28,6 +28,7 @@ public class HostellerDTO extends Audit {
 
 	@NotNull(message = "Name cannot be null")
 	@Size(min = 2, max = 150, message = "Name must be between 2 and 150 characters")
+	//if min = 10 , max = 10 will be the exact size of 10
 	@Pattern(regexp = "^[a-zA-Z0-9\\s]*$", message = "Full Name Not a Valid")
 	@CsvBindByName(column = "Full Name")
 	private String fullName;

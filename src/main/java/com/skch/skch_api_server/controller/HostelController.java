@@ -29,9 +29,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/v1/hostel")
-//@RequestMapping("/hostel")
-@SecurityRequirement(name = "bearerAuth")
+//@RequestMapping("/api/v1/hostel")
+@RequestMapping("/hostel")
+//@SecurityRequirement(name = "bearerAuth")
 @Slf4j
 public class HostelController {
 
@@ -53,7 +53,7 @@ public class HostelController {
 	}
 	
 //	@GetMapping("/get-hostellers")
-////	@PreAuthorize("hasAnyAuthority('Super User')")
+//	@PreAuthorize("hasAnyAuthority('Super User')")
 //	public ResponseEntity<?> getHostellers() {
 //		Result result = hostelService.getHostellers();
 //		return ResponseEntity.ok(result);
@@ -67,12 +67,11 @@ public class HostelController {
 //	@PreAuthorize("@jwtUtil.checkAccess(#search.fullName)")
 	public ResponseEntity<?> getHostellers(@RequestBody HostellerSearch search){
 		try {
+			Result result = hostelService.getHostellers(search);
 			if (!search.isExportExcel() && !search.isExportCsv() &&
 					!search.isExportPdf() && !search.isExportZip()) {
-				Result result = hostelService.getHostellers(search);
 				return ResponseEntity.ok(result);
 			}else {
-				Result result = hostelService.getHostellers(search);
 				HttpHeaders headers = new HttpHeaders();
 				headers.setContentType(result.getType());
 				headers.setContentDispositionFormData("attachment", result.getFileName());

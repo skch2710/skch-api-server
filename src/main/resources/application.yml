@@ -52,6 +52,7 @@ spring:
       enabled: true
   servlet:
     multipart:
+      enabled: true
       max-file-size: 50MB
       max-request-size: 50MB
       
@@ -63,7 +64,14 @@ app:
   otp-expiry: 5
   isOtpEnable: false
   aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
-  
+
+#logging:
+#  level:
+#    org:
+#      springframework:
+#        web: DEBUG
+#      apache:
+#        catalina: DEBUG
 #logging:
 #  level:
 #    web: DEBUG
