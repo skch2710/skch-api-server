@@ -11,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.util.Date;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -140,6 +142,14 @@ public class DateUtility {
 		long date = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli();
 		
 		log.info("Long Date in UTC :: {}",date);
+		
+		
+		LocalDate startDate = stringToDate("01012023", "ddMMyyyy");
+		LocalDate endDate = stringToDate("01012024", "ddMMyyyy");
+		LocalDate targetDate = stringToDate("01012023", "ddMMyyyy");
+		
+		log.info("Is Between Date :: {}",checkBetween(startDate,null,targetDate));
+		
 	}
 	
 	public static LocalDateTime toLocalDateTimeUtc(Long timeMilli) {
@@ -152,6 +162,24 @@ public class DateUtility {
 		return timeMilli != null ? 
 			LocalDate.ofInstant(Instant.ofEpochMilli(timeMilli), ZoneOffset.UTC)
 		: null ;
+	}
+	
+	public static boolean checkBetween(LocalDate startDate, LocalDate endDate, LocalDate targetDate) {
+		if (ObjectUtils.isEmpty(endDate)) {
+			return (targetDate.isAfter(startDate) || targetDate.isEqual(startDate));
+		}
+//		return targetDate.isAfter(startDate) && targetDate.isBefore(endDate);
+		return (targetDate.isAfter(startDate) || targetDate.isEqual(startDate))
+				&& (targetDate.isBefore(endDate) || targetDate.isEqual(endDate));
+	}
+	
+	public static boolean checkBetween(LocalDateTime startDate, LocalDateTime endDate, LocalDateTime targetDate) {
+		if (ObjectUtils.isEmpty(endDate)) {
+			return (targetDate.isAfter(startDate) || targetDate.isEqual(startDate));
+		}
+//		return targetDate.isAfter(startDate) && targetDate.isBefore(endDate);
+		return (targetDate.isAfter(startDate) || targetDate.isEqual(startDate))
+				&& (targetDate.isBefore(endDate) || targetDate.isEqual(endDate));
 	}
 	
 }
