@@ -80,7 +80,7 @@ public class JwtUtil {
 	
 	public static Boolean checkAccess(String resource) {
 		Boolean result = false;
-		System.out.println(resource);
+		log.info(">>>>>Resource :: {}",resource);
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			result = authentication.getAuthorities().stream()

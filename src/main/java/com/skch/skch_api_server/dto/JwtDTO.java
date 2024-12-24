@@ -13,5 +13,7 @@ public class JwtDTO {
 	private String refresh_token;
 	private String token_type;
 	private Long expires_in;
+	
+	private String resource;
 
 }
