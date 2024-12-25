@@ -804,4 +804,28 @@ public class ExcelUtil {
 			log.error("Error in Excel Dropdown Values :: ",e);
 		}
 	}
+	
+	public static Sheet getSheet(String sheetName, Workbook workbook) {
+		Sheet sheet = null;
+		Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+		while (sheetIterator.hasNext()) {
+			Sheet existingSheet = sheetIterator.next();
+			if (existingSheet.getSheetName().trim().equals(sheetName)) {
+				sheet = existingSheet;
+				break;
+			}
+		}
+		return sheet;
+	}
+
+	public static Sheet getFirstSheet(Workbook workbook) {
+		Sheet sheet = null;
+		Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+		while (sheetIterator.hasNext()) {
+			sheet = sheetIterator.next();
+			break;
+		}
+		return sheet;
+	}
+	
 }

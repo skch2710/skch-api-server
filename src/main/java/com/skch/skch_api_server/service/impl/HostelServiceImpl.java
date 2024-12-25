@@ -29,11 +29,13 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.github.pjfanning.xlsx.StreamingReader;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
@@ -87,6 +89,9 @@ public class HostelServiceImpl implements HostelService {
 	
 	@Autowired
 	private BatchInsert batchInsert;
+	
+	@Value("${app.batch-size}")
+	private int batchSize;
 
 	/**
 	 * Save Or Update the Hosteller
@@ -579,90 +584,84 @@ public class HostelServiceImpl implements HostelService {
 		Result result = new Result();
 		Workbook workbook = null;
 		CSVReader csvReader = null;
-//		IOUtils.setByteArrayMaxOverride(250000000);
+		Long userId = JwtUtil.getUserId();
 		try {
 			long intialTime = System.currentTimeMillis();
 
 			if (ExcelUtil.excelType(file)) {
-				if(file.getContentType().equals(ExcelUtil.XLS_TYPE)) {
+				if (file.getContentType().equals(ExcelUtil.XLS_TYPE)) {
 					workbook = new HSSFWorkbook(file.getInputStream());
-				}else {
-					workbook = new XSSFWorkbook(file.getInputStream());
+				} else {
+//					workbook = new XSSFWorkbook(file.getInputStream());
+					workbook = StreamingReader.builder().rowCacheSize(100).bufferSize(4096)
+							.open(file.getInputStream());
 				}
-				Sheet sheet = workbook.getSheetAt(0);
-				String headerCheck = ExcelUtil.headerCheck(sheet,ExcelUtil.HOSTEL_HEADERS);
+				Sheet sheet = ExcelUtil.getFirstSheet(workbook);
+				String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.HOSTEL_HEADERS);
 				log.info(headerCheck);
 				if (headerCheck.isBlank()) {
 					long totalRecords = sheet.getLastRowNum();
-					
-					log.info("Total Records :: "+totalRecords);
-					
-					if (totalRecords > 0) {
-						// Method to Save the Data Synchronus
-//						getRowValues(sheet);
-						
-						Long userId = JwtUtil.getUserId();
-						
-						// Run Method Async
-						CompletableFuture.runAsync(() -> {
-							try {
-								getRowValues(sheet, userId);
-							} catch (Exception e) {
-								log.error("Error in saveRecordsInBatch :: " + e);
-								throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-							}
-						});
-						
-						result.setData("Uploaded " + totalRecords + " records.");
-					} else {
-						result.setData("Empty Template Uploaded");
-					}
-				} else {
-					result.setErrorMessage(headerCheck);
-				}
-			}else if(ExcelUtil.csvType(file)) {
-				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(),
-						StandardCharsets.UTF_8));
-				
-				List<String[]> csvDataList = csvReader.readAll();
-				
-				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList,ExcelUtil.HOSTEL_HEADERS);
-				log.info(headerCheck);
-				if (headerCheck.isBlank()) {
-					Long userId = JwtUtil.getUserId();
-//					long totalRecords = ExcelUtil.getRecordCount(file);
-					long totalRecords = csvDataList.size() - 1;
-					
-					CompletableFuture.runAsync(() -> {
-						getCsvValues(csvDataList,userId);
-		            });
-					
-					log.info("Count of Records :: "+totalRecords);
-					
+
+					log.info("Total Records :: " + totalRecords);
+
+					// Method to Save the Data Synchronus
+					getRowValues(sheet, userId);
+
+					// Run Method Async
+//						CompletableFuture.runAsync(() -> {
+//							try {
+//								getRowValues(sheet, userId);
+//							} catch (Exception e) {
+//								log.error("Error in saveRecordsInBatch :: " + e);
+//								throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+//							}
+//						});
+
 					result.setData("Uploaded " + totalRecords + " records.");
 				} else {
 					result.setErrorMessage(headerCheck);
 				}
-			}else {
+			} else if (ExcelUtil.csvType(file)) {
+				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
+
+				List<String[]> csvDataList = csvReader.readAll();
+
+				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList, ExcelUtil.HOSTEL_HEADERS);
+				log.info(headerCheck);
+				if (headerCheck.isBlank()) {
+//					long totalRecords = ExcelUtil.getRecordCount(file);
+					long totalRecords = csvDataList.size() - 1L;
+
+					CompletableFuture.runAsync(() -> {
+						getCsvValues(csvDataList, userId);
+					});
+
+					log.info("Count of Records :: " + totalRecords);
+
+					result.setData("Uploaded " + totalRecords + " records.");
+				} else {
+					result.setErrorMessage(headerCheck);
+				}
+			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
 			}
-		
-		long finalTime = System.currentTimeMillis();
-		log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
-		
+
+			long finalTime = System.currentTimeMillis();
+			log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
+
 		} catch (Exception e) {
-			log.error("Error in uploadFile :: " + e);
+			log.error("Error in uploadFile :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		} finally {
 			try {
 				if (workbook != null) {
 					workbook.close();
 				}
-				if(csvReader != null) {
+				if (csvReader != null) {
 					csvReader.close();
 				}
 			} catch (Exception e) {
-				log.error("Error in Closing workbook or csvReader :: ",e);
+				log.error("Error in Closing workbook or csvReader :: ", e);
 			}
 		}
 		return result;
@@ -673,15 +672,13 @@ public class HostelServiceImpl implements HostelService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(Sheet sheet,Long userId) {
+	public void getRowValues(Sheet sheet, Long userId) {
 		ArrayList<HostellerDTO> dataList = new ArrayList<>();
 		List<HostellerDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-		int batchSize = 1000;
-		List<Integer> succCount = new ArrayList<>();
-		
+		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
 		try {
 			sheet.forEach(row -> {
 				if (row.getRowNum() == 0) {
@@ -691,42 +688,42 @@ public class HostelServiceImpl implements HostelService {
 					Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 					return ExcelUtil.getCellValue(cell);
 				}).collect(Collectors.toList());
-				
-				HostellerDTO dto = new HostellerDTO(cellValues,userId);
+
+				HostellerDTO dto = new HostellerDTO(cellValues, userId);
 				Map<String, String> errors = ValidationUtils.validate(dto);
 
 				if (errors.isEmpty()) {
+					dataList.add(dto);
 					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-						
-						features.add(CompletableFuture.runAsync(() -> 
-							batchInsert.saveInBatchHostellers(dataList), executor));
-						
-						succCount.add(dataList.size());
+						List<HostellerDTO> batch = new ArrayList<>(dataList);
+						features.add(CompletableFuture.runAsync(() -> batchInsert.saveInBatchHostellers(batch), executor));
+						Integer count = countMap.get("S") + dataList.size();
+						countMap.put("S", count);
 						dataList.clear();
 					}
-					dataList.add(dto);
 				} else {
-					String error = errors.values().stream().collect(Collectors.joining(","));
-					dto.setError(error);
+					dto.setError(String.join(",", errors.values()));
 					errorList.add(dto);
-					log.info("Error :: {}", error);
+					log.info("Validation error: {}", errors);
 				}
 			});
-			
+
 			if (!dataList.isEmpty()) {
-				features.add(CompletableFuture.runAsync(() -> 
-					batchInsert.saveInBatchHostellers(dataList), executor));
-				succCount.add(dataList.size());
+				List<HostellerDTO> batch = new ArrayList<>(dataList);
+				features.add(CompletableFuture.runAsync(() -> batchInsert.saveInBatchHostellers(batch), executor));
+				Integer count = countMap.get("S") + dataList.size();
+				countMap.put("S", count);
 			}
+			
+			countMap.put("F", errorList.size());
 
 			// Wait for all threads to finish and collect their results
-//        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
-			
-			int sum = succCount.stream().mapToInt(Integer::intValue).sum();
-			log.info("List DTO Size :: " + sum);
-//		log.info("List Error Size :: " + errorList.size() + errorList);
+        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+        
+		log.info("Success {} records , failed {} records.", countMap.get("S"), countMap.get("F"));
+
 		} catch (Exception e) {
-			log.error("Error in get Row Values :: ",e);
+			log.error("Error processing rows :: {} ", e.getMessage(), e);
 		} finally {
 			executor.shutdown();
 		}
@@ -741,7 +738,6 @@ public class HostelServiceImpl implements HostelService {
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-		int batchSize = 1000;
 		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
 		
 		try {

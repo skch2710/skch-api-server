@@ -64,6 +64,7 @@ app:
   otp-expiry: 5
   isOtpEnable: false
   aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
+  batch-size: 1000
 
 #logging:
 #  level:

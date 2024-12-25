@@ -323,6 +323,7 @@ public class UserServiceImpl implements UserService {
 					Sheet existingSheet = sheetIterator.next();
 					if(existingSheet.getSheetName().trim().equals("Data Sheet")) {
 						sheet = existingSheet;
+						break;
 					}
 				}
 				if(dto.isValidation()) {
