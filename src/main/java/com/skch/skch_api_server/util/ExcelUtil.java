@@ -76,7 +76,7 @@ public class ExcelUtil {
 	 * @param fileType
 	 * @return Boolean
 	 */
-	public static Boolean excelType(MultipartFile file) {
+	public static boolean excelType(MultipartFile file) {
 		if (file != null && !file.isEmpty() && EXCEL_MIME_TYPES.contains(file.getContentType())) {
 			return true;
 		}
@@ -89,7 +89,7 @@ public class ExcelUtil {
 	 * @param fileType
 	 * @return Boolean
 	 */
-	public static Boolean csvType(MultipartFile file) {
+	public static boolean csvType(MultipartFile file) {
 		if (file != null && !file.isEmpty() && CSV_TYPE.equals(file.getContentType())) {
 			return true;
 		}
