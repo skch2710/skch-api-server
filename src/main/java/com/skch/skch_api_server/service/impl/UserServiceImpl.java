@@ -2,7 +2,6 @@ package com.skch.skch_api_server.service.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -11,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -30,6 +28,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,6 +76,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private UploadFileDAO uploadFileDAO;
+	
+	@Value("${app.batch-size}")
+	private int batchSize;
 
 	/**
 	 * User Save Or Update Method
@@ -261,40 +263,29 @@ public class UserServiceImpl implements UserService {
 	 */
 	@Override
 	public ByteArrayOutputStream getUserTemplate() {
-		ByteArrayOutputStream bao = null;
-		Workbook workbook = null;
-		try {
-			FileInputStream inputStream = new FileInputStream(Constant.USER_TEMPLATE);
-			workbook = new XSSFWorkbook(inputStream);
-			Sheet sheet = workbook.getSheetAt(0);
-			
-			// Create the dropdown list values
-			String[] dropdownValuesRoles = { "Admin", "Super User" };
-			String[] dropdownValuesActive = { "No", "Yes" };
-			
-			String[] emailIds = usersDAO.findAllEmailId();
-			log.info("List :: "+ Arrays.asList(emailIds));
-			
-			// Define the range of cells where the dropdown should be added
-			ExcelUtil.dropDownValues(sheet, dropdownValuesRoles, 1, 1048575, 5, 5);
-			ExcelUtil.dropDownValues(sheet, dropdownValuesActive, 1, 1048575, 6, 6);
+	    try (FileInputStream inputStream = new FileInputStream(Constant.USER_TEMPLATE);
+	         Workbook workbook = new XSSFWorkbook(inputStream);
+	         ByteArrayOutputStream bao = new ByteArrayOutputStream()) {
 
-			bao = new ByteArrayOutputStream();
-			workbook.write(bao); // Write the workbook to temp byte array
-		} catch (Exception e) {
-			log.error("Error in get User Template :: ", e);
-			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		} finally {
-			try {
-				if (workbook != null) {
-					workbook.close();// close the workbook
-				}
-			} catch (IOException e) {
-				log.error("Error in Closing Workbook :: ", e);
-			}
-		}
-		return bao;
+	        Sheet sheet = workbook.getSheetAt(0);
+
+	        // Create the dropdown list values
+	        String[] dropdownValuesRoles = { "Admin", "Super User" };
+	        String[] dropdownValuesActive = { "No", "Yes" };
+
+	        // Define the range of cells where the dropdown should be added
+	        ExcelUtil.dropDownValues(sheet, dropdownValuesRoles, 1, 1048575, 5, 5);
+	        ExcelUtil.dropDownValues(sheet, dropdownValuesActive, 1, 1048575, 6, 6);
+
+	        workbook.write(bao); // Write the workbook to the ByteArrayOutputStream
+	        return bao;
+
+	    } catch (Exception e) {
+	        log.error("Error in getUserTemplate :: ", e);
+	        throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
 	}
+
 
 	/**
 	 * Upload User File 
@@ -302,96 +293,73 @@ public class UserServiceImpl implements UserService {
 	 * @return result
 	 */
 	@Override
-	public Result uploadUserFile(MultipartFile file,FileUploadDTO dto) {
+	public Result uploadUserFile(MultipartFile file, FileUploadDTO dto) {
 		Result result = new Result();
-		Workbook workbook = null;
-		CSVReader csvReader = null;
+		Long userId = JwtUtil.getUserId();
+
 		try {
-			long intialTime = System.currentTimeMillis();
-			Long userId = JwtUtil.getUserId();
+			long initialTime = System.currentTimeMillis();
 
 			if (ExcelUtil.excelType(file)) {
-//				workbook = new XSSFWorkbook(file.getInputStream());
-				workbook = StreamingReader.builder()
-			                     .rowCacheSize(100)    // Number of rows to keep in memory at once
-			                     .bufferSize(4096)      // Buffer size to use while reading the file
-			                     .open(file.getInputStream());
-//				Sheet sheet = workbook.getSheetAt(0);
-				Sheet sheet = null;
-				Iterator<Sheet> sheetIterator = workbook.sheetIterator();
-				while(sheetIterator.hasNext()) {
-					Sheet existingSheet = sheetIterator.next();
-					if(existingSheet.getSheetName().trim().equals("Data Sheet")) {
-						sheet = existingSheet;
-						break;
-					}
-				}
-				if(dto.isValidation()) {
-					log.info("Total Rows :: "+sheet.getLastRowNum());
-					String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
-					if (headerCheck.isBlank()) {
+				try (Workbook workbook = StreamingReader.builder().rowCacheSize(100).bufferSize(4096)
+						.open(file.getInputStream())) {
+
+					Sheet sheet = ExcelUtil.getFirstSheet(workbook);
+					if (dto.isValidation()) {
+						log.info("Total Rows :: " + sheet.getLastRowNum());
+						String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.USER_HEADERS);
+						if (headerCheck.isBlank()) {
+							long totalRecords = sheet.getLastRowNum();
+
+							result.setData("Uploaded " + totalRecords + " records.");
+							result.setStatusCode(HttpStatus.OK.value());
+							result.setSuccessMessage("Successfully Uploaded");
+						} else {
+							result.setErrorMessage(headerCheck);
+							result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+						}
+					} else {
+//	                    ExcelUtil.getCsvFileNew(sheet, ExcelUtil.USER_HEADERS.size());
 						long totalRecords = sheet.getLastRowNum();
+						UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
+
+						getRowValues(sheet, uploadFile);
+						log.info("Before calling SP...");
+						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); // Calling SP
 
 						result.setData("Uploaded " + totalRecords + " records.");
 						result.setStatusCode(HttpStatus.OK.value());
-						result.setSuccessMessage("SuccesFully Uploaded");
+						result.setSuccessMessage("Successfully Uploaded");
+					}
+				}
+			} else if (ExcelUtil.csvType(file)) {
+				try (CSVReader csvReader = new CSVReader(
+						new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+					List<String[]> csvDataList = csvReader.readAll();
+
+					String headerCheck = ExcelUtil.headerCheckCsv(csvDataList, ExcelUtil.USER_HEADERS);
+					log.info(headerCheck);
+					if (headerCheck.isBlank()) {
+						long totalRecords = csvDataList.size() - 1L;
+
+						UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
+
+						CompletableFuture.runAsync(() -> {
+							getCsvValues(csvDataList, uploadFile);
+							log.info("Before calling SP...");
+							uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); // Calling SP
+						});
+
+						log.info("Count of Records :: " + totalRecords);
+
+						result.setData("Uploaded " + totalRecords + " records.");
+						result.setStatusCode(HttpStatus.OK.value());
+						result.setSuccessMessage("Successfully Uploaded");
 					} else {
 						result.setErrorMessage(headerCheck);
 						result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 					}
-				}else {
-					ExcelUtil.getCsvFileNew(sheet,ExcelUtil.USER_HEADERS.size());
-					long totalRecords = sheet.getLastRowNum();
-					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
-					
-//					Workbook toAsync = workbook;
-					
-					// Run Method Async
-//					CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-						getRowValues(workbook, uploadFile);
-						log.info("Before calling SP...");
-//						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); // Calling SP
-//					});
-					
-//					future.thenRun(() -> {
-//					    try {
-//					        toAsync.close();
-//					        log.info("Workbook closed successfully after async process.");
-//					    } catch (IOException e) {
-//					        log.error("Error closing the workbook: ", e);
-//					    }
-//					});
-
-					result.setData("Uploaded " + totalRecords + " records.");
-					result.setStatusCode(HttpStatus.OK.value());
-					result.setSuccessMessage("SuccesFully Uploaded");
-				}
-			} else if (ExcelUtil.csvType(file)) {
-				csvReader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-
-				List<String[]> csvDataList = csvReader.readAll();
-
-				String headerCheck = ExcelUtil.headerCheckCsv(csvDataList, ExcelUtil.USER_HEADERS);
-				log.info(headerCheck);
-				if (headerCheck.isBlank()) {
-					long totalRecords = csvDataList.size() - 1;
-					
-					UploadFile uploadFile = saveUploadFile(file, userId, totalRecords);
-
-					CompletableFuture.runAsync(() -> {
-						getCsvValues(csvDataList, uploadFile);
-						log.info("Before calling SP...");
-						uploadFileDAO.callUsersProc(uploadFile.getUploadFileId()); //Calling SP
-					});
-
-					log.info("Count of Records :: " + totalRecords);
-
-					result.setData("Uploaded " + totalRecords + " records.");
-					result.setStatusCode(HttpStatus.OK.value());
-					result.setSuccessMessage("SuccesFully Uploaded");
-				} else {
-					result.setErrorMessage(headerCheck);
-					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 				}
 			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
@@ -399,25 +367,16 @@ public class UserServiceImpl implements UserService {
 			}
 
 			long finalTime = System.currentTimeMillis();
-			log.info("???>>>???::: TotalTime : " + (finalTime - intialTime));
+			log.info("???>>>???::: TotalTime : " + (finalTime - initialTime));
 
 		} catch (Exception e) {
-			log.error("Error in uploadFile :: " + e);
+			log.error("Error in uploadUserFile :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		} finally {
-			try {
-				if (workbook != null) {
-					workbook.close();
-				}
-				if (csvReader != null) {
-					csvReader.close();
-				}
-			} catch (Exception e) {
-				log.error("Error in Closing workbook or csvReader :: ", e);
-			}
 		}
+
 		return result;
 	}
+
 	
 	/**
 	 * To Save to Upload File
@@ -449,71 +408,68 @@ public class UserServiceImpl implements UserService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(Workbook workbook, UploadFile uploadFile) {
-		ArrayList<UsersFileDTO> dataList = new ArrayList<>();
-		List<CompletableFuture<Void>> features = new ArrayList<>();
+	public void getRowValues(Sheet sheet, UploadFile uploadFile) {
+		List<UsersFileDTO> dataList = new ArrayList<>();
+		List<CompletableFuture<Void>> futures = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-		int batchSize = 1000;
 		log.info("Starting getRowValues.....");
 		try {
-			Sheet sheet = null;
-			Iterator<Sheet> sheetIterator = workbook.sheetIterator();
-			while (sheetIterator.hasNext()) {
-				Sheet existingSheet = sheetIterator.next();
-				if (existingSheet.getSheetName().trim().equals("Data Sheet")) {
-					sheet = existingSheet;
+			sheet.forEach(row -> {
+				if (row.getRowNum() == 0) {
+					return; // Skip header row
 				}
-			}
-			Iterator<Row> rowIterator = sheet.rowIterator();
-			while (rowIterator.hasNext()) {
-				Row row = rowIterator.next();
-				try {
-					if (row.getRowNum() == 0) {
-						return;
-					}
-					List<String> cellValues = IntStream.range(0, ExcelUtil.USER_HEADERS.size()).mapToObj(i -> {
-						Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-						return ExcelUtil.getCellValue(cell);
-					}).collect(Collectors.toList());
+				// Extract cell values
+				List<String> cellValues = IntStream.range(0, ExcelUtil.HOSTEL_HEADERS.size()).mapToObj(i -> {
+					Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+					return ExcelUtil.getCellValue(cell);
+				}).toList();
 
-					UsersFileDTO dto = new UsersFileDTO(cellValues);
-					Map<String, String> errors = ValidationUtils.validate(dto);
+				// Map row to DTO
+				UsersFileDTO dto = new UsersFileDTO(cellValues);
+				dto.setUploadFileId(uploadFile.getUploadFileId());
+				dto.setStatus("success");
 
-					dto.setUploadFileId(uploadFile.getUploadFileId());
-					dto.setStatus("success");
-					if (!errors.isEmpty()) {
-						String error = errors.values().stream().collect(Collectors.joining(", "));
-						dto.setErrorMessage(error);
-						dto.setStatus("fail");
-					}
-					dataList.add(dto);
-
-					if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-//					features.add(CompletableFuture.runAsync(() -> 
-//						batchInsert.saveInBatchUsers(dataList), executor));
-						dataList.clear();
-					}
-				} catch (Exception e) {
-					log.error("Error processing row: " + row.getRowNum(), e);
+				// Validate the DTO
+				Map<String, String> errors = ValidationUtils.validate(dto);
+				if (!errors.isEmpty()) {
+					dto.setErrorMessage(String.join(",", errors.values()));
+					dto.setStatus("fail");
 				}
-			}
-			;
 
+				// Add to batch
+				dataList.add(dto);
+
+				// Process batch when it reaches the batch size
+				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+					processBatch(dataList, futures, executor);
+				}
+			});
+
+			// Process any remaining records in the batch
 			if (!dataList.isEmpty()) {
-//				features.add(CompletableFuture.runAsync(() -> 
-//					batchInsert.saveInBatchUsers(dataList), executor));
+				processBatch(dataList, futures, executor);
 			}
 
-			// Wait for all threads to finish and collect their results
-			CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+			// Wait for all threads to complete
+			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
 			log.info("Ending getRowValues.....");
 		} catch (Exception e) {
-			log.error("Error in get Row Values :: ", e);
+			log.error("Error in getRowValues :: ", e);
 		} finally {
 			executor.shutdown();
 		}
+	}
+
+	/**
+	 * Processes a batch of data by submitting it asynchronously for saving.
+	 */
+	private void processBatch(List<UsersFileDTO> dataList, List<CompletableFuture<Void>> futures,
+			ExecutorService executor) {
+		List<UsersFileDTO> batch = new ArrayList<>(dataList);
+		futures.add(CompletableFuture.runAsync(() -> batchInsert.saveInBatchUsers(batch), executor));
+		dataList.clear();
 	}
 	
 	/**
@@ -524,7 +480,6 @@ public class UserServiceImpl implements UserService {
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-		int batchSize = 1000;
 		try {
 			//Remove Headers
 			csvDataList.removeFirst(); //From Java 21 //csvDataList.remove(0);
@@ -544,22 +499,19 @@ public class UserServiceImpl implements UserService {
 				dataList.add(dto);
 				
 				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
-					features.add(CompletableFuture.runAsync(() -> 
-						batchInsert.saveInBatchUsers(dataList), executor));
-					dataList.clear();
+					processBatch(dataList,features,executor);
 				}
 			});
 			
 			if (!dataList.isEmpty()) {
-				features.add(CompletableFuture.runAsync(() -> 
-					batchInsert.saveInBatchUsers(dataList), executor));
+				processBatch(dataList,features,executor);
 			}
 
 			// Wait for all threads to finish and collect their results
 	        CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
 
 		} catch (Exception e) {
-			log.error("Error in getCsvValues :: " + e);
+			log.error("Error in getCsvValues :: ", e);
 		} finally {
 			executor.shutdown();
 		}
