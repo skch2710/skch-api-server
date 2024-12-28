@@ -28,6 +28,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.itextpdf.text.Document;
@@ -301,6 +302,14 @@ public class Utility {
         return map;
     }
 	
+	public static <T> T fromJson(String json, Class<T> classType) {
+		GsonBuilder b = new GsonBuilder();
+		b.registerTypeAdapter(LocalDate.class, new LocalDateAdapter().nullSafe());
+		b.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe());
+		Gson gson = b.create();
+		return gson.fromJson(json, classType);
+	}
+	
 	public static void main(String[] args) {
 		
 		JsonTest test = new JsonTest();
@@ -317,8 +326,12 @@ public class Utility {
         System.out.println(json);
         
         System.out.println(test);
-		
         
+        String jsonDob = "{\"min_dob\" : \"2023-01-01\", \"max_dob\" : \"2302-08-18\"}";
+		
+        JsonTest data = fromJson(jsonDob, JsonTest.class);
+        
+       log.info("Min DOB :: {} , Max DOB :: {} ",data.getMinDob(),data.getMaxDob());
 	}
 	
 }

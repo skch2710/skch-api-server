@@ -17,13 +17,16 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skch_api_server.dao.HostellerDAO;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.HostellerDTO;
 import com.skch.skch_api_server.dto.HostellerSearch;
+import com.skch.skch_api_server.dto.JsonTest;
 import com.skch.skch_api_server.dto.PaymentHistoryDTO;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.HostelService;
+import com.skch.skch_api_server.util.Utility;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
@@ -52,12 +55,16 @@ public class HostelController {
 		return ResponseEntity.ok(result);
 	}
 	
-//	@GetMapping("/get-hostellers")
-//	@PreAuthorize("hasAnyAuthority('Super User')")
-//	public ResponseEntity<?> getHostellers() {
-//		Result result = hostelService.getHostellers();
-//		return ResponseEntity.ok(result);
-//	}
+	@Autowired
+	private HostellerDAO hostellerDAO;
+	
+	@GetMapping("/test-hostellers-json")
+	public ResponseEntity<?> getTestHostellersJson() {
+		String dataJson = hostellerDAO.getMaxMinDob();
+		JsonTest jsonTest = Utility.fromJson(dataJson, JsonTest.class);
+		log.info("Min DOB :: {} , Max DOB :: {} ",jsonTest.getMinDob(),jsonTest.getMaxDob());
+		return ResponseEntity.ok(jsonTest);
+	}
 	
 	@PostMapping("/get-hostellers")
 //	@PreAuthorize("hasAnyAuthority(@jwtUtil.SUPER_USER)")

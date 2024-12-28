@@ -1,5 +1,7 @@
 package com.skch.skch_api_server.dto;
 
+import java.time.LocalDate;
+
 import com.google.gson.annotations.SerializedName;
 
 import lombok.AllArgsConstructor;
@@ -16,6 +18,12 @@ public class JsonTest {
 
 	@SerializedName(value = "email_id")
 	private String emailId = "";
+	
+	@SerializedName(value = "min_dob")
+	private LocalDate minDob;
+	
+	@SerializedName(value = "max_dob")
+	private LocalDate maxDob;
 	
 	// Custom setter for firstName
     public void setFirstName(String firstName) {
