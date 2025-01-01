@@ -7,3 +7,12 @@
 >> gradlew dependencies > dependencies.txt
 
 >> gradlew dependencyInsight --dependency spring-web
+
+--------- Eclipse CMD ----
+
+>> CTRL + H  --Global Search
+
+>> CTRL + F  --Within the file search
+
+>> CTRL + G  --Find method ussages
+
