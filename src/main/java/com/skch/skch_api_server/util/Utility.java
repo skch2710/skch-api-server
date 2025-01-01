@@ -303,10 +303,10 @@ public class Utility {
     }
 	
 	public static <T> T fromJson(String json, Class<T> classType) {
-		GsonBuilder b = new GsonBuilder();
-		b.registerTypeAdapter(LocalDate.class, new LocalDateAdapter().nullSafe());
-		b.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe());
-		Gson gson = b.create();
+		Gson gson = new GsonBuilder()
+				.registerTypeAdapter(LocalDate.class, new LocalDateAdapter().nullSafe())
+				.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe())
+				.create();
 		return gson.fromJson(json, classType);
 	}
 	

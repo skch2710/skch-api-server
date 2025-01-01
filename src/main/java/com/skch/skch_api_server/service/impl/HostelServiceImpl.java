@@ -218,7 +218,8 @@ public class HostelServiceImpl implements HostelService {
 	 */
 	@Override
 	public Result getHostellers(HostellerSearch search) {
-		log.info("Starting at getHostellers.....:: {}",System.currentTimeMillis());
+		log.info(">>>>>>>>Starting at getHostellers");
+		long intialTime = System.currentTimeMillis();
 		Result result = new Result();
 		try {
 			if (!search.isExportExcel() && !search.isExportCsv() &&
@@ -265,7 +266,8 @@ public class HostelServiceImpl implements HostelService {
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			}
 
-			log.info("Ending at getHostellers.....:: {}",System.currentTimeMillis());
+			long finalTime = System.currentTimeMillis();
+			log.info("Ending at getHostellers TotalTime Taken :: {}",(finalTime-intialTime));
 		} catch (Exception e) {
 			log.error("Error at getHostellers :: {} ",e.getMessage(), e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
