@@ -16,6 +16,7 @@ import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BarcodeQRCode;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
@@ -278,7 +279,39 @@ public class PdfHelper {
 
 			document.add(lineTable);
 		} catch (Exception e) {
-			log.error("Error in createLineSeparator :: " + e);
+			log.error("Error in createLineSeparator :: ", e);
+		}
+	}
+	
+	public static Image getQRCode(String data, int width,int height) {
+		Image qrCodeImage = null;
+		try {
+			BarcodeQRCode qrCode = new BarcodeQRCode(data, width, height, null);
+			qrCodeImage = qrCode.getImage();
+	        qrCodeImage.scaleAbsolute(20, 20);
+		} catch (Exception e) {
+			log.error("Error in getQRCode :: ", e);
+		}
+		return qrCodeImage;
+	}
+	
+	public static void getQRCode(PdfPTable table,String data,float left,
+			float top,float right,float heigt,int alignment) {
+		try {
+			BarcodeQRCode qrCode = new BarcodeQRCode(data, 1000, 1000, null);
+			Image qrCodeImage = qrCode.getImage();
+			qrCodeImage.scaleAbsolute(heigt, heigt);
+			PdfPCell cell = new PdfPCell(qrCodeImage);
+			cell.setPaddingLeft(left);
+			cell.setPaddingTop(top);
+			cell.setPaddingRight(right);
+			cell.setFixedHeight(heigt);
+			cell.setHorizontalAlignment(alignment);
+//			cell.setBorderColor(BaseColor.GREEN);
+			cell.setBorder(Rectangle.NO_BORDER);
+			table.addCell(cell);
+		} catch (Exception e) {
+			log.error("Error in getQRCode :: ", e);
 		}
 	}
 	

@@ -264,6 +264,7 @@ public class LoginServiceImpl implements LoginService {
 		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",10,null,10,Element.ALIGN_LEFT);
 		
 		PdfHelper.createLogo(innerTable,logoPath,0,0,5,20,Element.ALIGN_RIGHT);
+		PdfHelper.getQRCode(innerTable,"Sathish",0,0,0,30,Element.ALIGN_CENTER);
 		cell.addElement(innerTable);
 		
 		PdfHelper.imageBgm(bgmPath, backCard,cell, 158);
