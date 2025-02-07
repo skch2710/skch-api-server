@@ -9,7 +9,9 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -133,7 +135,7 @@ public class DateUtility {
 	}
 	
 	public static void main(String[] args) {
-		long value = System.currentTimeMillis();
+		/*long value = System.currentTimeMillis();
 		
 		log.info("DateTime in UTC :: {}",toLocalDateTimeUtc(value));
 		
@@ -141,14 +143,19 @@ public class DateUtility {
 		
 		long date = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli();
 		
-		log.info("Long Date in UTC :: {}",date);
+		log.info("Long Date in UTC :: {}",date);*/
 		
 		
 		LocalDate startDate = stringToDate("01012023", "ddMMyyyy");
 		LocalDate endDate = stringToDate("01012024", "ddMMyyyy");
-		LocalDate targetDate = stringToDate("01012023", "ddMMyyyy");
+		LocalDate targetDate = stringToDate("01012025", "ddMMyyyy");
 		
 		log.info("Is Between Date :: {}",checkBetween(startDate,null,targetDate));
+		
+		System.out.println(Collections.max(List.of(startDate, endDate,targetDate)));
+		
+		System.out.println(Collections.min(List.of(startDate, endDate,targetDate)));
+
 		
 	}
 	
@@ -180,6 +187,14 @@ public class DateUtility {
 //		return targetDate.isAfter(startDate) && targetDate.isBefore(endDate);
 		return (targetDate.isAfter(startDate) || targetDate.isEqual(startDate))
 				&& (targetDate.isBefore(endDate) || targetDate.isEqual(endDate));
+	}
+	
+	public static LocalDate maxDate(LocalDate date1 , LocalDate date2) {
+		return Collections.max(List.of(date1, date2));
+	}
+	
+	public static LocalDate minDate(LocalDate date1 , LocalDate date2) {
+		return Collections.min(List.of(date1, date2));
 	}
 	
 }
