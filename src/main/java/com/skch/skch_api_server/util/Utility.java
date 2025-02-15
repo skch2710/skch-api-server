@@ -38,6 +38,7 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.skch.skch_api_server.common.Constant;
+import com.skch.skch_api_server.dto.HostellerDTO;
 import com.skch.skch_api_server.dto.JsonTest;
 import com.skch.skch_api_server.model.Audit;
 
@@ -312,26 +313,32 @@ public class Utility {
 	
 	public static void main(String[] args) {
 		
-		JsonTest test = new JsonTest();
-		test.setEmailId("");
-		
-		trimFields(test);
-		
-		List<JsonTest> listTest = new ArrayList<>();
-		listTest.add(test);
-		
-		Gson gson = new Gson();
-        String json = gson.toJson(listTest);
-        
-        System.out.println(json);
-        
-        System.out.println(test);
-        
-        String jsonDob = "{\"min_dob\" : \"2023-01-01\", \"max_dob\" : \"2302-08-18\"}";
-		
-        JsonTest data = fromJson(jsonDob, JsonTest.class);
-        
-       log.info("Min DOB :: {} , Max DOB :: {} ",data.getMinDob(),data.getMaxDob());
+//		JsonTest test = new JsonTest();
+//		test.setEmailId("");
+//		
+//		trimFields(test);
+//		
+//		List<JsonTest> listTest = new ArrayList<>();
+//		listTest.add(test);
+//		
+//		Gson gson = new Gson();
+//        String json = gson.toJson(listTest);
+//        
+//        System.out.println(json);
+//        
+//        System.out.println(test);
+//        
+//        String jsonDob = "{\"min_dob\" : \"2023-01-01\", \"max_dob\" : \"2302-08-18\"}";
+//		
+//        JsonTest data = fromJson(jsonDob, JsonTest.class);
+//        
+//       log.info("Min DOB :: {} , Max DOB :: {} ",data.getMinDob(),data.getMaxDob());
+       
+       HostellerDTO dto = new HostellerDTO();
+       dto.setDob("28-02-2005");
+       
+       Map<String, String> validate = ValidationUtils.validate(dto);
+       System.out.println(validate);
 	}
 	
 }

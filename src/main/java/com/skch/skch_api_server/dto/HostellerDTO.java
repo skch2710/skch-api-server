@@ -6,9 +6,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.opencsv.bean.CsvBindByName;
 import com.skch.skch_api_server.model.Audit;
+import com.skch.skch_api_server.utilAnnotations.DateValidate;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -42,8 +44,9 @@ public class HostellerDTO extends Audit {
 	@CsvBindByName(column = "Phone Number")
 	private String phoneNumber;
 	
-	@NotNull(message = "DOB cannot be null")
-	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "DOB(dd-MM-yyyy) is not valid")
+	@NotEmpty(message = "DOB cannot be null or Empty")
+//	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "DOB(dd-MM-yyyy) is not valid")
+	@DateValidate(message = "DOB(dd-MM-yyyy) is not valid")
 	@CsvBindByName(column = "DOB")
 	private String dob;
 
@@ -52,8 +55,9 @@ public class HostellerDTO extends Audit {
 	@CsvBindByName(column = "Fee")
 	private String fee;
 
-	@NotNull(message = "Joining Date cannot be null")
-	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Joining Date(dd-MM-yyyy) is not valid")
+//	@NotNull(message = "Joining Date cannot be null")
+//	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Joining Date(dd-MM-yyyy) is not valid")
+	@DateValidate(message = "DOB(dd-MM-yyyy) is not valid")
 	@CsvBindByName(column = "Joining Date")
 	private String joiningDate;
 
@@ -68,8 +72,9 @@ public class HostellerDTO extends Audit {
 	@CsvBindByName(column = "Reason")
 	private String reason;
 
-	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Vacated Date(dd-MM-yyyy) is not valid")
+//	@Pattern(regexp = "^(0[1-9]|[12]\\d|3[01])-(0[1-9]|1[0-2])-\\d{4}$", message = "Vacated Date(dd-MM-yyyy) is not valid")
 	@CsvBindByName(column = "Vacated Date")
+	@DateValidate(message = "DOB(dd-MM-yyyy) is not valid")
 	private String vacatedDate;
 
 	@CsvBindByName(column = "Active")
