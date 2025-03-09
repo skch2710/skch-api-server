@@ -43,5 +43,14 @@ public class SchedulerJob {
 		Thread.sleep(Duration.ofSeconds(12));
 		log.info("Hii...test4 SchedulerJob End "+new Date());
 	}
+	
+	/*
+	 * One Table schedular_jobs_java
+	 * 
+	 * job_id , Job_Name , scheduler_cron , start_date , end_date 
+	 * 
+	 * If Job Started start_date is now and end date is null
+	 * Then Job End update end_date
+	 */
 
 }
