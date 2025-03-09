@@ -13,9 +13,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -38,8 +36,6 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.skch.skch_api_server.common.Constant;
-import com.skch.skch_api_server.dto.HostellerDTO;
-import com.skch.skch_api_server.dto.JsonTest;
 import com.skch.skch_api_server.model.Audit;
 
 import lombok.extern.slf4j.Slf4j;
@@ -311,6 +307,7 @@ public class Utility {
 		return gson.fromJson(json, classType);
 	}
 	
+	
 	public static void main(String[] args) {
 		
 //		JsonTest test = new JsonTest();
@@ -334,11 +331,12 @@ public class Utility {
 //        
 //       log.info("Min DOB :: {} , Max DOB :: {} ",data.getMinDob(),data.getMaxDob());
        
-       HostellerDTO dto = new HostellerDTO();
-       dto.setDob("28-02-2005");
-       
-       Map<String, String> validate = ValidationUtils.validate(dto);
-       System.out.println(validate);
+//       HostellerDTO dto = new HostellerDTO();
+//       dto.setDob("28-02-2005");
+//       
+//       Map<String, String> validate = ValidationUtils.validate(dto);
+//       System.out.println(validate);
+		
 	}
 	
 }

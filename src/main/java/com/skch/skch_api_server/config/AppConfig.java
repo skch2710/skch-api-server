@@ -5,10 +5,12 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 
 @Configuration
+@EnableRetry
 public class AppConfig {
 
 //	@Bean
