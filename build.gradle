@@ -55,6 +55,9 @@ dependencies {
 
     // SMB Connection
     implementation 'eu.agno3.jcifs:jcifs-ng:2.1.7'
+    
+    //SMARTY
+    implementation 'com.smartystreets.api:smartystreets-java-sdk:3.17.5'
 
     // Swagger (OpenAPI)
     implementation('org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0') {

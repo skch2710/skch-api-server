@@ -66,6 +66,11 @@ app:
   aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
   batch-size: 1000
 
+smarty:
+  auth-id: 65d993e0-b610-d46a-47ee-bf015b9dd6f3
+  auth-token: 0CtEpzHeubQtJzm7OyW3
+  batch-size: 100
+
 #logging:
 #  level:
 #    org:
