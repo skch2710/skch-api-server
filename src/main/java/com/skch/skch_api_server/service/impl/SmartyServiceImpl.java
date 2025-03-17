@@ -1,5 +1,7 @@
 package com.skch.skch_api_server.service.impl;
 
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -10,15 +12,25 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.github.pjfanning.xlsx.StreamingReader;
+import com.opencsv.CSVReader;
 import com.skch.skch_api_server.dto.LookupDto;
 import com.skch.skch_api_server.dto.Result;
+import com.skch.skch_api_server.dto.SmartyFileUploadDTO;
+import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.SmartyService;
+import com.skch.skch_api_server.util.ExcelUtil;
 import com.smartystreets.api.exceptions.BatchFullException;
 import com.smartystreets.api.us_street.Batch;
 import com.smartystreets.api.us_street.Client;
@@ -153,5 +165,80 @@ public class SmartyServiceImpl implements SmartyService {
 		BeanUtils.copyProperties(dto, lookup);
 		return lookup;
 	}
+
+	/**
+	 * Read the file and Send the Request to Smarty
+	 * @param file
+	 * @param dto
+	 * @return result
+	 */
+	@Override
+	public Result uploadSmartyFile(MultipartFile file, SmartyFileUploadDTO dto) {
+		
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		
+		Result result = new Result();
+//		Long userId = JwtUtil.getUserId();
+		try {
+			if (ExcelUtil.excelType(file)) {
+				try (Workbook workbook = file.getContentType().equals(ExcelUtil.XLS_TYPE)
+						? new HSSFWorkbook(file.getInputStream())
+						: StreamingReader.builder().rowCacheSize(100).bufferSize(4096)
+									.open(file.getInputStream())) {
+
+					Sheet sheet = ExcelUtil.getFirstSheet(workbook);
+					String headerCheck = ExcelUtil.headerCheck(sheet, ExcelUtil.SMARTY_HEADERS);
+					log.info(headerCheck);
+
+					if (headerCheck.isBlank()) {
+						long totalRecords = sheet.getLastRowNum();
+						log.info("Total Records :: " + totalRecords);
+
+						// Method to Save the Data Synchronously
+//						getRowValues(sheet, userId);
+
+						result.setData("Uploaded " + totalRecords + " records.");
+					} else {
+						result.setErrorMessage(headerCheck);
+					}
+				}
+			} else if (ExcelUtil.csvType(file)) {
+				try (CSVReader csvReader = new CSVReader(
+						new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+					List<String[]> csvDataList = csvReader.readAll();
+					String headerCheck = ExcelUtil.headerCheckCsv(csvDataList, ExcelUtil.SMARTY_HEADERS);
+					log.info(headerCheck);
+
+					if (headerCheck.isBlank()) {
+						long totalRecords = csvDataList.size() - 1L;
+
+//						CompletableFuture.runAsync(() -> getCsvValues(csvDataList, userId));
+
+						log.info("Count of Records :: " + totalRecords);
+
+						result.setData("Uploaded " + totalRecords + " records.");
+					} else {
+						result.setErrorMessage(headerCheck);
+					}
+				}
+			} else {
+				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
+			}
+
+			log.info(">>>>> TotalTime Token to Complete in MilliSec : {} and Sec : {}", stopWatch.getTotalTimeMillis(),stopWatch.getTotalTimeSeconds());
+
+		} catch (Exception e) {
+			log.error("Error in uploadFile :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}finally {
+			if (stopWatch.isRunning()) {
+		        stopWatch.stop();
+		    }
+		}
+		return result;
+	}
+
 
 }

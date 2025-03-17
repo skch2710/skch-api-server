@@ -11,6 +11,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.skch.skch_api_server.dto.FileUploadDTO;
+import com.skch.skch_api_server.dto.SmartyFileUploadDTO;
 
 @Configuration
 @EnableWebMvc
@@ -20,6 +21,7 @@ public class MultipartConfig implements WebMvcConfigurer {
 	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
 		converters.add(new Converter());
 		converters.add(new FileUploadConverter());
+		converters.add(new SmartyFileUploadConverter());
 	}
 }
 
@@ -36,5 +38,13 @@ class FileUploadConverter extends MappingJackson2HttpMessageConverter {
 	@Override
 	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
 		return type.getTypeName().equals(FileUploadDTO.class.getName());
+	}
+}
+
+class SmartyFileUploadConverter extends MappingJackson2HttpMessageConverter {
+
+	@Override
+	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
+		return type.getTypeName().equals(SmartyFileUploadDTO.class.getName());
 	}
 }
