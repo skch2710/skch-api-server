@@ -15,5 +15,7 @@ public interface SmartyService {
 	public Result getBulkRequest(List<LookupDto> dtoList);
 	
 	public Result uploadSmartyFile(MultipartFile file, SmartyFileUploadDTO dto);
+	
+	public Result getSmartyTemplate(String fileType);
 
 }

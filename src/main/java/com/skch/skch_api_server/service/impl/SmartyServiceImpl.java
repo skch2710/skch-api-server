@@ -1,7 +1,11 @@
 package com.skch.skch_api_server.service.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -13,12 +17,16 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 import org.springframework.web.multipart.MultipartFile;
@@ -175,9 +183,9 @@ public class SmartyServiceImpl implements SmartyService {
 	@Override
 	public Result uploadSmartyFile(MultipartFile file, SmartyFileUploadDTO dto) {
 		
-		StopWatch stopWatch = new StopWatch();
-		stopWatch.start();
-		
+//		StopWatch stopWatch = new StopWatch();
+//		stopWatch.start();
+		long startTimeMilli = System.currentTimeMillis();
 		Result result = new Result();
 //		Long userId = JwtUtil.getUserId();
 		try {
@@ -197,8 +205,9 @@ public class SmartyServiceImpl implements SmartyService {
 
 						// Method to Save the Data Synchronously
 //						getRowValues(sheet, userId);
-
-						result.setData("Uploaded " + totalRecords + " records.");
+						Map<Boolean, List<Lookup>> data = getRowValues(sheet);
+						result.setData(data);
+//						result.setData("Uploaded " + totalRecords + " records.");
 					} else {
 						result.setErrorMessage(headerCheck);
 					}
@@ -226,19 +235,155 @@ public class SmartyServiceImpl implements SmartyService {
 			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
 			}
-
-			log.info(">>>>> TotalTime Token to Complete in MilliSec : {} and Sec : {}", stopWatch.getTotalTimeMillis(),stopWatch.getTotalTimeSeconds());
+			
+			long endTimeMilli = System.currentTimeMillis();
+			log.info(">>>>> TotalTime Token to Complete in MilliSec : {} ", (endTimeMilli-startTimeMilli));
 
 		} catch (Exception e) {
 			log.error("Error in uploadFile :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}finally {
-			if (stopWatch.isRunning()) {
-		        stopWatch.stop();
-		    }
 		}
 		return result;
 	}
+	
+	public Map<Boolean, List<Lookup>> getRowValues(Sheet sheet) {
+	    Vector<Lookup> dataList = new Vector<>();
+	    List<CompletableFuture<Map<Boolean, List<Lookup>>>> futures = new ArrayList<>();
+	    ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+	    Map<Boolean, List<Lookup>> processBatchList = null;
+	    log.info("Starting getRowValues...");
+	    try {
+	        sheet.forEach(row -> {
+	            if (row.getRowNum() == 0) {
+	                return; // Skip header row
+	            }
 
+	            // Extract cell values
+	            List<String> cellValues = IntStream.range(0, ExcelUtil.SMARTY_HEADERS.size())
+	                    .mapToObj(i -> {
+	                        Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+	                        return ExcelUtil.getCellValue(cell);
+	                    })
+	                    .toList();
 
+	            // Map row to Lookup
+	            Lookup lookup = dataToLookup(cellValues);
+
+				// Add to batch
+				dataList.add(lookup);
+
+				// Process batch when it reaches the batch size
+				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+					Vector<Lookup> batch = new Vector<>(dataList);
+					futures.add(CompletableFuture.supplyAsync(() -> processBatch(batch), executor));
+					dataList.clear();
+				}
+
+	        });
+
+	        // Process any remaining rows in the batch
+	        if (!dataList.isEmpty()) {
+	        	Vector<Lookup> batch = new Vector<>(dataList);
+				futures.add(CompletableFuture.supplyAsync(() -> processBatch(batch), executor));
+	        }
+
+	        // Wait for all futures to complete
+			processBatchList = futures.stream().map(future -> future.exceptionally(ex -> {
+				log.error("Exception occurred: ", ex);
+				return Collections.emptyMap();
+			})).map(CompletableFuture::join)
+				.flatMap(map -> map.entrySet().stream())
+				.collect(Collectors.groupingBy(Map.Entry::getKey,
+					Collectors.mapping(Map.Entry::getValue,
+					Collectors.flatMapping(List::stream, Collectors.toList())
+				)));
+		
+	        log.info("Total Standardized Size {} ,Total Non-standardized Size {} ", 
+	        		processBatchList.get(true).size(), processBatchList.get(false).size());
+
+	    } catch (Exception e) {
+	        log.error("Error in getRowValues :: ", e);
+	        throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	    } finally {
+	        executor.shutdown();
+	    }
+	    return processBatchList;
+	}
+
+	private Map<Boolean, List<Lookup>> processBatch(Vector<Lookup> dataList) {
+		Map<Boolean, List<Lookup>> partitioned = null;
+		log.info(">>>>Starting procees batch of name : {}",Thread.currentThread().getName());
+		Batch batch = new Batch();
+		try {
+	    	dataList.forEach(lookup -> {
+				try {
+					batch.add(lookup);
+				} catch (BatchFullException e) {
+					
+				}
+			});
+	    	Thread.sleep(Duration.ofSeconds(30));
+//	        client.send(batch);
+	    	Vector<Lookup> allLookups = batch.getAllLookups();
+	        
+			// Partition into standardized & non-standardized in a single stream
+	        partitioned = allLookups.stream()
+	                .collect(Collectors.partitioningBy(lookup -> !lookup.getResult().isEmpty()));
+
+	        List<Lookup> standardized = partitioned.get(true);  // Standardized addresses
+	        List<Lookup> nonStandardized = partitioned.get(false); // Non-standardized addresses
+
+	        log.info("Standardized Size {} , Non-standardized Size {} ", 
+	        		standardized.size(), nonStandardized.size());
+	    } catch (Exception e) {
+	        log.error("Error processing batch :: ", e);
+	        throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+		return partitioned;
+	}
+
+	
+	public Lookup dataToLookup(List<String> cellValues) {
+		Lookup lookup = new Lookup();
+		lookup.setStreet(cellValues.get(0));
+		lookup.setSecondary(cellValues.get(1));
+		lookup.setCity(cellValues.get(2));
+		lookup.setState(cellValues.get(3));
+		lookup.setZipCode(cellValues.get(4));
+		return lookup;
+	}
+	
+	/**
+	 * Returns the Smarty template based on the specified file type.
+	 * 
+	 * @param fileType the type of file to generate ("Excel" or "CSV")
+	 * @return the generated template as a Result object
+	 */
+	@Override
+	public Result getSmartyTemplate(String fileType) {
+		Result result = new Result();
+	    try (ByteArrayOutputStream bao = new ByteArrayOutputStream()) {
+	        if (fileType.equals("Excel")) {
+	            try (Workbook workbook = new XSSFWorkbook()) {
+	                Sheet sheet = workbook.createSheet("Smarty_Template");
+	                Row header = sheet.createRow(0);
+	                for(int i = 0 ; i < ExcelUtil.SMARTY_HEADERS.size();i++) {
+	                	 header.createCell(i).setCellValue(ExcelUtil.SMARTY_HEADERS.get(i));
+	                }
+	                workbook.write(bao);
+	                result.setFileName("Smarty_Template.xlsx");
+	            }
+	        } else {
+	            String csvContent = String.join(",", ExcelUtil.SMARTY_HEADERS);
+	            bao.write(csvContent.getBytes(StandardCharsets.UTF_8));
+	            result.setFileName("Smarty_Template.csv");
+	        }
+	        result.setBao(bao);
+	        result.setType(MediaType.APPLICATION_OCTET_STREAM);
+	        return result;
+	    } catch (Exception e) {
+	        log.error("Error in getSmartyTemplate :: ", e);
+	        throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 }
