@@ -42,6 +42,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Utility {
+	
+	public static void logTimeTaken(long milliSec) {
+		log.info("Total Time taken in MilliSec {} , Sec {} and Min {}",milliSec,
+				(milliSec/1000.00),((milliSec/1000.00)/60));;
+	}
 
 	public static String isBlank(String input) {
 		return input == null || !input.isBlank() ? input : null;

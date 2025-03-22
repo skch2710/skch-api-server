@@ -39,6 +39,7 @@ import com.skch.skch_api_server.dto.SmartyFileUploadDTO;
 import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.SmartyService;
 import com.skch.skch_api_server.util.ExcelUtil;
+import com.skch.skch_api_server.util.Utility;
 import com.smartystreets.api.exceptions.BatchFullException;
 import com.smartystreets.api.us_street.Batch;
 import com.smartystreets.api.us_street.Client;
@@ -204,7 +205,6 @@ public class SmartyServiceImpl implements SmartyService {
 						log.info("Total Records :: " + totalRecords);
 
 						// Method to Save the Data Synchronously
-//						getRowValues(sheet, userId);
 						Map<Boolean, List<Lookup>> data = getRowValues(sheet);
 						result.setData(data);
 //						result.setData("Uploaded " + totalRecords + " records.");
@@ -223,11 +223,11 @@ public class SmartyServiceImpl implements SmartyService {
 					if (headerCheck.isBlank()) {
 						long totalRecords = csvDataList.size() - 1L;
 
-//						CompletableFuture.runAsync(() -> getCsvValues(csvDataList, userId));
-
 						log.info("Count of Records :: " + totalRecords);
-
-						result.setData("Uploaded " + totalRecords + " records.");
+						Map<Boolean, List<Lookup>> data = getCsvValues(csvDataList);
+						
+						result.setData(data);
+						result.setSuccessMessage("Uploaded " + totalRecords + " records.");
 					} else {
 						result.setErrorMessage(headerCheck);
 					}
@@ -237,7 +237,8 @@ public class SmartyServiceImpl implements SmartyService {
 			}
 			
 			long endTimeMilli = System.currentTimeMillis();
-			log.info(">>>>> TotalTime Token to Complete in MilliSec : {} ", (endTimeMilli-startTimeMilli));
+			
+			Utility.logTimeTaken((endTimeMilli-startTimeMilli));
 
 		} catch (Exception e) {
 			log.error("Error in uploadFile :: ", e);
@@ -263,14 +264,10 @@ public class SmartyServiceImpl implements SmartyService {
 	                    .mapToObj(i -> {
 	                        Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
 	                        return ExcelUtil.getCellValue(cell);
-	                    })
-	                    .toList();
+	                    }).toList();
 
 	            // Map row to Lookup
-	            Lookup lookup = dataToLookup(cellValues);
-
-				// Add to batch
-				dataList.add(lookup);
+				dataList.add(dataToLookup(cellValues));
 
 				// Process batch when it reaches the batch size
 				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
@@ -278,7 +275,6 @@ public class SmartyServiceImpl implements SmartyService {
 					futures.add(CompletableFuture.supplyAsync(() -> processBatch(batch), executor));
 					dataList.clear();
 				}
-
 	        });
 
 	        // Process any remaining rows in the batch
@@ -288,15 +284,13 @@ public class SmartyServiceImpl implements SmartyService {
 	        }
 
 	        // Wait for all futures to complete
-			processBatchList = futures.stream().map(future -> future.exceptionally(ex -> {
-				log.error("Exception occurred: ", ex);
-				return Collections.emptyMap();
-			})).map(CompletableFuture::join)
-				.flatMap(map -> map.entrySet().stream())
-				.collect(Collectors.groupingBy(Map.Entry::getKey,
-					Collectors.mapping(Map.Entry::getValue,
-					Collectors.flatMapping(List::stream, Collectors.toList())
-				)));
+	        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+	        
+	        processBatchList = futures.stream()
+	                .map(CompletableFuture::join) // Get the result of each future
+	                .flatMap(map -> map.entrySet().stream()) // Flatten the map entries
+	                .collect(Collectors.groupingBy(Map.Entry::getKey,
+	                Collectors.flatMapping(e -> e.getValue().stream(), Collectors.toList())));
 		
 	        log.info("Total Standardized Size {} ,Total Non-standardized Size {} ", 
 	        		processBatchList.get(true).size(), processBatchList.get(false).size());
@@ -312,14 +306,14 @@ public class SmartyServiceImpl implements SmartyService {
 
 	private Map<Boolean, List<Lookup>> processBatch(Vector<Lookup> dataList) {
 		Map<Boolean, List<Lookup>> partitioned = null;
-		log.info(">>>>Starting procees batch of name : {}",Thread.currentThread().getName());
+		log.info(">>>>Starting procees batch of size : {}",dataList.size());
 		Batch batch = new Batch();
 		try {
 	    	dataList.forEach(lookup -> {
 				try {
 					batch.add(lookup);
 				} catch (BatchFullException e) {
-					
+					 log.error("Error BatchFullException :: ", e);
 				}
 			});
 	    	Thread.sleep(Duration.ofSeconds(30));
@@ -351,6 +345,70 @@ public class SmartyServiceImpl implements SmartyService {
 		lookup.setState(cellValues.get(3));
 		lookup.setZipCode(cellValues.get(4));
 		return lookup;
+	}
+	
+	public Lookup dataToLookup(String[] cellValues) {
+		Lookup lookup = new Lookup();
+		lookup.setStreet(cellValues[0]);
+		lookup.setSecondary(cellValues[1]);
+		lookup.setCity(cellValues[2]);
+		lookup.setState(cellValues[3]);
+		lookup.setZipCode(cellValues[4]);
+		return lookup;
+	}
+	
+	/**
+	 * CSV DATA 
+	 */
+	public Map<Boolean, List<Lookup>> getCsvValues(List<String[]> csvDataList) {
+	    Vector<Lookup> dataList = new Vector<>();
+	    List<CompletableFuture<Map<Boolean, List<Lookup>>>> futures = new ArrayList<>();
+	    ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+	    Map<Boolean, List<Lookup>> processBatchList = null;
+	    log.info("Starting getCsvValues...");
+	    try {
+			//Remove Headers
+			csvDataList.removeFirst(); //From Java 21
+//			csvDataList.remove(0);
+			
+	    	csvDataList.forEach(data -> {
+
+	            // Map row to Lookup
+				dataList.add(dataToLookup(data));
+
+				// Process batch when it reaches the batch size
+				if (!dataList.isEmpty() && dataList.size() % batchSize == 0) {
+					Vector<Lookup> batch = new Vector<>(dataList);
+					futures.add(CompletableFuture.supplyAsync(() -> processBatch(batch), executor));
+					dataList.clear();
+				}
+	        });
+
+	        // Process any remaining rows in the batch
+	        if (!dataList.isEmpty()) {
+	        	Vector<Lookup> batch = new Vector<>(dataList);
+				futures.add(CompletableFuture.supplyAsync(() -> processBatch(batch), executor));
+	        }
+
+	        // Wait for all futures to complete
+	        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+	        
+	        processBatchList = futures.stream()
+	                .map(CompletableFuture::join) // Get the result of each future
+	                .flatMap(map -> map.entrySet().stream()) // Flatten the map entries
+	                .collect(Collectors.groupingBy(Map.Entry::getKey,
+	                Collectors.flatMapping(e -> e.getValue().stream(), Collectors.toList())));
+		
+	        log.info("Total Standardized Size {} ,Total Non-standardized Size {} ", 
+	        		processBatchList.get(true).size(), processBatchList.get(false).size());
+
+	    } catch (Exception e) {
+	        log.error("Error in getRowValues :: ", e);
+	        throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	    } finally {
+	        executor.shutdown();
+	    }
+	    return processBatchList;
 	}
 	
 	/**
