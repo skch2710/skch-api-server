@@ -2,9 +2,11 @@ package com.skch.skch_api_server.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -145,17 +147,21 @@ public class DateUtility {
 		
 		log.info("Long Date in UTC :: {}",date);*/
 		
+		LocalDateTime dateTime = LocalDateTime.now();
 		
-		LocalDate startDate = stringToDate("01012023", "ddMMyyyy");
-		LocalDate endDate = stringToDate("01012024", "ddMMyyyy");
-		LocalDate targetDate = stringToDate("01012025", "ddMMyyyy");
+		LocalTime time = LocalTime.now();
 		
-		log.info("Is Between Date :: {}",checkBetween(startDate,null,targetDate));
+		System.out.println(dateTime.getDayOfWeek() == DayOfWeek.SUNDAY);
 		
-		System.out.println(Collections.max(List.of(startDate, endDate,targetDate)));
+		System.out.println(dateTime.getHour());
 		
-		System.out.println(Collections.min(List.of(startDate, endDate,targetDate)));
-
+		System.out.println(dateTime.getMinute());
+		
+		System.out.println(time.isAfter(LocalTime.of(16, 29)));
+		
+		System.out.println(time.isBefore(LocalTime.of(17, 01)));
+		
+		System.out.println(LocalTime.of(17, 01));
 		
 	}
 	
