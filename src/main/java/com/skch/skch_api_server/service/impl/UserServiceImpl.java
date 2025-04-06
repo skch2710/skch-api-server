@@ -96,9 +96,7 @@ public class UserServiceImpl implements UserService {
 					Users saveUser = MAPPER.fromUserDTO(dto);
 
 					saveUser.setIsActive(true);
-//					saveUser.setCreatedDate(new Date());
-//					saveUser.setModifiedDate(new Date());
-					Utility.updateFields(saveUser,"C");
+//					Utility.updateFields(saveUser,"C");
 					String userUuid = UUID.randomUUID().toString() + "#" + System.currentTimeMillis();
 					saveUser.setUserUuid(userUuid);
 					// Set The User Role
@@ -178,7 +176,7 @@ public class UserServiceImpl implements UserService {
 //			userRole.setCreatedDate(new Date());
 //			userRole.setModifiedById(dto.getModifiedById());
 //			userRole.setModifiedDate(new Date());
-			Utility.updateFields(userRole,"C");
+//			Utility.updateFields(userRole,"C");
 			userRole.setUsers(users);
 
 			users.setUserRole(userRole);
@@ -201,7 +199,7 @@ public class UserServiceImpl implements UserService {
 //				userPrivilege.setCreatedDate(new Date());
 //				userPrivilege.setModifiedById(dto.getModifiedById());
 //				userPrivilege.setModifiedDate(new Date());
-				Utility.updateFields(userPrivilege,"C");
+//				Utility.updateFields(userPrivilege,"C");
 
 				userPrivilege.setUsers(users);
 				userPrivilegeList.add(userPrivilege);

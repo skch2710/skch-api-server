@@ -72,10 +72,10 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // Test Dependencies
-    // testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    // testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-/*tasks.named('test') {
+tasks.named('test') {
     useJUnitPlatform()
-}*/
+}

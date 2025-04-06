@@ -70,4 +70,9 @@ public class Users extends Audit{
     @OneToOne(fetch = FetchType.LAZY, mappedBy = "users", cascade = CascadeType.ALL)
    	private UserValidation userValidation;
 
+	public Users() {
+		super.setCreatedDate(LocalDateTime.now());
+		super.setModifiedDate(LocalDateTime.now());
+	}
+    
 }
