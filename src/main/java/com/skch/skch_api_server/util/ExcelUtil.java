@@ -12,8 +12,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -42,6 +44,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.opencsv.CSVParser;
@@ -49,6 +52,7 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import com.skch.skch_api_server.dto.UserDTO;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -829,5 +833,99 @@ public class ExcelUtil {
 		}
 		return sheet;
 	}
+	
+	public static void main(String[] args) throws IOException {
+		
+		LocalTime startTime = LocalTime.now();
+		long startMilli = System.currentTimeMillis();
+		
+		byte[] data = exportUsersToExcel();
+		
+		String path = "C:/Users/HP/Desktop/UsersData/ExcelMulti_01.xlsx";
+		
+		FileUtils.saveByteArrayToFile(path, data);
+		
+		LocalTime endTime = LocalTime.now();
+		long endMilli = System.currentTimeMillis();
+
+		System.out.println("File Placed...."+ Duration.between(startTime, endTime).getSeconds());
+		System.out.println("Milli...."+ (endMilli - startMilli));
+		
+	}
+	
+	
+	public static byte[] exportUsersToExcel() throws IOException {
+		
+		List<UserDTO> userList = generateUserList();
+		List<CompletableFuture<Void>> features = new ArrayList<>();
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+		
+        try (Workbook workbook = new XSSFWorkbook()) {
+            // Calculate number of sheets needed
+            int totalRecords = userList.size();
+            int sheetsNeeded = (int) Math.ceil((double) totalRecords / 25000);
+            
+            // Create sheets sequentially (must be single-threaded)
+            Sheet[] sheets = new Sheet[sheetsNeeded];
+            for (int sheetNum = 0; sheetNum < sheetsNeeded; sheetNum++) {
+                sheets[sheetNum] = workbook.createSheet("Users_" + (sheetNum + 1));
+            }
+            
+            // Create each sheet
+            for (int sheetNum = 0; sheetNum < sheetsNeeded; sheetNum++) {
+                int startIndex = sheetNum * 25000;
+                int endIndex = Math.min(startIndex + 25000, totalRecords);
+                List<UserDTO> subList = userList.subList(startIndex, endIndex);
+                
+//                createSheet(workbook, "Users_" + (sheetNum + 1), subList);
+                Sheet sheet = sheets[sheetNum];
+                String sheetName = "Users_"+(sheetNum + 1);
+                features.add(CompletableFuture.runAsync(() -> createSheet(sheet, sheetName, subList), executor));
+            }
+            
+			// Wait for all threads to complete
+			CompletableFuture.allOf(features.toArray(new CompletableFuture[0])).join();
+            
+            // Write workbook to byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        }
+    }
+    
+    private static void createSheet(Sheet sheet, String sheetName, List<UserDTO> users) {
+    	
+    	System.out.println("Starting ..."+sheetName);
+//        Sheet sheet = workbook.createSheet(sheetName);
+        
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"Email", "First Name", "Last Name"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+        
+        // Create data rows
+        int rowNum = 1;
+        for (UserDTO user : users) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(user.getEmailId());
+            row.createCell(1).setCellValue(user.getFirstName());
+            row.createCell(2).setCellValue(user.getLastName());
+        }
+    }
+	
+	public static List<UserDTO> generateUserList() {
+        List<UserDTO> userList = new ArrayList<>();
+        for (int i = 1; i <= 100025; i++) {
+            UserDTO user = new UserDTO();
+            user.setEmailId("user" + i + "@example.com");
+            user.setFirstName("FirstName" + i);
+            user.setLastName("LastName" + i);
+            userList.add(user);
+        }
+        return userList;
+    }
 	
 }
