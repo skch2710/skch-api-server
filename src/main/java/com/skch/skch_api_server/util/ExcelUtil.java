@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,6 +54,7 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import com.skch.skch_api_server.common.Constant;
 import com.skch.skch_api_server.dto.UserDTO;
 
 import lombok.extern.slf4j.Slf4j;
@@ -834,24 +837,24 @@ public class ExcelUtil {
 		return sheet;
 	}
 	
-	public static void main(String[] args) throws IOException {
-		
-		LocalTime startTime = LocalTime.now();
-		long startMilli = System.currentTimeMillis();
-		
-		byte[] data = exportUsersToExcel();
-		
-		String path = "C:/Users/HP/Desktop/UsersData/ExcelMulti_01.xlsx";
-		
-		FileUtils.saveByteArrayToFile(path, data);
-		
-		LocalTime endTime = LocalTime.now();
-		long endMilli = System.currentTimeMillis();
-
-		System.out.println("File Placed...."+ Duration.between(startTime, endTime).getSeconds());
-		System.out.println("Milli...."+ (endMilli - startMilli));
-		
-	}
+//	public static void main(String[] args) throws IOException {
+//		
+//		LocalTime startTime = LocalTime.now();
+//		long startMilli = System.currentTimeMillis();
+//		
+//		byte[] data = exportUsersToExcel();
+//		
+//		String path = "C:/Users/HP/Desktop/UsersData/ExcelMulti_01.xlsx";
+//		
+//		FileUtils.saveByteArrayToFile(path, data);
+//		
+//		LocalTime endTime = LocalTime.now();
+//		long endMilli = System.currentTimeMillis();
+//
+//		System.out.println("File Placed...."+ Duration.between(startTime, endTime).getSeconds());
+//		System.out.println("Milli...."+ (endMilli - startMilli));
+//		
+//	}
 	
 	
 	public static byte[] exportUsersToExcel() throws IOException {
@@ -918,14 +921,103 @@ public class ExcelUtil {
 	
 	public static List<UserDTO> generateUserList() {
         List<UserDTO> userList = new ArrayList<>();
-        for (int i = 1; i <= 100025; i++) {
+        for (int i = 1; i <= 200025; i++) {
             UserDTO user = new UserDTO();
             user.setEmailId("user" + i + "@example.com");
             user.setFirstName("FirstName" + i);
             user.setLastName("LastName" + i);
+            user.setRoleId(Long.valueOf(i));
+            user.setSalary(new BigDecimal(i));
+            user.setPhoneNumber("369852147");
+            user.setTypeOfUser("Internal User");
+            user.setDob("2020-01-01");
+            user.setPlace("India");
+            user.setStatus("Active");
             userList.add(user);
         }
         return userList;
     }
+	
+	
+	public static <T> ByteArrayOutputStream exportToExcel(List<T> dataList, List<String> headers, List<String> fieldNames, String sheetName){
+        log.info(">>>>Starting exportToExcel ");
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		 try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)){
+            Sheet sheet = workbook.createSheet(sheetName);
+
+            // Header Row
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.size(); i++) {
+                headerRow.createCell(i).setCellValue(headers.get(i));
+            }
+            
+            CellStyle qtyCellStyle = cellStyle(workbook, Constant.QTY_FORMAT);
+            CellStyle currencyCellStyle = cellStyle(workbook, Constant.CURRENCY_FORMAT_NEGITIVE);
+            currencyCellStyle.setAlignment(HorizontalAlignment.LEFT);
+            
+            // Data Rows
+            for (int i = 0; i < dataList.size(); i++) {
+                Row dataRow = sheet.createRow(i + 1);
+                T item = dataList.get(i);
+
+                for (int j = 0; j < fieldNames.size(); j++) {
+                		String fieldName = fieldNames.get(j);
+                    Field field = item.getClass().getDeclaredField(fieldNames.get(j));
+                    field.setAccessible(true);
+                    Object value = field.get(item);
+//                    System.out.println(field.getType());
+                    Cell cell = dataRow.createCell(j);
+                    if(fieldName.equals("roleId")) {
+                    		cell.setCellStyle(qtyCellStyle);
+                    		if(ObjectUtils.isNotEmpty(value)) {
+                    			cell.setCellValue(Double.valueOf(value.toString()));
+                    		}else {
+                    			cell.setBlank();
+                    		}
+                    }else if(fieldName.equals("salary")){
+	                		cell.setCellStyle(currencyCellStyle);
+	                		cell.setCellValue(ObjectUtils.isNotEmpty(value) ?
+	                					Double.valueOf(value.toString()) : 0d);
+                    }else {
+                    		cell.setCellValue(value != null ? value.toString() : "");
+                    }
+                }
+            }
+            workbook.write(out);
+            log.info("<<<<<Ending exportToExcel ");
+        } catch (Exception e) {
+			log.error("Error in exportToExcel :: ",e);
+		}
+		return out;
+    }
+	
+	public static void main(String[] args) {
+		
+		List<String> headers = List.of("First Name", "Last Name", "Email Id", "Role Id", "Salary",
+					"Phone Number","Date Of Birth", "Status","Type of User","Place",
+					"First Name", "Last Name", "Email Id", "Role Id", "Salary",
+					"Phone Number","Date Of Birth", "Status","Type of User","Place");
+		List<String> fieldNames = List.of("firstName", "lastName", "emailId", "roleId","salary",
+				"phoneNumber","dob","status","typeOfUser","place",
+				"firstName", "lastName", "emailId", "roleId","salary",
+				"phoneNumber","dob","status","typeOfUser","place");
+
+		List<UserDTO> userDataList = generateUserList();
+
+		long startTime = System.currentTimeMillis();
+		
+		ByteArrayOutputStream data = exportToExcel(userDataList,headers,fieldNames,"UserData");
+		long milliSec = System.currentTimeMillis();
+		String path = "C:/Users/HP/Desktop/UsersData/ExcelUser_"+milliSec+".xlsx";
+		
+		FileUtils.saveByteArrayToFile(path, data.toByteArray());
+		
+		long endTime = System.currentTimeMillis();
+
+		Utility.logTimeTaken(endTime-startTime);
+		
+		System.out.println("Generate completed....");
+	
+	}
 	
 }

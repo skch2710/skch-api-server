@@ -16,6 +16,7 @@ public class Constant {
 	public static final String NUMBER_FORMAT_NEGITIVE = "#,##0.00; (#,##0.00)";
 	public static final String PERCENTAGE_FORMAT = "0.00\\%";
 	public static final String PERCENTAGE_FORMAT_NEGITIVE = "0.00\\%; (0.00\\%)";
+	public static final String QTY_FORMAT = "#,##0";
 	
 	public static final String ZIP_TYPE = "application/zip";
 	public static final String EXCEL_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
