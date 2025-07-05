@@ -14,10 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -31,6 +29,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -938,11 +937,31 @@ public class ExcelUtil {
         return userList;
     }
 	
+	public static void setWorkBookProp(SXSSFWorkbook workbook) {
+		// Access the underlying XSSFWorkbook to set document properties
+		XSSFWorkbook xssfWorkbook = (XSSFWorkbook) workbook.getXSSFWorkbook();
+
+		// Core Properties (Author, Title, etc.)
+		POIXMLProperties.CoreProperties coreProps = xssfWorkbook.getProperties().getCoreProperties();
+		coreProps.setCreator("Sathish Kumar");
+		coreProps.setTitle("User Export Report");
+		coreProps.setDescription("This is an auto-generated Excel export.");
+
+		// Extended Properties (Company, Application)
+		POIXMLProperties.ExtendedProperties extProps = xssfWorkbook.getProperties().getExtendedProperties();
+		extProps.getUnderlyingProperties().setCompany("Sathish_CH");
+		extProps.getUnderlyingProperties().setApplication("skch-api-server");
+
+	}
+	
 	
 	public static <T> ByteArrayOutputStream exportToExcel(List<T> dataList, List<String> headers, List<String> fieldNames, String sheetName){
         log.info(">>>>Starting exportToExcel ");
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		 try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)){
+			 
+			 setWorkBookProp(workbook); 
+			 
             Sheet sheet = workbook.createSheet(sheetName);
 
             // Header Row
