@@ -1,9 +1,11 @@
 package com.skch.skch_api_server.util;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Chunk;
@@ -21,6 +23,7 @@ import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import com.skch.skch_api_server.common.Constant;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -188,6 +191,16 @@ public class PdfHelper {
 		cell.setHorizontalAlignment(horizontalAlignment);
 		table.addCell(cell);
 	}
+	
+	//This is for grid Component
+	public static void createPdfPCell(PdfPTable table, Object content) {
+		PdfPCell cell = new PdfPCell(new Phrase(content != null ? content.toString() : "",
+											getPoppinsFont(6, null)));
+		cell.setPaddingTop(5);
+		cell.setPaddingBottom(5);
+		cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+		table.addCell(cell);
+	}
 
 	public static void createPdfPCell(PdfPTable table, String content, Font font, int padding, int paddingLeft,
 			int horizontalAlignment) {
@@ -312,6 +325,52 @@ public class PdfHelper {
 			table.addCell(cell);
 		} catch (Exception e) {
 			log.error("Error in getQRCode :: ", e);
+		}
+	}
+	
+	public static <T> void gridComponent(List<T> dataList, List<String> headers,
+            List<String> fieldNames, String gridName, Document document) {
+		try {
+			Paragraph tableTitle = createParagraph(gridName + " (" + 
+						NumberFormats.numFormart(dataList.size(),Constant.QTY_FORMAT) + ")",
+					14, 5, getPoppinsFont(12, new BaseColor(255, 165, 0)));
+			document.add(tableTitle);
+
+			PdfPTable mainTable = createTable(headers.size(), 5, 5, 100);
+//		mainTable.setTotalWidth(new float[] { 10, 14, 10, 4, 8, 8, 12, 10, 10, 8, 6 });
+
+			// Add table headers
+			headers.forEach(header -> {
+				headerCell(mainTable, header, new BaseColor(229, 242, 255),
+						getPoppinsFont(8, null));
+			});
+
+			for (int i = 0; i < dataList.size(); i++) {
+				T item = dataList.get(i);
+				for (int j = 0; j < fieldNames.size(); j++) {
+					String fieldName = fieldNames.get(j);
+					Field field = item.getClass().getDeclaredField(fieldNames.get(j));
+					field.setAccessible(true);
+					Object value = field.get(item);
+					if (ExcelUtil.DATE_FIELDS.contains(fieldName)) {
+						String cellValue = DateUtility.objToString(value,Constant.DATE_FORMAT);
+						createPdfPCell(mainTable, cellValue);
+					}else if (ExcelUtil.QTY_FIELDS.contains(fieldName)) {
+						String cellValue = NumberFormats.numFormart(value,Constant.QTY_FORMAT);
+						createPdfPCell(mainTable, cellValue);
+					} else if (ExcelUtil.CURRENCY_FIELDS.contains(fieldName)) {
+						String cellValue = NumberFormats.numFormart(value,Constant.D_CURRENCY_FORMAT_NEGITIVE);
+						createPdfPCell(mainTable, cellValue);
+					}else {
+						createPdfPCell(mainTable, value);
+					}
+				}
+			}
+
+			document.add(mainTable);
+			
+		} catch (Exception e) {
+			log.error("Error in Pdf Grid Component :: ",e);
 		}
 	}
 	

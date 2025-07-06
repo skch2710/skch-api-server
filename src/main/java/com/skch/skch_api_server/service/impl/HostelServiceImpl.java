@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -246,28 +247,31 @@ public class HostelServiceImpl implements HostelService {
 				}
 			} else if (search.isExportExcel()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
-				result.setBao(getHostelGridExcelNew(hostellerGridList));
-				result.setFileName("Hostel_Data.xlsx");
+				ByteArrayOutputStream data = ExcelUtil.exportToExcel(hostellerGridList,
+						ExcelUtil.HOSTEL_HEADERS, ExcelUtil.HOSTEL_FIELDS,Constant.HOSTEL_DATA);
+				result.setBao(data);
+				result.setFileName(Constant.HOSTEL_DATA+Constant.EXCEL_EXT);
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			} else if (search.isExportCsv()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
 				result.setBao(getHostelGridCsv(hostellerGridList));
-				result.setFileName("Hostel_Data.csv");
+				result.setFileName(Constant.HOSTEL_DATA+Constant.CSV_EXT);
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			}else if (search.isExportPdf()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
 				result.setBao(getHostelGridPdf(hostellerGridList));
-				result.setFileName("Hostel_Data.pdf");
+				result.setFileName(Constant.HOSTEL_DATA+Constant.PDF_EXT);
 				result.setType(MediaType.APPLICATION_PDF);
 			}else if (search.isExportZip()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);
 				result.setBao(getHostelZip(hostellerGridList));
-				result.setFileName("Hostel_Data.zip");
+				result.setFileName(Constant.HOSTEL_DATA+Constant.ZIP_EXT);
 				result.setType(MediaType.APPLICATION_OCTET_STREAM);
 			}
 
 			long finalTime = System.currentTimeMillis();
-			log.info("Ending at getHostellers TotalTime Taken :: {}",(finalTime-intialTime));
+			log.info("Ending at getHostellers TotalTime Taken ");
+			Utility.logTimeTaken(finalTime - intialTime);
 		} catch (Exception e) {
 			log.error("Error at getHostellers :: {} ",e.getMessage(), e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -473,46 +477,8 @@ public class HostelServiceImpl implements HostelService {
 
 			PdfHelper.lineSeparator(document, "Hosteller Data");
 
-			Paragraph tableTitle = PdfHelper.createParagraph("Number of Hostellers (" + hostellerGridList.size() + ")",
-					14, 5, PdfHelper.getPoppinsFont(12, new BaseColor(255, 165, 0)));
-			document.add(tableTitle);
-
-			PdfPTable mainTable = PdfHelper.createTable(11, 5, 5, 100);
-			mainTable.setTotalWidth(new float[] { 10, 14, 10, 4, 8, 8, 12, 10, 10, 8, 6 });
-
-			// Add table headers
-			ExcelUtil.HOSTEL_HEADERS.forEach(header -> {
-				PdfHelper.headerCell(mainTable, header, new BaseColor(229, 242, 255),
-						PdfHelper.getPoppinsFont(8, null));
-			});
-
-			// Table Data
-			for (HostellerGrid data : hostellerGridList) {
-				PdfHelper.createPdfPCell(mainTable, data.getFullName(), PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, data.getEmailId(), PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, data.getPhoneNumber(), PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, DateUtility.dateToString(data.getDob(),"yyyy-MM-dd"),
-						PdfHelper.getPoppinsFont(6, null), 5, Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, PdfHelper.numberFormatGrid(data.getFee()),
-						PdfHelper.getPoppinsFont(6, null), 5, Element.ALIGN_RIGHT);
-				PdfHelper.createPdfPCell(mainTable, DateUtility.dateToString(data.getJoiningDate(),"yyyy-MM-dd"),
-						PdfHelper.getPoppinsFont(6, null), 5, Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, data.getAddress(), PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, data.getProof(), PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, data.getReason(), PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, DateUtility.dateToString(data.getVacatedDate(),"yyyy-MM-dd"),
-						PdfHelper.getPoppinsFont(6, null), 5, Element.ALIGN_CENTER);
-				PdfHelper.createPdfPCell(mainTable, data.getActive() ? "Yes" : "No", PdfHelper.getPoppinsFont(6, null), 5,
-						Element.ALIGN_CENTER);
-			}
-
-			document.add(mainTable);
+			PdfHelper.gridComponent(hostellerGridList,ExcelUtil.HOSTEL_HEADERS,
+					ExcelUtil.HOSTEL_FIELDS, "Hostel Data",document);
 
 			document.close();// Close the document
 		} catch (Exception e) {
@@ -537,7 +503,8 @@ public class HostelServiceImpl implements HostelService {
 			CompletableFuture<ByteArrayOutputStream> excel = CompletableFuture.supplyAsync(() -> {
 				try {
 					log.info(">>Thread Name: " + Thread.currentThread());
-					return getHostelGridExcel(hostellerGridList);
+					return ExcelUtil.exportToExcel(hostellerGridList,
+							ExcelUtil.HOSTEL_HEADERS, ExcelUtil.HOSTEL_FIELDS,Constant.HOSTEL_DATA);
 				} catch (Exception e) {
 					log.error("Error in Excel getHostelZip :: ", e);
 					throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -568,7 +535,7 @@ public class HostelServiceImpl implements HostelService {
 		} catch (Exception e) {
 			log.error("error in getHostelZip :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}finally {
+		} finally {
 			executor.shutdown();
 		}
 		return baos;

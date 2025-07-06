@@ -51,6 +51,23 @@ public class DateUtility {
 		}
 		return "";
 	}
+	
+	public static String objToString(Object value, String format) {
+	    if (value == null) {
+	        return "";
+	    }
+	    if (value instanceof LocalDate) {
+	        return ((LocalDate) value).format(DateTimeFormatter.ofPattern(format));
+	    }
+	    if (value instanceof LocalDateTime) {
+	        return ((LocalDateTime) value).format(DateTimeFormatter.ofPattern(format));
+	    }
+	    if (value instanceof Date) {
+	        return new SimpleDateFormat(format).format((Date) value);
+	    }
+	    return "";
+	}
+
 
 	public static String dateToString(LocalDate date, String format) {
 		if(date != null) {

@@ -12,6 +12,7 @@ public class Constant {
 	
 	public static final String CURRENCY_FORMAT = "₹ #,##0.00";
 	public static final String CURRENCY_FORMAT_NEGITIVE = "₹ #,##0.00; ₹ (#,##0.00)";
+	public static final String D_CURRENCY_FORMAT_NEGITIVE = "$ #,##0.00; $ (#,##0.00)";
 	public static final String NUMBER_FORMAT = "#,##0.00";
 	public static final String NUMBER_FORMAT_NEGITIVE = "#,##0.00; (#,##0.00)";
 	public static final String PERCENTAGE_FORMAT = "0.00\\%";
@@ -23,5 +24,13 @@ public class Constant {
 	public static final String PDF_TYPE = "application/pdf";
 	public static final String JPG_TYPE = "image/jpeg";
 	public static final String PNG_TYPE = "image/png";
+	
+	public static final String ZIP_EXT = ".zip";
+	public static final String EXCEL_EXT = ".xlsx";
+	public static final String PDF_EXT = ".pdf";
+	public static final String CSV_EXT = ".csv";
+	
+	public static final String HOSTEL_DATA = "Hostel_Data";
+	
 
 }

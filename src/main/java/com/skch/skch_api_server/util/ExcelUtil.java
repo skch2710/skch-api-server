@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -55,28 +56,38 @@ import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 import com.skch.skch_api_server.common.Constant;
 import com.skch.skch_api_server.dto.UserDTO;
+import com.skch.skch_api_server.model.HostellerGrid;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ExcelUtil {
 
-	public static final List<String> HOSTEL_HEADERS = Arrays.asList("Full Name", "Email Id", "Phone Number", "DOB",
-			"Fee", "Joining Date", "Address", "Proof", "Reason", "Vacated Date", "Active");
-	
-	public static final List<String> USER_HEADERS = Arrays.asList("First Name", "Last Name", "Email Id", "Phone Number",
-			"DOB", "Role Name", "Active");
+	public static final List<String> HOSTEL_HEADERS = Arrays.asList("Full Name", "Email Id",
+			"Phone Number", "DOB", "Fee", "Joining Date", "Address", "Proof", "Reason",
+			"Vacated Date", "Active");
+	public static final List<String> HOSTEL_FIELDS = Arrays.asList("fullName", "emailId", 
+			"phoneNumber", "dob","fee", "joiningDate", "address", "proof", "reason", 
+			"vacatedDate", "active");
+	public static final List<String> USER_HEADERS = Arrays.asList("First Name", "Last Name", 
+			"Email Id", "Phone Number","DOB", "Role Name", "Active");
 
 	public static final List<String> EXCEL_MIME_TYPES = Arrays.asList("application/vnd.ms-excel",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 	
-	public static final List<String> SMARTY_HEADERS = Arrays.asList("Street", "Secondary", "City", "State", "ZipCode");
+	public static final List<String> SMARTY_HEADERS = Arrays.asList("Street", "Secondary", "City",
+			"State", "ZipCode");
 	
 	public static final String XLS_TYPE = "application/vnd.ms-excel";
 
 	public static final String CSV_TYPE = "text/csv";
 	
 	private static final char BOM = '\uFEFF';
+	
+	public static final Set<String> QTY_FIELDS = Set.of("roleId");
+	public static final Set<String> DATE_FIELDS = Set.of("dob","joiningDate","vacatedDate",
+			"createdDate");
+	public static final Set<String> CURRENCY_FIELDS = Set.of("salary","fee");
 	
 	/**
 	 * Check the File is Excel or Not
@@ -136,7 +147,8 @@ public class ExcelUtil {
 	                if (headerRow.getPhysicalNumberOfCells() > 0) {
 	                    List<String> excelHeaders = new ArrayList<>();
 	                    for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
-	                        String header = getCellValue(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
+	                        String header = getCellValue(headerRow.getCell(i, 
+	                        		Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
 	                        excelHeaders.add(header.trim());
 	                    }
 	                    
@@ -147,13 +159,16 @@ public class ExcelUtil {
 	                        error = "";
 	                    } else {
 	                        List<String> unMatched = IntStream.range(0, headers.size())
-	                                .filter(i -> i >= excelHeaders.size() || !headers.get(i).equals(excelHeaders.get(i)))
+	                                .filter(i -> i >= excelHeaders.size() || 
+	                                		!headers.get(i).equals(excelHeaders.get(i)))
 	                                .mapToObj(headers::get).collect(Collectors.toList());
 	                        if (!unMatched.isEmpty()) {
 	                            error += "Missing Columns " + String.join(",", unMatched);
 	                        } else {
-	                            List<String> additionalData = IntStream.range(headers.size(), excelHeaders.size())
-	                                    .mapToObj(excelHeaders::get).filter(obj -> obj != null && !obj.isBlank())
+	                            List<String> additionalData = IntStream.range(headers.size(),
+	                            						excelHeaders.size())
+	                                    .mapToObj(excelHeaders::get).filter(obj -> obj != null 
+	                                    				&& !obj.isBlank())
 	                                    .collect(Collectors.toList());
 	                            if (!additionalData.isEmpty()) {
 	                                error += "Extra Columns " + String.join(",", additionalData);
@@ -188,20 +203,24 @@ public class ExcelUtil {
 				Row headerRow = sheet.getRow(0);
 				List<String> excelHeaders = new ArrayList<>();
 				for (int i = 0; i < headerRow.getPhysicalNumberOfCells(); i++) {
-					String header = getCellValue(headerRow.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
+					String header = getCellValue(headerRow.getCell(i, 
+							Row.MissingCellPolicy.CREATE_NULL_AS_BLANK));
 					excelHeaders.add(header.trim());
 				}
 				if (Arrays.equals(headers.toArray(), excelHeaders.toArray())) {
 					error = "";
 				} else {
 					List<String> unMatched = IntStream.range(0, headers.size())
-							.filter(i -> i >= excelHeaders.size() || !headers.get(i).equals(excelHeaders.get(i)))
+							.filter(i -> i >= excelHeaders.size() || 
+										!headers.get(i).equals(excelHeaders.get(i)))
 							.mapToObj(headers::get).collect(Collectors.toList());
 					if (!unMatched.isEmpty()) {
 						error += "Missing Columns " + String.join(",", unMatched);
 					} else {
-						List<String> additionalData = IntStream.range(headers.size(), excelHeaders.size())
-								.mapToObj(excelHeaders::get).filter(obj -> obj != null && !obj.isBlank())
+						List<String> additionalData = IntStream.range(headers.size(), 
+											excelHeaders.size())
+								.mapToObj(excelHeaders::get).filter(obj -> obj != null 
+												&& !obj.isBlank())
 								.collect(Collectors.toList());
 						if (!additionalData.isEmpty()) {
 							error += "Extra Columns " + String.join(",", additionalData);
@@ -247,13 +266,16 @@ public class ExcelUtil {
 					return error;
 				} else {
 					List<String> unMatched = IntStream.range(0, headers.size())
-							.filter(i -> i >= headersCsv.size() || !headers.get(i).equals(headersCsv.get(i)))
+							.filter(i -> i >= headersCsv.size() || 
+									!headers.get(i).equals(headersCsv.get(i)))
 							.mapToObj(headers::get).collect(Collectors.toList());
 					if (!unMatched.isEmpty()) {
 						error += "Missing Columns " + String.join(",", unMatched);
 					} else {
-						List<String> additionalData = IntStream.range(headers.size(), headersCsv.size())
-								.mapToObj(headersCsv::get).filter(obj -> obj != null && !obj.isBlank())
+						List<String> additionalData = IntStream.range(headers.size(), 
+										headersCsv.size())
+								.mapToObj(headersCsv::get).filter(obj -> obj != null && 
+											!obj.isBlank())
 								.collect(Collectors.toList());
 						if (!additionalData.isEmpty()) {
 							error += "Extra Columns " + String.join(",", additionalData);
@@ -367,8 +389,8 @@ public class ExcelUtil {
 				uploadDir.mkdirs();
 			}
 			String originalFilename = file.getOriginalFilename();
-			String fileName = "FileName_" + DateUtility.dateToString(LocalDateTime.now(), "MMddyyyy_HHmmss") + "."
-					+ originalFilename.split("\\.")[1];
+			String fileName = "FileName_" + DateUtility.dateToString(LocalDateTime.now(), 
+							"MMddyyyy_HHmmss") + "." + originalFilename.split("\\.")[1];
 			Path filePath = Paths.get(dir, fileName);
 			Files.write(filePath, file.getBytes());
 		} catch (Exception e) {
@@ -954,61 +976,63 @@ public class ExcelUtil {
 
 	}
 	
-	
-	public static <T> ByteArrayOutputStream exportToExcel(List<T> dataList, List<String> headers, List<String> fieldNames, String sheetName){
-        log.info(">>>>Starting exportToExcel ");
+	public static <T> ByteArrayOutputStream exportToExcel(List<T> dataList, List<String> headers,
+			List<String> fieldNames, String sheetName) {
+		log.info(">>>>Starting exportToExcel ");
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		 try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)){
-			 
-			 setWorkBookProp(workbook); 
-			 
-            Sheet sheet = workbook.createSheet(sheetName);
+		try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
 
-            // Header Row
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < headers.size(); i++) {
-                headerRow.createCell(i).setCellValue(headers.get(i));
-            }
-            
-            CellStyle qtyCellStyle = cellStyle(workbook, Constant.QTY_FORMAT);
-            CellStyle currencyCellStyle = cellStyle(workbook, Constant.CURRENCY_FORMAT_NEGITIVE);
-            currencyCellStyle.setAlignment(HorizontalAlignment.LEFT);
-            
-            // Data Rows
-            for (int i = 0; i < dataList.size(); i++) {
-                Row dataRow = sheet.createRow(i + 1);
-                T item = dataList.get(i);
+			Sheet sheet = workbook.createSheet(sheetName);
 
-                for (int j = 0; j < fieldNames.size(); j++) {
-                		String fieldName = fieldNames.get(j);
-                    Field field = item.getClass().getDeclaredField(fieldNames.get(j));
-                    field.setAccessible(true);
-                    Object value = field.get(item);
+			// Header Row
+			Row headerRow = sheet.createRow(0);
+			for (int i = 0; i < headers.size(); i++) {
+				headerRow.createCell(i).setCellValue(headers.get(i));
+			}
+			
+			CellStyle qtyCellStyle = cellStyle(workbook, Constant.QTY_FORMAT);
+			CellStyle currencyCellStyle = cellStyle(workbook, Constant.CURRENCY_FORMAT_NEGITIVE);
+			currencyCellStyle.setAlignment(HorizontalAlignment.LEFT);
+
+			// Data Rows
+			for (int i = 0; i < dataList.size(); i++) {
+				Row dataRow = sheet.createRow(i + 1);
+				T item = dataList.get(i);
+
+				for (int j = 0; j < fieldNames.size(); j++) {
+					String fieldName = fieldNames.get(j);
+					Field field = item.getClass().getDeclaredField(fieldNames.get(j));
+					field.setAccessible(true);
+					Object value = field.get(item);
 //                    System.out.println(field.getType());
-                    Cell cell = dataRow.createCell(j);
-                    if(fieldName.equals("roleId")) {
-                    		cell.setCellStyle(qtyCellStyle);
-                    		if(ObjectUtils.isNotEmpty(value)) {
-                    			cell.setCellValue(Double.valueOf(value.toString()));
-                    		}else {
-                    			cell.setBlank();
-                    		}
-                    }else if(fieldName.equals("salary")){
-	                		cell.setCellStyle(currencyCellStyle);
-	                		cell.setCellValue(ObjectUtils.isNotEmpty(value) ?
-	                					Double.valueOf(value.toString()) : 0d);
-                    }else {
-                    		cell.setCellValue(value != null ? value.toString() : "");
-                    }
-                }
-            }
-            workbook.write(out);
-            log.info("<<<<<Ending exportToExcel ");
-        } catch (Exception e) {
-			log.error("Error in exportToExcel :: ",e);
+					Cell cell = dataRow.createCell(j);
+					if (QTY_FIELDS.contains(fieldName)) {
+						cell.setCellStyle(qtyCellStyle);
+						if (value != null) {
+							cell.setCellValue(Double.parseDouble(value.toString()));
+						} else {
+							cell.setBlank();
+						}
+					} else if (CURRENCY_FIELDS.contains(fieldName)) {
+						cell.setCellStyle(currencyCellStyle);
+						cell.setCellValue(value != null ? 
+								Double.parseDouble(value.toString()) : 0d);
+					} else if (DATE_FIELDS.contains(fieldName)) {
+						String cellValue = DateUtility.objToString(value,Constant.DATE_FORMAT);
+						cell.setCellValue(cellValue);
+					} else {
+						cell.setCellValue(value != null ? value.toString() : "");
+					}
+				}
+			}
+			setWorkBookProp(workbook);
+			workbook.write(out);
+			log.info("<<<<<Ending exportToExcel ");
+		} catch (Exception e) {
+			log.error("Error in exportToExcel :: ", e);
 		}
 		return out;
-    }
+	}
 	
 	public static void main(String[] args) {
 		
@@ -1020,16 +1044,25 @@ public class ExcelUtil {
 				"phoneNumber","dob","status","typeOfUser","place",
 				"firstName", "lastName", "emailId", "roleId","salary",
 				"phoneNumber","dob","status","typeOfUser","place");
-
+		
 		List<UserDTO> userDataList = generateUserList();
 
 		long startTime = System.currentTimeMillis();
 		
 		ByteArrayOutputStream data = exportToExcel(userDataList,headers,fieldNames,"UserData");
-		long milliSec = System.currentTimeMillis();
-		String path = "C:/Users/HP/Desktop/UsersData/ExcelUser_"+milliSec+".xlsx";
+		
+		List<HostellerGrid> sampleHostelData = getSampleHostelData();
+		
+		ByteArrayOutputStream dataH = exportToExcel(sampleHostelData,
+				HOSTEL_HEADERS,HOSTEL_FIELDS,"UserData");
+		
+		String path = "C:/Users/HP/Desktop/UsersData/Excel_"+startTime+".xlsx";
+		
+		String pathH = "C:/Users/HP/Desktop/UsersData/Excel_"+startTime+".xlsx";
 		
 		FileUtils.saveByteArrayToFile(path, data.toByteArray());
+		
+		FileUtils.saveByteArrayToFile(pathH, dataH.toByteArray());
 		
 		long endTime = System.currentTimeMillis();
 
@@ -1037,6 +1070,26 @@ public class ExcelUtil {
 		
 		System.out.println("Generate completed....");
 	
+	}
+	
+	public static List<HostellerGrid> getSampleHostelData(){
+		List<HostellerGrid> dataList = new ArrayList<>();
+        for (int i = 1; i <= 200050; i++) {
+        		HostellerGrid data = new HostellerGrid();
+        		data.setFullName("FullName"+i);
+        		data.setEmailId("EmailId"+i);
+        		data.setPhoneNumber(""+i);
+        		data.setDob(LocalDate.now());
+        		data.setFee(new BigDecimal(i));
+        		data.setJoiningDate(LocalDate.now());
+        		data.setAddress("AddressLine"+i);
+        		data.setProof("Proof"+i);
+        		data.setReason("Reason"+i);
+        		data.setVacatedDate(LocalDateTime.now());
+        		data.setActive(true);
+        		dataList.add(data);
+        }
+        return dataList;
 	}
 	
 }
