@@ -1,12 +1,18 @@
 package com.skch.skch_api_server.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -101,6 +107,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         response.setErrorMessage(edx.getMessage());
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
+    
+
+	@Override
+	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+
+		Map<String, String> errors = new HashMap<>();
+		ex.getBindingResult().getFieldErrors()
+				.forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+
+		ErrorResponse response = new ErrorResponse();
+		response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+		response.setSuccessMessage("Invalid Request.");
+		response.setErrorMessage(errors.toString());
+
+		return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+	}
+
+
 
     /**
      * Generic Exception handle.

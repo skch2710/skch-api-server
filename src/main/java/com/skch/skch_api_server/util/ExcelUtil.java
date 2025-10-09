@@ -2,10 +2,13 @@ package com.skch.skch_api_server.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -31,6 +34,12 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.poi.ooxml.POIXMLProperties;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.crypt.EncryptionMode;
+import org.apache.poi.poifs.crypt.Encryptor;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -942,7 +951,7 @@ public class ExcelUtil {
 	
 	public static List<UserDTO> generateUserList() {
         List<UserDTO> userList = new ArrayList<>();
-        for (int i = 1; i <= 200025; i++) {
+        for (int i = 1; i <= 2000; i++) {
             UserDTO user = new UserDTO();
             user.setEmailId("user" + i + "@example.com");
             user.setFirstName("FirstName" + i);
@@ -1034,6 +1043,85 @@ public class ExcelUtil {
 		return out;
 	}
 	
+	public static <T> ByteArrayOutputStream exportToExcel(List<T> dataList, List<String> headers,
+			List<String> fieldNames, String sheetName,String password) {
+		log.info(">>>>Starting exportToExcel ");
+		ByteArrayOutputStream encryptedOut = new ByteArrayOutputStream();
+		
+		try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+			
+			File tempFile = File.createTempFile("excel_data", ".xlsx");
+
+			Sheet sheet = workbook.createSheet(sheetName);
+
+			// Header Row
+			Row headerRow = sheet.createRow(0);
+			for (int i = 0; i < headers.size(); i++) {
+				headerRow.createCell(i).setCellValue(headers.get(i));
+			}
+			
+			CellStyle qtyCellStyle = cellStyle(workbook, Constant.QTY_FORMAT);
+			CellStyle currencyCellStyle = cellStyle(workbook, Constant.CURRENCY_FORMAT_NEGITIVE);
+			currencyCellStyle.setAlignment(HorizontalAlignment.LEFT);
+
+			// Data Rows
+			for (int i = 0; i < dataList.size(); i++) {
+				Row dataRow = sheet.createRow(i + 1);
+				T item = dataList.get(i);
+
+				for (int j = 0; j < fieldNames.size(); j++) {
+					String fieldName = fieldNames.get(j);
+					Field field = item.getClass().getDeclaredField(fieldNames.get(j));
+					field.setAccessible(true);
+					Object value = field.get(item);
+//                    log.info("Field Type : {} , {}",field.getType(),field.getType().equals(LocalDate.class));
+					Cell cell = dataRow.createCell(j);
+					if (QTY_FIELDS.contains(fieldName)) {
+						cell.setCellStyle(qtyCellStyle);
+						if (value != null) {
+							cell.setCellValue(Double.parseDouble(value.toString()));
+						} else {
+							cell.setBlank();
+						}
+					} else if (CURRENCY_FIELDS.contains(fieldName)) {
+						cell.setCellStyle(currencyCellStyle);
+						cell.setCellValue(value != null ? 
+								Double.parseDouble(value.toString()) : 0d);
+					} else if (DATE_FIELDS.contains(fieldName)) {
+						String cellValue = DateUtility.objToString(value,Constant.DATE_FORMAT);
+						cell.setCellValue(cellValue);
+					} else {
+						cell.setCellValue(value != null ? value.toString() : "");
+					}
+				}
+			}
+			setWorkBookProp(workbook);
+			try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+	            workbook.write(fos);
+	        }
+			
+			// Encrypt and write to memory
+			POIFSFileSystem fs = new POIFSFileSystem();
+			Encryptor encryptor = new EncryptionInfo(EncryptionMode.agile).getEncryptor();
+			encryptor.confirmPassword(password);
+
+			try (OPCPackage opc = OPCPackage.open(tempFile, PackageAccess.READ_WRITE);
+			         OutputStream os = encryptor.getDataStream(fs)) {
+			        opc.save(os);
+			  }
+
+			// Return final encrypted bytes
+			fs.writeFilesystem(encryptedOut);
+			fs.close();
+			tempFile.delete();
+			
+			log.info("<<<<<Ending exportToExcel ");
+		} catch (Exception e) {
+			log.error("Error in exportToExcel :: ", e);
+		}
+		return encryptedOut;
+	}
+	
 	public static void main(String[] args) {
 		
 		List<String> headers = List.of("First Name", "Last Name", "Email Id", "Role Id", "Salary",
@@ -1045,22 +1133,23 @@ public class ExcelUtil {
 				"firstName", "lastName", "emailId", "roleId","salary",
 				"phoneNumber","dob","status","typeOfUser","place");
 		
-		List<UserDTO> userDataList = generateUserList();
+//		List<UserDTO> userDataList = generateUserList();
 
 		long startTime = System.currentTimeMillis();
 		
-		ByteArrayOutputStream data = exportToExcel(userDataList,headers,fieldNames,"UserData");
+//		ByteArrayOutputStream data = exportToExcel(userDataList,headers,fieldNames,"UserData",
+//				"Sathish@123");
 		
 		List<HostellerGrid> sampleHostelData = getSampleHostelData();
 		
 		ByteArrayOutputStream dataH = exportToExcel(sampleHostelData,
-				HOSTEL_HEADERS,HOSTEL_FIELDS,"UserData");
+				HOSTEL_HEADERS,HOSTEL_FIELDS,"UserData","Sathish@123");
 		
-		String path = "C:/Users/HP/Desktop/UsersData/Excel_"+startTime+".xlsx";
+//		String path = "C:/Users/HP/Desktop/UsersData/ExcelUser_"+startTime+".xlsx";
 		
-		String pathH = "C:/Users/HP/Desktop/UsersData/Excel_"+startTime+".xlsx";
+		String pathH = "C:/Users/HP/Desktop/UsersData/ExcelHostel_"+startTime+".xlsx";
 		
-		FileUtils.saveByteArrayToFile(path, data.toByteArray());
+//		FileUtils.saveByteArrayToFile(path, data.toByteArray());
 		
 		FileUtils.saveByteArrayToFile(pathH, dataH.toByteArray());
 		
@@ -1074,7 +1163,7 @@ public class ExcelUtil {
 	
 	public static List<HostellerGrid> getSampleHostelData(){
 		List<HostellerGrid> dataList = new ArrayList<>();
-        for (int i = 1; i <= 200050; i++) {
+        for (int i = 1; i <= 20; i++) {
         		HostellerGrid data = new HostellerGrid();
         		data.setFullName("FullName"+i);
         		data.setEmailId("EmailId"+i);

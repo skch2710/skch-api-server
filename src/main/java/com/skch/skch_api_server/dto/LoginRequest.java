@@ -1,5 +1,8 @@
 package com.skch.skch_api_server.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,8 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoginRequest {
 
+	@NotBlank(message = "Email cannot be blank")
+	@Email(message = "Invalid email format")
 	private String emailId;
+	
+	@NotEmpty(message = "Password cannot be blank")
 	private String password;
+	
 	private String otp;
 
 }

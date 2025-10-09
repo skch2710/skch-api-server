@@ -49,6 +49,7 @@ import com.skch.skch_api_server.util.ExcelUtil;
 import com.skch.skch_api_server.util.JwtUtil;
 import com.skch.skch_api_server.util.Utility;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -60,7 +61,7 @@ public class LoginController {
 	private LoginService loginService;
 
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+	public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
 		Result response = loginService.login(request);
 		return ResponseEntity.ok(response);
 	}

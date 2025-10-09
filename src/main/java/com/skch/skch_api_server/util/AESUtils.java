@@ -9,7 +9,10 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import com.skch.skch_api_server.exception.CustomException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,6 +84,7 @@ public class AESUtils {
 			}
 		} catch (Exception e) {
 			log.error("Decription error: {}", e.getMessage(), e);
+			throw new CustomException("Invalid Encrypted data",HttpStatus.BAD_REQUEST);
 		}
 		return result;
 	}
