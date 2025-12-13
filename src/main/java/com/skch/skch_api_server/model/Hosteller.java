@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@DynamicUpdate
+//@DynamicUpdate
 @Entity
 @Table(name = "hostellers", schema = "hostel")
 public class Hosteller extends Audit{

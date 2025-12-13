@@ -19,6 +19,8 @@ public class LoginRequest {
 	@NotEmpty(message = "Password cannot be blank")
 	private String password;
 	
+	private String requestVerifyToken;
+	
 	private String otp;
 
 }

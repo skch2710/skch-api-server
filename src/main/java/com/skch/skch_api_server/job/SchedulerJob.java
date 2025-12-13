@@ -3,9 +3,12 @@ package com.skch.skch_api_server.job;
 import java.time.Duration;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import com.skch.skch_api_server.util.RetryUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,10 +17,18 @@ import lombok.extern.slf4j.Slf4j;
 @EnableScheduling
 public class SchedulerJob {
 	
-//	@Scheduled(cron = "0/5 * * * * *")
-	public void testSchedulerJob() throws Exception {
+	@Autowired
+	private RetryUtil retryUtil;
+	
+//	@Scheduled(cron = "0 0/2 * * * *")
+	public void testSchedulerJob(){
 		log.info("Hii...test1 SchedulerJob Startrd for 5 sec "+new Date());
-		Thread.sleep(Duration.ofSeconds(8));
+//		Thread.sleep(Duration.ofSeconds(8));
+		try {
+			retryUtil.getRetry();
+		} catch (Exception e) {
+			log.error("Error in testSchedularJob :: ",e);
+		}
 		log.info("Hii...test1 SchedulerJob End for 5 sec "+new Date());
 	}
 	

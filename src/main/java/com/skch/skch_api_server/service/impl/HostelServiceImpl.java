@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -107,6 +108,8 @@ public class HostelServiceImpl implements HostelService {
 		Result result = null;
 		Hosteller hosteller = null;
 		try {
+//			Thread.sleep(Duration.ofSeconds(40));
+			
 			dto.setFee(Utility.isBlank(dto.getFee()));
 			dto.setVacatedDate(Utility.isBlank(dto.getVacatedDate()));
 			dto.setJoiningDate(Utility.isBlank(dto.getJoiningDate()));
@@ -118,7 +121,13 @@ public class HostelServiceImpl implements HostelService {
 				log.info(">>>>>> Starting ...." + dto);
 				if (dto.getHostellerId() == null || dto.getHostellerId() == 0) {
 					hosteller = MAPPER.fromHostellerDTO(dto);
-					Utility.updateFields(hosteller, "C");
+//					Utility.updateFields(hosteller, "C");
+					hosteller.setHostellerId(null);
+					hosteller.setCreatedById(2L);
+					hosteller.setCreatedDate(LocalDateTime.now());
+					hosteller.setModifiedById(2L);
+					hosteller.setModifiedDate(LocalDateTime.now());
+					
 					hosteller.setActive(true);
 					if (hosteller.getJoiningDate() == null) {
 						hosteller.setJoiningDate(LocalDate.now());
@@ -143,7 +152,7 @@ public class HostelServiceImpl implements HostelService {
 					hosteller.setCreatedById(serverHosteller.getCreatedById());
 					hosteller.setVacatedDate(DateUtility.stringToDateTimes(dto.getVacatedDate(),"dd-MM-yyyy"));
 					
-					Utility.updateFields(hosteller, "U");
+//					Utility.updateFields(hosteller, "U");
 
 					hosteller = hostellerDAO.save(hosteller);
 
@@ -161,7 +170,7 @@ public class HostelServiceImpl implements HostelService {
 			}
 			log.info("Ending at saveOrUpdateHosteller.....");
 		} catch (Exception e) {
-			log.error("Error at saveOrUpdateHosteller :: " + e);
+			log.error("Error at saveOrUpdateHosteller :: " , e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;
@@ -223,6 +232,7 @@ public class HostelServiceImpl implements HostelService {
 		long intialTime = System.currentTimeMillis();
 		Result result = new Result();
 		try {
+//			Thread.sleep(Duration.ofSeconds(30));
 			if (!search.isExportExcel() && !search.isExportCsv() &&
 					!search.isExportPdf() && !search.isExportZip()) {
 				List<HostellerGrid> hostellerGridList = getHostelRecords(search);

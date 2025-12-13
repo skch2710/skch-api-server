@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,6 +44,7 @@ public class HostelController {
 	
 	@PostMapping("/save-update-hosteller")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
+	@PreAuthorize("hasAnyAuthority('Hostellers-W')")
 	public ResponseEntity<?> saveUpdateHosteller(@RequestBody HostellerDTO dto) {
 		Result result = hostelService.saveOrUpdateHosteller(dto);
 		return ResponseEntity.ok(result);

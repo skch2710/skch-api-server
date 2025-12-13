@@ -53,7 +53,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/authenticate")
+@RequestMapping("/authenticate")
 @Slf4j
 public class LoginController {
 	
@@ -331,7 +331,7 @@ public class LoginController {
     
     @GetMapping("/get-jwt-access-token")
    	public ResponseEntity<?> getAccessToken() {
-    	LoginRequest dto = new LoginRequest("skch@outlook.com","S@th!$h","");
+    	LoginRequest dto = new LoginRequest("skch@outlook.com","S@th!$h","","");
        	JwtDTO result = jwtUtil.getToken(dto);
    		return ResponseEntity.ok(result);
    	}

@@ -1,5 +1,5 @@
 server:
-  port: 8061
+  port: 8062
   forward-headers-strategy: framework
   max-http-request-header-size: 200000000
   tomcat:
@@ -32,7 +32,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8060
+          issuer-uri: http://localhost:8061
 #          jwk-set-uri: http://localhost:8060/.well-known/jwks.json
 
   mail:
@@ -59,12 +59,13 @@ spring:
 app:
   timezone: "Asia/Kolkata"
   auth-cred: sathish_ch:S@th!$h
-  url: http://localhost:8060/oauth2/token
+  url: http://localhost:8061/oauth2/token
   passwordlink-expiry: 24
   otp-expiry: 5
   isOtpEnable: false
   aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
   batch-size: 1000
+  request-verify-token: SpringBootReactRequestDevelopment
 
 smarty:
   auth-id: ${SMARTY_AUTH_ID}

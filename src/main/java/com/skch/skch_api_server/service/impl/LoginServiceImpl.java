@@ -71,12 +71,21 @@ public class LoginServiceImpl implements LoginService {
 
 	@Value("${app.isOtpEnable}")
 	private Boolean isOtpEnable;
+	
+	@Value("${app.request-verify-token}")
+	private String REQUEST_VERIFY_TOKEN;
 
 	@Override
 	public Result login(LoginRequest request) {
 		Result result = null;
 		LoginResponse loginResponse = null;
 		try {
+			
+			if(ObjectUtils.isEmpty(request.getRequestVerifyToken()) ||
+					!REQUEST_VERIFY_TOKEN.equals(request.getRequestVerifyToken())) {
+				throw new CustomException("Invalid Request",HttpStatus.UNAUTHORIZED);
+			}
+			
 			log.info("Decrypted Password :: {} ",AESUtils.decrypt(request.getPassword()));
 			request.setPassword(AESUtils.decrypt(request.getPassword()));
 			result = new Result();
@@ -88,7 +97,7 @@ public class LoginServiceImpl implements LoginService {
 				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 			} else {
 				if (!bCryptPasswordEncoder.matches(request.getPassword(), user.getPasswordSalt())) {
-					result.setErrorMessage("Invalid PassWord.");
+					result.setErrorMessage("Invalid password you entered.");
 					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 				} else {
 					loginResponse.setIsOtpEnable(isOtpEnable);
