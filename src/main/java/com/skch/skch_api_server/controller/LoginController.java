@@ -6,6 +6,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -22,6 +23,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -39,6 +41,7 @@ import com.skch.skch_api_server.dao.UsersDAO;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.JwtDTO;
 import com.skch.skch_api_server.dto.LoginRequest;
+import com.skch.skch_api_server.dto.LoginResponse;
 import com.skch.skch_api_server.dto.ReqSearch;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.ValidateLinkDTO;
@@ -49,6 +52,9 @@ import com.skch.skch_api_server.util.ExcelUtil;
 import com.skch.skch_api_server.util.JwtUtil;
 import com.skch.skch_api_server.util.Utility;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,14 +62,33 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/authenticate")
 @Slf4j
 public class LoginController {
-	
+
 	@Autowired
 	private LoginService loginService;
 
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
-		Result response = loginService.login(request);
-		return ResponseEntity.ok(response);
+	public ResponseEntity<Result> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
+
+		Result result = loginService.login(request);
+		LoginResponse responce = (LoginResponse) result.getData();
+		String accessToken = responce.getJwtDTO().getAccess_token();
+		String refreshToken = responce.getJwtDTO().getRefresh_token();
+
+		// ACCESS TOKEN (short-lived)
+		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken).httpOnly(true).secure(true)
+				.sameSite("None").path("/").maxAge(Duration.ofMinutes(2)).build();
+
+		// REFRESH TOKEN (long-lived)
+		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken).httpOnly(true).secure(true)
+		        .secure(false)          // true in prod (HTTPS)
+		        .sameSite("Lax")        // None + Secure in prod
+		        .path("/authenticate/refresh")
+		        .maxAge(Duration.ofHours(2)).build();
+
+		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+		return ResponseEntity.ok(result);
 	}
 
 	@PostMapping("/verify-otp")
@@ -71,7 +96,6 @@ public class LoginController {
 		Result response = loginService.verifyOTP(request);
 		return ResponseEntity.ok(response);
 	}
-
 
 	@PostMapping("/generate-pdf")
 	public ResponseEntity<?> generatePdf(@RequestBody ReqSearch search) throws Exception {
@@ -89,100 +113,94 @@ public class LoginController {
 
 			return ResponseEntity.ok().headers(headers).body(inputStreamResource);
 		} catch (Exception e) {
-			log.error("Error in Get Pdf Controller....",e);
-			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+			log.error("Error in Get Pdf Controller....", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	@Autowired
 	private UsersDAO usersDAO;
-	
+
 	@GetMapping("/soundex-test")
 	public ResponseEntity<?> soundexTest() {
-		Map<String,String> output = new HashMap<>();
+		Map<String, String> output = new HashMap<>();
 		output.put("Sathish", Utility.soundex("Sathish"));
 		output.put("Satish", Utility.soundex("Satish"));
 		output.put("Kumar", Utility.soundex("Kumar"));
 		output.put("kumaaar", Utility.soundex("kumaaar"));
-		
+
 //		Map<Long,String> mapData = usersDAO.getUserPrivilegesMap();
 //		System.out.println(mapData.get(4L));
-		
+
 		/*
-		int page = 0;
-        int size = 2; // Adjust the page size based on your memory constraints
-        Map<Long, String> resultMap = new HashMap<>();
-        
-        Page<String> jsonPage;
-        do {
-            jsonPage = usersDAO.getUserPrivilegesJson(PageRequest.of(page, size));
-            for (String jsonData : jsonPage) {
-                resultMap.putAll(Utility.parseJsonToMap(jsonData, Long.class, String.class));
-            }
-            page++;
-            System.out.println(resultMap);
-        } while (jsonPage.hasNext()); */
+		 * int page = 0; int size = 2; // Adjust the page size based on your memory
+		 * constraints Map<Long, String> resultMap = new HashMap<>();
+		 * 
+		 * Page<String> jsonPage; do { jsonPage =
+		 * usersDAO.getUserPrivilegesJson(PageRequest.of(page, size)); for (String
+		 * jsonData : jsonPage) { resultMap.putAll(Utility.parseJsonToMap(jsonData,
+		 * Long.class, String.class)); } page++; System.out.println(resultMap); } while
+		 * (jsonPage.hasNext());
+		 */
 		/*
-		Object object = usersDAO.findByTest("skch@outlook.com");
-		Gson gson = new Gson();
-		String json = gson.toJson(object);
-		log.info(">>>>"+json);
-		JsonArray array = JsonParser.parseString(json).getAsJsonArray();
-		
-        Long id = array.get(0).getAsLong();
-        String email = array.get(1).getAsString();
-        
-        System.out.println("ID: " + id);
-        System.out.println("Email: " + email);
-		
-		log.info(">>>>"+array);*/
-		
+		 * Object object = usersDAO.findByTest("skch@outlook.com"); Gson gson = new
+		 * Gson(); String json = gson.toJson(object); log.info(">>>>"+json); JsonArray
+		 * array = JsonParser.parseString(json).getAsJsonArray();
+		 * 
+		 * Long id = array.get(0).getAsLong(); String email =
+		 * array.get(1).getAsString();
+		 * 
+		 * System.out.println("ID: " + id); System.out.println("Email: " + email);
+		 * 
+		 * log.info(">>>>"+array);
+		 */
+
 //		String[] emailList = {"Sathish@mail"};
 //		
 //		Map<String,Long> mapData = usersDAO.getExistUsersMap(emailList);
 //		System.out.println(mapData != null ? mapData.containsKey("Sathish@mail.Com".toLowerCase()) : false);
-		
+
 		return ResponseEntity.ok(output);
 	}
-	
-    @PostMapping(path = "/upload-file", consumes = "multipart/form-data")
-    public ResponseEntity<?> uploadFile(@RequestPart(required = true, name="file") MultipartFile file,
-    		@RequestPart(required = false, name="dto") FileUploadDTO dto) {
-        
-    	if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body("No file was provided or the file is empty.");
-        }
-    	
-    	System.out.println("DTO : "+dto);
-    	
-        try {
-            // Ensure the upload directory exists
-            File uploadDir = new File(Constant.UPLOAD_DIR);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-            // Get the file's original name
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null) {
-                return ResponseEntity.badRequest().body("File name is invalid.");
-            }
-            // Create the file path
-            Path filePath = Paths.get(Constant.UPLOAD_DIR, originalFilename);
-            // Save the file locally
-            Files.write(filePath, file.getBytes());
 
-            return ResponseEntity.ok("File uploaded successfully: " + originalFilename);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            		.body("Error occurred while uploading the file: " + e);
-        }
-    }
-    
-    @PostMapping(path ="/csv-excel", consumes = "multipart/form-data")
-	public ResponseEntity<?> csvToExcel(@RequestPart(required = true, name="file") MultipartFile file){
+	@PostMapping(path = "/upload-file", consumes = "multipart/form-data")
+	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
+			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
+
+		if (file == null || file.isEmpty()) {
+			return ResponseEntity.badRequest().body("No file was provided or the file is empty.");
+		}
+
+		System.out.println("DTO : " + dto);
+
+		try {
+			// Ensure the upload directory exists
+			File uploadDir = new File(Constant.UPLOAD_DIR);
+			if (!uploadDir.exists()) {
+				uploadDir.mkdirs();
+			}
+			// Get the file's original name
+			String originalFilename = file.getOriginalFilename();
+			if (originalFilename == null) {
+				return ResponseEntity.badRequest().body("File name is invalid.");
+			}
+			// Create the file path
+			Path filePath = Paths.get(Constant.UPLOAD_DIR, originalFilename);
+			// Save the file locally
+			Files.write(filePath, file.getBytes());
+
+			return ResponseEntity.ok("File uploaded successfully: " + originalFilename);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Error occurred while uploading the file: " + e);
+		}
+	}
+
+	@PostMapping(path = "/csv-excel", consumes = "multipart/form-data")
+	public ResponseEntity<?> csvToExcel(@RequestPart(required = true, name = "file") MultipartFile file) {
 		try {
 			log.info(file.getContentType());
-			if(file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
+			if (file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
 				ByteArrayOutputStream outputStream = ExcelUtil.convertCsvToExcel(file);
 
 				HttpHeaders headers = new HttpHeaders();
@@ -195,38 +213,38 @@ public class LoginController {
 				outputStream.flush();// Flush the output stream
 
 				return ResponseEntity.ok().headers(headers).body(inputStreamResource);
-			}else {
+			} else {
 				return ResponseEntity.badRequest().body("Not a CSV File");
 			}
 		} catch (Exception e) {
-			log.error("Error in csvToExcel....",e);
-			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+			log.error("Error in csvToExcel....", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-    
-    @PostMapping(path ="/csv-file-reader", consumes = "multipart/form-data")
-	public ResponseEntity<?> getCsvReader(@RequestPart(required = true, name="file") MultipartFile file){
+
+	@PostMapping(path = "/csv-file-reader", consumes = "multipart/form-data")
+	public ResponseEntity<?> getCsvReader(@RequestPart(required = true, name = "file") MultipartFile file) {
 		try {
 			log.info(file.getContentType());
-			if(file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
-				
+			if (file != null && file.getContentType().equals(ExcelUtil.CSV_TYPE)) {
+
 				ExcelUtil.readFirstLine(file);
-				
+
 				return ResponseEntity.ok("File Details... ");
-			}else {
+			} else {
 				return ResponseEntity.ok("File Not a CSV: ");
 			}
 		} catch (Exception e) {
-			log.error("Error in csvToExcel....",e);
-			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+			log.error("Error in csvToExcel....", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
+
 	}
-    
-    @PostMapping(path ="/excel-csv", consumes = "multipart/form-data")
-	public ResponseEntity<?> excelToCsv(@RequestPart(required = true, name="file") MultipartFile file){
+
+	@PostMapping(path = "/excel-csv", consumes = "multipart/form-data")
+	public ResponseEntity<?> excelToCsv(@RequestPart(required = true, name = "file") MultipartFile file) {
 //    	SXSSFWorkbook workbook = null;
-    	File tempFile = null;
+		File tempFile = null;
 		try {
 			log.info("Starting file.......");
 			// Save the file to a temporary location
@@ -237,8 +255,8 @@ public class LoginController {
 //			log.info(file.getContentType());
 //			
 //			InputStream inputStream = new FileInputStream(tempFile);
-            Workbook workbook = WorkbookFactory.create(file.getInputStream());
-            Sheet sheet = workbook.getSheetAt(0);
+			Workbook workbook = WorkbookFactory.create(file.getInputStream());
+			Sheet sheet = workbook.getSheetAt(0);
 			log.info("Size of Records :: ");
 			ByteArrayOutputStream outputStream = ExcelUtil.getCsvFile(sheet);
 
@@ -253,111 +271,155 @@ public class LoginController {
 
 			return ResponseEntity.ok().headers(headers).body(inputStreamResource);
 		} catch (Exception e) {
-			log.error("Error in csvToExcel....",e);
-			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+			log.error("Error in csvToExcel....", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-    
-    @DeleteMapping("/delete-file")
-    public ResponseEntity<?> deleteFile(@RequestBody FileUploadDTO dto) {
-        if (dto.getFileName() == null || dto.getFileName().isEmpty()) {
-            return ResponseEntity.badRequest().body("File name must be provided.");
-        }
-        try {
-            // Create the file path
-            File file = new File(Constant.UPLOAD_DIR, dto.getFileName());
 
-            if (!file.exists()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found.");
-            }
+	@DeleteMapping("/delete-file")
+	public ResponseEntity<?> deleteFile(@RequestBody FileUploadDTO dto) {
+		if (dto.getFileName() == null || dto.getFileName().isEmpty()) {
+			return ResponseEntity.badRequest().body("File name must be provided.");
+		}
+		try {
+			// Create the file path
+			File file = new File(Constant.UPLOAD_DIR, dto.getFileName());
 
-            if (file.delete()) {
-                return ResponseEntity.ok("File deleted successfully.");
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                		.body("Failed to delete the file.");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            		.body("Error occurred while deleting the file: " + e);
-        }
-    }
-    
-    @GetMapping("/list-files")
-    public ResponseEntity<?> listFiles() {
-        File directory = new File(Constant.UPLOAD_DIR);
+			if (!file.exists()) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found.");
+			}
 
-        if (!directory.exists() || !directory.isDirectory()) {
-            return ResponseEntity.status(404).body("Directory not found.");
-        }
-        File[] files = directory.listFiles();
-        List<String> fileNames = new ArrayList<>();
-        if (files != null && files.length > 0) {
-            for (File file : files) {
-                if (file.isFile()) {
-                	String fileName = file.getName();
-                	String dateNum = fileName.split("_")[1];
-                	
-                	LocalDate date = DateUtility.stringToDate(dateNum, "MMddyyyy");
-                	System.out.println(date);
-                	
-                	if(date.isBefore(LocalDate.now())) {
-                		fileNames.add(fileName);
-                	}
-                }
-            }
-        }else {
-        	return ResponseEntity.ok("No files found in the directory.");
-        }
+			if (file.delete()) {
+				return ResponseEntity.ok("File deleted successfully.");
+			} else {
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete the file.");
+			}
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Error occurred while deleting the file: " + e);
+		}
+	}
 
-        return ResponseEntity.ok(fileNames);
-    }
-    
-    @Autowired
-    private JwtUtil jwtUtil;
-    
-    private final JwtDecoder jwtDecoder;
+	@GetMapping("/list-files")
+	public ResponseEntity<?> listFiles() {
+		File directory = new File(Constant.UPLOAD_DIR);
 
-    @Autowired
-    public LoginController(JwtDecoder jwtDecoder) {
-        this.jwtDecoder = jwtDecoder;
-    }
-    
-    @PostMapping("/get-jwt-refresh-token")
+		if (!directory.exists() || !directory.isDirectory()) {
+			return ResponseEntity.status(404).body("Directory not found.");
+		}
+		File[] files = directory.listFiles();
+		List<String> fileNames = new ArrayList<>();
+		if (files != null && files.length > 0) {
+			for (File file : files) {
+				if (file.isFile()) {
+					String fileName = file.getName();
+					String dateNum = fileName.split("_")[1];
+
+					LocalDate date = DateUtility.stringToDate(dateNum, "MMddyyyy");
+					System.out.println(date);
+
+					if (date.isBefore(LocalDate.now())) {
+						fileNames.add(fileName);
+					}
+				}
+			}
+		} else {
+			return ResponseEntity.ok("No files found in the directory.");
+		}
+
+		return ResponseEntity.ok(fileNames);
+	}
+
+	@Autowired
+	private JwtUtil jwtUtil;
+
+	private final JwtDecoder jwtDecoder;
+
+	@Autowired
+	public LoginController(JwtDecoder jwtDecoder) {
+		this.jwtDecoder = jwtDecoder;
+	}
+
+	@PostMapping("/get-jwt-refresh-token")
 	public ResponseEntity<?> getRefreshToken(@RequestBody JwtDTO dto) {
-    	JwtDTO result = jwtUtil.getRefreshToken(dto.getRefresh_token());
+		JwtDTO result = jwtUtil.getRefreshToken(dto.getRefresh_token());
 		return ResponseEntity.ok(result);
 	}
-    
-    @GetMapping("/get-jwt-access-token")
-   	public ResponseEntity<?> getAccessToken() {
-    	LoginRequest dto = new LoginRequest("skch@outlook.com","S@th!$h","","");
-       	JwtDTO result = jwtUtil.getToken(dto);
-   		return ResponseEntity.ok(result);
-   	}
-    
-    
-    @GetMapping("/jwt-token-time")
-   	public ResponseEntity<?> getTokenTime() {
-    	
-    	Jwt jwt = jwtDecoder.decode("eyJraWQiOiI0NTk4MjNhZC04OTdiLTRmNjYtYjJlMS0xMmJhMjU0MDI1MjkiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJza2NoQG91dGxvb2suY29tIiwiYXVkIjoic2F0aGlzaF9jaCIsIm5iZiI6MTcyMTI4MTY4MywidXNlcl9uYW1lIjoic2tjaEBvdXRsb29rLmNvbSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA2MCIsImV4cCI6MTcyMTMyNDg4MywiaWF0IjoxNzIxMjgxNjgzLCJqdGkiOiIzNzg3YjRkYy01NWY2LTRmMmUtOTZjYy0wYzE0ODI2YzI5YjQiLCJhdXRob3JpdGllcyI6WyJVc2VyLVIiLCJNb250aGx5LVIiLCJZZWFybHktUiIsIlN1cGVyIFVzZXIiLCJGdWxsIFJlcG9ydHMtUiIsIkhvc3RlbGxlcnMtUiIsIlVTRVJfSUQgOiA1RXhFZ0MxU0RocHROSEtuUVpwSDZnPT0iLCJIb21lLVIiLCJVU0VSIFVVSUQgOiBudWxsIl19.bqo4K5qUNVVzMrj-ed1IWaAQY0OCVw2_LEYcNjCW5xg04-MvJzaAwIHW2-yq_B2vFg8c-llUjOMej8hecLGQrjjjgNUgH0a6fklux1y1VWCQ143Oan519EdCOTuIilzv_LHteUGWuW523ZqX1yVxGfK_vivbRDA1qF4Lvw1LbgZZgg9LGXZ4aJm0l99YsAbq91opHPZ8lOhtBz1Vc-ekLH482ABdGvjYTQtem1JSELRBE7vRxVa9s3TMYn8ck2z19R2vN9hdXKMWr9hMDEShjZyb76j-1QqBVL8LFnVnWJHq6ZkAtkgtqZzqM-car5miBvNP-wR60KVBfAWvkib4sQ");
-    	
-    	log.info("Time Expire :: "+jwt.getExpiresAt().isBefore(LocalDateTime.now().plusSeconds(30).atZone(ZoneId.systemDefault()).toInstant()));
-    	
-    	log.info("Time Expire :: "+DateUtility.dateToString(LocalDateTime.ofInstant(jwt.getExpiresAt(),ZoneId.systemDefault()), "yyyy-MM-dd HH:mm:ss a"));
-    	
-   		return ResponseEntity.ok(jwt);
-   	}
-    
-    /**
+
+	@PostMapping("/refresh")
+	public ResponseEntity<Void> refresh(HttpServletResponse response, HttpServletRequest request) {
+
+		String refreshToken = null;
+		if (request.getCookies() != null) {
+			for (Cookie cookie : request.getCookies()) {
+				log.info(cookie.getName() + " ::: " + cookie.getValue());
+				if ("REFRESH_TOKEN".equals(cookie.getName())) {
+					refreshToken = cookie.getValue();
+					break;
+				}
+			}
+		}
+		
+		if(refreshToken == null) {
+			throw new CustomException("Refresh Token is missing", HttpStatus.BAD_REQUEST);
+		}
+
+		JwtDTO result = jwtUtil.getRefreshToken(refreshToken);
+
+		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", result.getAccess_token()).httpOnly(true)
+				.secure(true).sameSite("None").path("/").maxAge(Duration.ofMinutes(2)).build();
+
+		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+		return ResponseEntity.ok().build();
+	}
+
+	@GetMapping("/get-jwt-access-token")
+	public ResponseEntity<?> getAccessToken() {
+		LoginRequest dto = new LoginRequest("skch@outlook.com", "S@th!$h", "", "");
+		JwtDTO result = jwtUtil.getToken(dto);
+		return ResponseEntity.ok(result);
+	}
+
+	@GetMapping("/jwt-token-time")
+	public ResponseEntity<?> getTokenTime() {
+
+		Jwt jwt = jwtDecoder.decode(
+				"eyJraWQiOiI0NTk4MjNhZC04OTdiLTRmNjYtYjJlMS0xMmJhMjU0MDI1MjkiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJza2NoQG91dGxvb2suY29tIiwiYXVkIjoic2F0aGlzaF9jaCIsIm5iZiI6MTcyMTI4MTY4MywidXNlcl9uYW1lIjoic2tjaEBvdXRsb29rLmNvbSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA2MCIsImV4cCI6MTcyMTMyNDg4MywiaWF0IjoxNzIxMjgxNjgzLCJqdGkiOiIzNzg3YjRkYy01NWY2LTRmMmUtOTZjYy0wYzE0ODI2YzI5YjQiLCJhdXRob3JpdGllcyI6WyJVc2VyLVIiLCJNb250aGx5LVIiLCJZZWFybHktUiIsIlN1cGVyIFVzZXIiLCJGdWxsIFJlcG9ydHMtUiIsIkhvc3RlbGxlcnMtUiIsIlVTRVJfSUQgOiA1RXhFZ0MxU0RocHROSEtuUVpwSDZnPT0iLCJIb21lLVIiLCJVU0VSIFVVSUQgOiBudWxsIl19.bqo4K5qUNVVzMrj-ed1IWaAQY0OCVw2_LEYcNjCW5xg04-MvJzaAwIHW2-yq_B2vFg8c-llUjOMej8hecLGQrjjjgNUgH0a6fklux1y1VWCQ143Oan519EdCOTuIilzv_LHteUGWuW523ZqX1yVxGfK_vivbRDA1qF4Lvw1LbgZZgg9LGXZ4aJm0l99YsAbq91opHPZ8lOhtBz1Vc-ekLH482ABdGvjYTQtem1JSELRBE7vRxVa9s3TMYn8ck2z19R2vN9hdXKMWr9hMDEShjZyb76j-1QqBVL8LFnVnWJHq6ZkAtkgtqZzqM-car5miBvNP-wR60KVBfAWvkib4sQ");
+
+		log.info("Time Expire :: " + jwt.getExpiresAt()
+				.isBefore(LocalDateTime.now().plusSeconds(30).atZone(ZoneId.systemDefault()).toInstant()));
+
+		log.info("Time Expire :: " + DateUtility.dateToString(
+				LocalDateTime.ofInstant(jwt.getExpiresAt(), ZoneId.systemDefault()), "yyyy-MM-dd HH:mm:ss a"));
+
+		return ResponseEntity.ok(jwt);
+	}
+
+	/**
 	 * Validate the Email Link
+	 * 
 	 * @param dto
 	 * @return result
 	 */
-    @PostMapping("/validate-uuid")
+	@PostMapping("/validate-uuid")
 	public ResponseEntity<?> validateUuid(@RequestBody ValidateLinkDTO dto) {
-    	Result result = loginService.validateUuid(dto);
+		Result result = loginService.validateUuid(dto);
 		return ResponseEntity.ok(result);
 	}
-    
+
+	@PostMapping("/logout")
+	public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+
+		ResponseCookie clearAccess = ResponseCookie.from("ACCESS_TOKEN", "").httpOnly(true).secure(true)
+				.sameSite("None").path("/").maxAge(0).build();
+
+		ResponseCookie clearRefresh = ResponseCookie.from("REFRESH_TOKEN", "").httpOnly(true).secure(true)
+				.sameSite("None").path("/auth/refresh").maxAge(0).build();
+
+		response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
+		response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+
+		return ResponseEntity.ok().build();
+	}
+
 }

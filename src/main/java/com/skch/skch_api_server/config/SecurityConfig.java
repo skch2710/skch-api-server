@@ -17,7 +17,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-//@EnableMethodSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
@@ -36,21 +35,21 @@ public class SecurityConfig {
 //	@Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
 //	String jwkUri;
 
+	@Autowired
+	private CookieBearerTokenResolver cookieBearerTokenResolver;
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-	    return http.securityMatcher("/api/v1/**")
-	            .authorizeHttpRequests(auth -> auth
-	                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-	                    .anyRequest().authenticated())
-	            .oauth2ResourceServer(oauth2 -> oauth2
-	                    .jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-	                    .authenticationEntryPoint(this.customBearerTokenAuthenticationEntryPoint)
-	                    .accessDeniedHandler(this.customBearerTokenAccessDeniedHandler))
-	            .csrf(Customizer.withDefaults())
-	            .headers(headers -> headers
-	                    .xssProtection(Customizer.withDefaults())
-	                    .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'; object-src 'none'")))
-	            .build();
+		return http.securityMatcher("/api/v1/**").authorizeHttpRequests(auth -> auth
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll().anyRequest().authenticated())
+				.oauth2ResourceServer(oauth2 -> oauth2.bearerTokenResolver(cookieBearerTokenResolver)
+						.jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
+						.authenticationEntryPoint(customBearerTokenAuthenticationEntryPoint)
+						.accessDeniedHandler(customBearerTokenAccessDeniedHandler))
+				.csrf(Customizer.withDefaults())
+				.headers(headers -> headers.xssProtection(Customizer.withDefaults())
+						.contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'; object-src 'none'")))
+				.build();
 	}
 
 	@Bean
