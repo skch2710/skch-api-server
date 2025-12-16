@@ -40,6 +40,8 @@ import com.skch.skch_api_server.dao.UploadFileDAO;
 import com.skch.skch_api_server.dao.UsersDAO;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.Navigation;
+import com.skch.skch_api_server.dto.ProfileDto;
+import com.skch.skch_api_server.dto.ProfileRequest;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.SubNavigarion;
 import com.skch.skch_api_server.dto.UserDTO;
@@ -513,6 +515,73 @@ public class UserServiceImpl implements UserService {
 		} finally {
 			executor.shutdown();
 		}
+	}
+
+	/**
+	 * Get Profile Details
+	 * 
+	 * @param request
+	 * @return result
+	 */
+	@Override
+	public Result profile(ProfileRequest request) {
+		Result result = new Result();
+		try {
+			Users user = usersDAO.findByEmailIdIgnoreCase(request.getEmailId());
+			if (user != null) {
+				UserDTO userDto = MAPPER.fromUserModel(user);
+				ProfileDto dto = new ProfileDto();
+				dto.setUser(userDto);
+				dto.setNavigations(getNavigations(user));
+				result.setData(dto);
+				result.setStatusCode(HttpStatus.OK.value());
+				result.setSuccessMessage("Profile Data Fetched Successfully.");
+			} else {
+				result.setErrorMessage("User Not Found.");
+				result.setStatusCode(HttpStatus.NOT_FOUND.value());
+			}
+		} catch (Exception e) {
+			log.error("Error in profile :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
+	}
+
+	public Object getNavigations(Users user) {
+		SortedMap<Long, Object> navMap = new TreeMap<>();
+		try {
+			user.getUserPrivilege().stream().filter(
+					obj -> obj.getIsActive() && obj.getReadOnlyFlag() && obj.getResource().getIsSubnav().equals("N"))
+					.forEach(obj -> {
+						Navigation navigation = new Navigation();
+						BeanUtils.copyProperties(obj.getResource(), navigation);
+						navMap.put(obj.getResource().getDisplayOrder(), navigation);
+					});
+
+			user.getUserPrivilege().stream().filter(
+					obj -> obj.getIsActive() && obj.getReadOnlyFlag() && obj.getResource().getIsSubnav().equals("Y"))
+					.collect(Collectors.groupingBy(obj -> obj.getResource().getDisplayOrder()))
+					.forEach((displyOrder, listNav) -> {
+						List<Navigation> navList = new ArrayList<>();
+						SubNavigarion nav = new SubNavigarion();
+						listNav.forEach(obj -> {
+							Navigation navigation = new Navigation();
+							BeanUtils.copyProperties(obj.getResource(), navigation);
+							navList.add(navigation);
+						});
+						if (!listNav.isEmpty()) {
+							nav.setResourceName(listNav.get(0).getResource().getParentName());
+							nav.setIcon(listNav.get(0).getResource().getParentIcon());
+							nav.setDisplayOrder(listNav.get(0).getResource().getDisplayOrder());
+							nav.setSubNav(navList);
+							navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);
+						}
+					});
+		} catch (Exception e) {
+			log.error("Error in getNavigations :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return navMap.values();
 	}
 
 }

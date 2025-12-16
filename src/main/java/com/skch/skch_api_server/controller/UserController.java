@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.skch.skch_api_server.dto.FileUploadDTO;
+import com.skch.skch_api_server.dto.ProfileRequest;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.UserDTO;
 import com.skch.skch_api_server.exception.CustomException;
@@ -46,6 +47,18 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
+	
+	@PostMapping("/profile")
+//	@PreAuthorize("hasAnyAuthority('User-R')")
+	@PreAuthorize("hasAuthority('User-R') and @jwtUtil.checkProfileMatch(#p0.getEmailId())")
+	@Operation(summary="Get User Profile",description = "Return the User Profile based on EmailId")
+	public ResponseEntity<?> profile(@RequestBody ProfileRequest request) {
+//		if(!JwtUtil.checkProfileMatch(request.getEmailId())) {
+//			throw new CustomException("Access Denied to fetch other user profile",HttpStatus.FORBIDDEN);
+//		}
+		Result result = userService.profile(request);
+		return ResponseEntity.ok(result);
+	}
 
 	@PostMapping("/save-update-user")
 //	@PreAuthorize("hasAnyAuthority('Super User','Admin')")

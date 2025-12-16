@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.skch.skch_api_server.dto.FileUploadDTO;
+import com.skch.skch_api_server.dto.ProfileRequest;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.UserDTO;
 
@@ -17,5 +18,7 @@ public interface UserService {
 	ByteArrayOutputStream getUserTemplate();
 	
 	Result uploadUserFile(MultipartFile file,FileUploadDTO dto);
+	
+	Result profile(ProfileRequest request);
 
 }

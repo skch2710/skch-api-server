@@ -103,5 +103,18 @@ public class JwtUtil {
 		}
 		return result;
 	}
+	
+	public static boolean checkProfileMatch(String emailId) {
+		boolean result = false;
+		System.out.println(emailId);
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			log.info(">>>>>Authentication Name :: {}",authentication.getName());
+			result = authentication.getName().equalsIgnoreCase(emailId);
+		} catch (Exception e) {
+			log.error("Error in checkAccess...:: ", e);
+		}
+		return result;
+	}
 
 }

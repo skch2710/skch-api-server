@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class LoginServiceImpl implements LoginService {
-	
+
 	private ObjectMapper MAPPER = ObjectMapper.INSTANCE;
 
 	@Autowired
@@ -58,7 +58,7 @@ public class LoginServiceImpl implements LoginService {
 
 	@Autowired
 	private UsersDAO userDAO;
-	
+
 	@Autowired
 	private UserValidationDAO userValidationDAO;
 
@@ -71,7 +71,7 @@ public class LoginServiceImpl implements LoginService {
 
 	@Value("${app.isOtpEnable}")
 	private Boolean isOtpEnable;
-	
+
 	@Value("${app.request-verify-token}")
 	private String REQUEST_VERIFY_TOKEN;
 
@@ -80,13 +80,13 @@ public class LoginServiceImpl implements LoginService {
 		Result result = null;
 		LoginResponse loginResponse = null;
 		try {
-			
-			if(ObjectUtils.isEmpty(request.getRequestVerifyToken()) ||
-					!REQUEST_VERIFY_TOKEN.equals(request.getRequestVerifyToken())) {
-				throw new CustomException("Invalid Request",HttpStatus.UNAUTHORIZED);
+
+			if (ObjectUtils.isEmpty(request.getRequestVerifyToken())
+					|| !REQUEST_VERIFY_TOKEN.equals(request.getRequestVerifyToken())) {
+				throw new CustomException("Invalid Request", HttpStatus.UNAUTHORIZED);
 			}
-			
-			log.info("Decrypted Password :: {} ",AESUtils.decrypt(request.getPassword()));
+
+			log.info("Decrypted Password :: {} ", AESUtils.decrypt(request.getPassword()));
 			request.setPassword(AESUtils.decrypt(request.getPassword()));
 			result = new Result();
 			loginResponse = new LoginResponse();
@@ -104,19 +104,24 @@ public class LoginServiceImpl implements LoginService {
 					if (isOtpEnable) {
 						String otp = cacheService.generateOTP(request.getEmailId().toLowerCase().trim());
 						loginResponse.setOtp(otp);
-						
+
 						result.setData(loginResponse);
 						result.setSuccessMessage("OTP has been send to Mail");
 						result.setStatusCode(HttpStatus.OK.value());
 					} else {
 						JwtDTO jwtDTO = jwtUtil.getToken(request);
-						List<UserPrivilegeDTO> upr = MAPPER.fromUserPrivilegeModel(user.getUserPrivilege());
-						UserDTO userDto = MAPPER.fromUserModel(user);
-						userDto.setUserPrivilege(upr);
-						loginResponse.setUser(userDto);
-						loginResponse.setNavigations(getNavigations(user));
+//						List<UserPrivilegeDTO> upr = MAPPER.fromUserPrivilegeModel(user.getUserPrivilege());
+//						UserDTO userDto = MAPPER.fromUserModel(user);
+//						userDto.setUserPrivilege(upr);
+//						loginResponse.setUser(userDto);
+//						loginResponse.setNavigations(getNavigations(user));
+
+						if (ObjectUtils.isEmpty(jwtDTO) || ObjectUtils.isEmpty(jwtDTO.getAccess_token())) {
+							throw new CustomException("Error in generating token", HttpStatus.INTERNAL_SERVER_ERROR);
+						}
+
 						loginResponse.setJwtDTO(jwtDTO);
-						
+
 						result.setData(loginResponse);
 						result.setSuccessMessage("Login Succesfully.....");
 						result.setStatusCode(HttpStatus.OK.value());
@@ -125,7 +130,7 @@ public class LoginServiceImpl implements LoginService {
 			}
 		} catch (Exception e) {
 			log.error("Error in login...::", e);
-			throw new CustomException("Error in Login :: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;
 	}
@@ -140,18 +145,18 @@ public class LoginServiceImpl implements LoginService {
 			String emailId = request.getEmailId().toLowerCase().trim();
 			String serverOtp = cacheService.getOtp(emailId);
 			if (request.getOtp().equals(serverOtp)) {
-				Users user = userDAO.findByEmailIdIgnoreCase(emailId);
+//				Users user = userDAO.findByEmailIdIgnoreCase(emailId);
 				resut.setStatusCode(HttpStatus.OK.value());
 				resut.setSuccessMessage("OTP is successfully validated");
 				cacheService.clearOTP(emailId);
 
 				JwtDTO jwtDTO = jwtUtil.getToken(request);
-				List<UserPrivilegeDTO> upr = MAPPER.fromUserPrivilegeModel(user.getUserPrivilege());
-				UserDTO userDto = MAPPER.fromUserModel(user);
-				userDto.setUserPrivilege(upr);
-				loginResponse.setUser(userDto);
+//				List<UserPrivilegeDTO> upr = MAPPER.fromUserPrivilegeModel(user.getUserPrivilege());
+//				UserDTO userDto = MAPPER.fromUserModel(user);
+//				userDto.setUserPrivilege(upr);
+//				loginResponse.setUser(userDto);
 				loginResponse.setJwtDTO(jwtDTO);
-				loginResponse.setNavigations(getNavigations(user));
+//				loginResponse.setNavigations(getNavigations(user));
 				resut.setData(loginResponse);
 
 			} else if (Integer.valueOf(serverOtp) == 0) {
@@ -171,35 +176,33 @@ public class LoginServiceImpl implements LoginService {
 	public Object getNavigations(Users user) {
 		SortedMap<Long, Object> navMap = new TreeMap<>();
 		try {
-			user.getUserPrivilege().stream()
-					.filter(obj -> obj.getIsActive() && obj.getReadOnlyFlag() 
-							&& obj.getResource().getIsSubnav().equals("N"))
+			user.getUserPrivilege().stream().filter(
+					obj -> obj.getIsActive() && obj.getReadOnlyFlag() && obj.getResource().getIsSubnav().equals("N"))
 					.forEach(obj -> {
 						Navigation navigation = new Navigation();
 						BeanUtils.copyProperties(obj.getResource(), navigation);
 						navMap.put(obj.getResource().getDisplayOrder(), navigation);
 					});
-			
-			user.getUserPrivilege().stream()
-			.filter(obj -> obj.getIsActive() && obj.getReadOnlyFlag() 
-					&& obj.getResource().getIsSubnav().equals("Y"))
-			.collect(Collectors.groupingBy(obj->obj.getResource().getDisplayOrder()))
-			.forEach((displyOrder,listNav)->{
-				List<Navigation> navList = new ArrayList<>();
-				SubNavigarion nav = new SubNavigarion();
-				listNav.forEach(obj -> {
-					Navigation navigation = new Navigation();
-					BeanUtils.copyProperties(obj.getResource(), navigation);
-					navList.add(navigation);	
+
+			user.getUserPrivilege().stream().filter(
+					obj -> obj.getIsActive() && obj.getReadOnlyFlag() && obj.getResource().getIsSubnav().equals("Y"))
+					.collect(Collectors.groupingBy(obj -> obj.getResource().getDisplayOrder()))
+					.forEach((displyOrder, listNav) -> {
+						List<Navigation> navList = new ArrayList<>();
+						SubNavigarion nav = new SubNavigarion();
+						listNav.forEach(obj -> {
+							Navigation navigation = new Navigation();
+							BeanUtils.copyProperties(obj.getResource(), navigation);
+							navList.add(navigation);
+						});
+						if (!listNav.isEmpty()) {
+							nav.setResourceName(listNav.get(0).getResource().getParentName());
+							nav.setIcon(listNav.get(0).getResource().getParentIcon());
+							nav.setDisplayOrder(listNav.get(0).getResource().getDisplayOrder());
+							nav.setSubNav(navList);
+							navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);
+						}
 					});
-				if(!listNav.isEmpty()) {
-					nav.setResourceName(listNav.get(0).getResource().getParentName());
-					nav.setIcon(listNav.get(0).getResource().getParentIcon());
-					nav.setDisplayOrder(listNav.get(0).getResource().getDisplayOrder());
-					nav.setSubNav(navList);
-					navMap.put(listNav.get(0).getResource().getDisplayOrder(), nav);
-				}
-			});
 		} catch (Exception e) {
 			log.error("Error in getNavigations ... ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -208,7 +211,7 @@ public class LoginServiceImpl implements LoginService {
 	}
 
 	@Override
-	public ByteArrayOutputStream getPdf(){
+	public ByteArrayOutputStream getPdf() {
 		ByteArrayOutputStream baos;
 		try {
 //			Rectangle pagesize = new Rectangle(1754, 1240);
@@ -222,18 +225,18 @@ public class LoginServiceImpl implements LoginService {
 
 			document.open(); // Open the document
 
-			PdfPTable totalCard = PdfHelper.createNoBorderTable(3,0f,0f,92);
-			totalCard.setTotalWidth(new float[] {49f,2f,49f});
+			PdfPTable totalCard = PdfHelper.createNoBorderTable(3, 0f, 0f, 92);
+			totalCard.setTotalWidth(new float[] { 49f, 2f, 49f });
 			PdfPTable frontCard = frontCard();
-			PdfPTable middleSpacee = PdfHelper.createTable(1,0f,0f,100);
+			PdfPTable middleSpacee = PdfHelper.createTable(1, 0f, 0f, 100);
 			PdfPTable backCard = backCard();
-			
+
 			totalCard.addCell(frontCard);
 			totalCard.addCell(middleSpacee);
 			totalCard.addCell(backCard);
-			
+
 			document.add(totalCard);
-			
+
 			document.close(); // Close the document
 		} catch (Exception e) {
 			log.error("error in generate Pdf ", e);
@@ -241,42 +244,42 @@ public class LoginServiceImpl implements LoginService {
 		}
 		return baos;
 	}
-	
+
 	public PdfPTable frontCard() throws Exception {
 		String bgmPath = "src/main/resources/images/Card Front.png";
 		String logoPath = "src/main/resources/images/logo-one.png";
-		
-		PdfPTable frontCard = PdfHelper.createTable(1,0f,0f,100);
+
+		PdfPTable frontCard = PdfHelper.createTable(1, 0f, 0f, 100);
 		frontCard.getDefaultCell().setBorder(1);
-		frontCard.getDefaultCell().setBorderColor(new BaseColor(245,245,245));
+		frontCard.getDefaultCell().setBorderColor(new BaseColor(245, 245, 245));
 		PdfPCell cell = new PdfPCell();
-		
-		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
-		PdfHelper.createLogo(innerTable,logoPath,5,0,0,25,Element.ALIGN_LEFT);
-		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",10,null,5,Element.ALIGN_LEFT);
-		
+
+		PdfPTable innerTable = PdfHelper.createTable(1, 15f, 15f, 100);
+		PdfHelper.createLogo(innerTable, logoPath, 5, 0, 0, 25, Element.ALIGN_LEFT);
+		PdfHelper.noBorderCell(innerTable, "Sathish Kumar", 10, null, 5, Element.ALIGN_LEFT);
+
 		cell.addElement(innerTable);
-		
-		PdfHelper.imageBgm(bgmPath, frontCard,cell, 158);
-		
+
+		PdfHelper.imageBgm(bgmPath, frontCard, cell, 158);
+
 		return frontCard;
 	}
-	
+
 	public PdfPTable backCard() throws Exception {
 		String bgmPath = "src/main/resources/images/Card Back.png";
 		String logoPath = "src/main/resources/images/logo-one.png";
-		
-		PdfPTable backCard = PdfHelper.createTable(1,0f,0f,100);
+
+		PdfPTable backCard = PdfHelper.createTable(1, 0f, 0f, 100);
 		PdfPCell cell = new PdfPCell();
-		
-		PdfPTable innerTable = PdfHelper.createTable(1,15f,15f,100);
-		PdfHelper.noBorderCell(innerTable,"Sathish Kumar",10,null,10,Element.ALIGN_LEFT);
-		
-		PdfHelper.createLogo(innerTable,logoPath,0,0,5,20,Element.ALIGN_RIGHT);
-		PdfHelper.getQRCode(innerTable,"Sathish",0,0,0,30,Element.ALIGN_CENTER);
+
+		PdfPTable innerTable = PdfHelper.createTable(1, 15f, 15f, 100);
+		PdfHelper.noBorderCell(innerTable, "Sathish Kumar", 10, null, 10, Element.ALIGN_LEFT);
+
+		PdfHelper.createLogo(innerTable, logoPath, 0, 0, 5, 20, Element.ALIGN_RIGHT);
+		PdfHelper.getQRCode(innerTable, "Sathish", 0, 0, 0, 30, Element.ALIGN_CENTER);
 		cell.addElement(innerTable);
-		
-		PdfHelper.imageBgm(bgmPath, backCard,cell, 158);
+
+		PdfHelper.imageBgm(bgmPath, backCard, cell, 158);
 		return backCard;
 	}
 
@@ -295,21 +298,21 @@ public class LoginServiceImpl implements LoginService {
 				String decryptedUuid = "";
 				try {
 					decryptedUuid = AESUtils.decrypt(dto.getUuid());
-				}catch(Exception e) {
+				} catch (Exception e) {
 					log.error("Error in UUID decrypt :: {}", e.getMessage(), e);
 					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 					result.setErrorMessage("Link not valid.");
 					return result;
 				}
-				UserValidation userValidation = userValidationDAO
-						.findByUuidTypeAndUuidLink(dto.getLinkType(),decryptedUuid);
+				UserValidation userValidation = userValidationDAO.findByUuidTypeAndUuidLink(dto.getLinkType(),
+						decryptedUuid);
 				String[] uuidData = decryptedUuid.split("#");
-				Long timeMilli = uuidData.length > 1 ?  Long.valueOf(uuidData[1]) : null;
+				Long timeMilli = uuidData.length > 1 ? Long.valueOf(uuidData[1]) : null;
 				LocalDateTime generateTime = DateUtility.getLongMilli(timeMilli);
 
-				log.info("Generated Date :: {}",generateTime);
-				
-				if (generateTime != null && !generateTime.isBefore(LocalDateTime.now().minusDays(1)) 
+				log.info("Generated Date :: {}", generateTime);
+
+				if (generateTime != null && !generateTime.isBefore(LocalDateTime.now().minusDays(1))
 						&& ObjectUtils.isNotEmpty(userValidation)) {
 					result.setStatusCode(HttpStatus.OK.value());
 					result.setErrorMessage("Link Valid.");
@@ -317,8 +320,7 @@ public class LoginServiceImpl implements LoginService {
 					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 					result.setErrorMessage("Link expired.");
 				}
-				if (ObjectUtils.isNotEmpty(userValidation) 
-						&& ObjectUtils.isNotEmpty(userValidation.getUuidLink())) {
+				if (ObjectUtils.isNotEmpty(userValidation) && ObjectUtils.isNotEmpty(userValidation.getUuidLink())) {
 					userValidation.setUuidLink(null);
 					userValidationDAO.save(userValidation);
 				}
@@ -328,9 +330,9 @@ public class LoginServiceImpl implements LoginService {
 			}
 		} catch (Exception e) {
 			log.error("Error in validateUuid :: {}", e.getMessage(), e);
-			throw new CustomException(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;
 	}
-	
+
 }

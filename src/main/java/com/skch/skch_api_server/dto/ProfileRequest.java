@@ -7,12 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponse {
+public class ProfileRequest {
 	
-	private Boolean isOtpEnable;
-	private String otp;
-	private JwtDTO jwtDTO;
-//	private UserDTO user;
-//	private Object navigations;
-	
+	private String userId;
+	private String emailId;
+
 }
