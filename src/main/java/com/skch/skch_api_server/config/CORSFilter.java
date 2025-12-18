@@ -1,7 +1,9 @@
 package com.skch.skch_api_server.config;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
@@ -20,6 +22,9 @@ import jakarta.servlet.http.HttpServletResponse;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CORSFilter implements Filter {
 
+	@Value("${app.cors-origin}")
+	private List<String> allowedOrigins;
+
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
 			throws IOException, ServletException {
@@ -29,7 +34,7 @@ public class CORSFilter implements Filter {
 
 		String origin = request.getHeader("Origin");
 
-		if ("http://localhost:5173".equals(origin)) {
+		if (allowedOrigins.contains(origin)) {
 			response.setHeader("Access-Control-Allow-Origin", origin);
 			response.setHeader("Access-Control-Allow-Credentials", "true");
 		}

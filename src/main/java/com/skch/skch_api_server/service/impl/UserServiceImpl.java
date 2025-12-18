@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -527,6 +528,7 @@ public class UserServiceImpl implements UserService {
 	public Result profile(ProfileRequest request) {
 		Result result = new Result();
 		try {
+//			Thread.sleep(Duration.ofSeconds(10));
 			Users user = usersDAO.findByEmailIdIgnoreCase(request.getEmailId());
 			if (user != null) {
 				UserDTO userDto = MAPPER.fromUserModel(user);
