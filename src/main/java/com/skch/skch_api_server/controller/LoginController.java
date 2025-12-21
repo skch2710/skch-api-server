@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -65,6 +66,9 @@ public class LoginController {
 
 	@Autowired
 	private LoginService loginService;
+	
+	@Value("${app.token-expiry}")
+	private long tokenExpiry;
 
 	@PostMapping("/login")
 	public ResponseEntity<Result> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
@@ -76,14 +80,14 @@ public class LoginController {
 
 		// ACCESS TOKEN (short-lived)
 		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken).httpOnly(true).secure(true)
-				.sameSite("None").path("/").maxAge(Duration.ofMinutes(2)).build();
+				.sameSite("None").path("/").maxAge(Duration.ofMinutes(tokenExpiry)).build();
 
 		// REFRESH TOKEN (long-lived)
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken).httpOnly(true).secure(true)
 		        .secure(false)          // true in prod (HTTPS)
 		        .sameSite("Lax")        // None + Secure in prod
 		        .path("/authenticate/refresh")
-		        .maxAge(Duration.ofHours(2)).build();
+		        .maxAge(Duration.ofHours(tokenExpiry)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
@@ -367,7 +371,7 @@ public class LoginController {
 		JwtDTO result = jwtUtil.getRefreshToken(refreshToken);
 
 		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", result.getAccess_token()).httpOnly(true)
-				.secure(true).sameSite("None").path("/").maxAge(Duration.ofMinutes(2)).build();
+				.secure(true).sameSite("None").path("/").maxAge(Duration.ofMinutes(tokenExpiry)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 		return ResponseEntity.ok().build();

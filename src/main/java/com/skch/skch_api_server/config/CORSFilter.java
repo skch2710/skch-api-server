@@ -1,13 +1,14 @@
 package com.skch.skch_api_server.config;
 
 import java.io.IOException;
-import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+
+import com.skch.skch_api_server.common.CorsProperties;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -22,8 +23,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CORSFilter implements Filter {
 
-	@Value("${app.cors-origin}")
-	private List<String> allowedOrigins;
+	@Autowired
+	private CorsProperties corsProperties;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
@@ -34,7 +35,7 @@ public class CORSFilter implements Filter {
 
 		String origin = request.getHeader("Origin");
 
-		if (allowedOrigins.contains(origin)) {
+		if (corsProperties.getCorsOrigin().contains(origin)) {
 			response.setHeader("Access-Control-Allow-Origin", origin);
 			response.setHeader("Access-Control-Allow-Credentials", "true");
 		}
