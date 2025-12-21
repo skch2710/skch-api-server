@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.skch.skch_api_server.dao.HostellerDAO;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.HostellerDTO;
+import com.skch.skch_api_server.dto.HostellerInactive;
 import com.skch.skch_api_server.dto.HostellerSearch;
 import com.skch.skch_api_server.dto.JsonTest;
 import com.skch.skch_api_server.dto.PaymentHistoryDTO;
@@ -29,6 +30,7 @@ import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.HostelService;
 import com.skch.skch_api_server.util.Utility;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
 
@@ -130,4 +132,18 @@ public class HostelController {
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	
+	/**
+	 * Inactive Hosteller
+	 * @param dto
+	 * @return result
+	 */
+	@PostMapping("/inactive-hosteller")
+	@PreAuthorize("hasAnyAuthority('Hostellers-X')")
+	@Operation(summary = "Inactive Hosteller", description = "Inactive Hosteller")
+	public ResponseEntity<?> inactiveHosteller(@RequestBody HostellerInactive dto) {
+		Result result = hostelService.inactiveHosteller(dto);
+		return ResponseEntity.ok(result);
+	}
+	
 }

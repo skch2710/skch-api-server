@@ -55,6 +55,7 @@ import com.skch.skch_api_server.dao.PaymentHistoryDAO;
 import com.skch.skch_api_server.dto.ColumnFilter;
 import com.skch.skch_api_server.dto.HostellerDTO;
 import com.skch.skch_api_server.dto.HostellerGridDTO;
+import com.skch.skch_api_server.dto.HostellerInactive;
 import com.skch.skch_api_server.dto.HostellerSearch;
 import com.skch.skch_api_server.dto.PaymentHistoryDTO;
 import com.skch.skch_api_server.dto.Result;
@@ -773,6 +774,41 @@ public class HostelServiceImpl implements HostelService {
 			}
 		}
 		return bao;
+	}
+
+	/**
+	 * Inactive Hosteller
+	 * 
+	 * @param dto
+	 * @return result
+	 */
+	@Override
+	public Result inactiveHosteller(HostellerInactive dto) {
+		Result result = new Result();
+		try {
+			log.info("Starting at inactiveHosteller.....");
+			Hosteller hosteller = hostellerDAO.findByHostellerId(dto.getHostellerId());
+			if (hosteller != null) {
+				hosteller.setActive(false);
+				hosteller.setModifiedById(JwtUtil.getUserId());
+				hosteller.setModifiedDate(LocalDateTime.now());
+				hosteller.setVacatedDate(LocalDateTime.now());
+
+				hosteller = hostellerDAO.save(hosteller);
+
+				result.setStatusCode(HttpStatus.OK.value());
+				result.setSuccessMessage("Hosteller Inactivated Successfully...");
+				result.setData(hosteller);
+			} else {
+				result.setStatusCode(HttpStatus.NOT_FOUND.value());
+				result.setErrorMessage("Hosteller Not Found for Id :: " + dto.getHostellerId());
+			}
+			log.info("Ending at inactiveHosteller.....");
+		} catch (Exception e) {
+			log.error("Error at inactiveHosteller :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
 	}
 
 }
