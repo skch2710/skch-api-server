@@ -110,7 +110,8 @@ public class HostelController {
 	@PostMapping(path = "/upload-file", consumes = "multipart/form-data")
 	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
 			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
-		Result result = hostelService.uploadFile(file);
+		System.out.println("File Name :: " + dto.isValidation());
+		Result result = hostelService.uploadFile(file,dto);
 		return ResponseEntity.ok(result);
 	}
 	
