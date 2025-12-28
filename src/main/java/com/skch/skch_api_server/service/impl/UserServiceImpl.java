@@ -527,6 +527,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Result profile(ProfileRequest request) {
 		Result result = new Result();
+		log.info("Profile Request :: {}", request.getEmailId());
 		try {
 //			Thread.sleep(Duration.ofSeconds(10));
 			Users user = usersDAO.findByEmailIdIgnoreCase(request.getEmailId());
