@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.web.client.RestClient;
 
 import com.smartystreets.api.ClientBuilder;
 import com.smartystreets.api.us_street.Client;
@@ -43,5 +44,11 @@ public class AppConfig {
 	Client smartyClient() {
 		return new ClientBuilder(authId, authToken).buildUsStreetApiClient();
 	}
+	
+	@Bean
+	RestClient restClient() {
+	    return RestClient.create();
+	}
+
 
 }

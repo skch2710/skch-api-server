@@ -68,6 +68,14 @@ app:
   request-verify-token: SpringBootReactRequestDevelopment
   token-expiry: 20
 
+auth:
+  server:
+    authorize-url: http://localhost:8061/oauth2/authorize
+    token-url: http://localhost:8061/oauth2/token
+  client-id: auth_code_client
+  redirect-uri: http://localhost:8062/authenticate/callback
+  scope: read
+
 cors:  
   cors-origin:
     - http://localhost:5173

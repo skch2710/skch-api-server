@@ -47,6 +47,9 @@ public class SecurityConfig {
 						.authenticationEntryPoint(customBearerTokenAuthenticationEntryPoint)
 						.accessDeniedHandler(customBearerTokenAccessDeniedHandler))
 				.csrf(Customizer.withDefaults())
+				.csrf(csrf -> csrf
+			            .ignoringRequestMatchers("/authenticate/login", "/authenticate/callback")
+			        )
 				.headers(headers -> headers.xssProtection(Customizer.withDefaults())
 						.contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'; object-src 'none'")))
 				.build();

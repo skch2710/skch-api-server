@@ -4,19 +4,32 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
 
+import com.skch.skch_api_server.common.AuthProps;
 import com.skch.skch_api_server.dto.JwtDTO;
 import com.skch.skch_api_server.dto.LoginRequest;
+import com.skch.skch_api_server.exception.CustomException;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class JwtUtil {
+	
+    private final RestClient restClient;
+    private final AuthProps authProps;
 	
 	public static final String SUPER_USER = "Super User";
 	
@@ -116,5 +129,32 @@ public class JwtUtil {
 		}
 		return result;
 	}
+	
+	// Authorization Code Grant Type
+	public JwtDTO getAuthCodeTokens(String code, String codeVerifier) {
+	    try {
+	        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+	        requestBody.add("grant_type", "authorization_code");
+	        requestBody.add("client_id", authProps.getClientId());
+	        requestBody.add("code", code);
+	        requestBody.add("redirect_uri", authProps.getRedirectUri());
+	        requestBody.add("code_verifier", codeVerifier);
+
+	        ResponseEntity<JwtDTO> response =
+	        			restClient.post()
+	                        .uri(authProps.getServer().getTokenUrl())
+	                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+	                        .body(requestBody)
+	                        .retrieve()
+	                        .toEntity(JwtDTO.class);
+
+	        return response.getBody();
+
+	    } catch (Exception e) {
+	        log.error("Error exchanging authorization code for tokens", e);
+	        throw new CustomException("Failed to get tokens using authorization code", HttpStatus.BAD_REQUEST);
+	    }
+	}
+
 
 }
