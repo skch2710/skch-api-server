@@ -90,6 +90,17 @@ public class JwtUtil {
 		return result;
 	}
 	
+	public static String getUserName() {
+		String result = "system";
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			result = authentication.getName();
+		} catch (Exception e) {
+			log.error("Error in getUserName...:: ", e);
+		}
+		return result;
+	}
+	
 	
 	public static Boolean checkAccess(String resource) {
 		Boolean result = false;

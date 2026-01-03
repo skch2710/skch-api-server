@@ -525,12 +525,13 @@ public class UserServiceImpl implements UserService {
 	 * @return result
 	 */
 	@Override
-	public Result profile(ProfileRequest request) {
+	public Result profile() {
 		Result result = new Result();
-		log.info("Profile Request :: {}", request.getEmailId());
 		try {
 //			Thread.sleep(Duration.ofSeconds(10));
-			Users user = usersDAO.findByEmailIdIgnoreCase(request.getEmailId());
+			String emailId = JwtUtil.getUserName();
+			log.info("Profile Request :: {}", emailId);
+			Users user = usersDAO.findByEmailIdIgnoreCase(emailId);
 			if (user != null) {
 				UserDTO userDto = MAPPER.fromUserModel(user);
 				ProfileDto dto = new ProfileDto();

@@ -184,12 +184,20 @@ public class LoginController {
                 .path("/authenticate/refresh")
                 .maxAge(Duration.ofDays(7))
                 .build();
-
+//        ResponseCookie ssoInitCookie = ResponseCookie.from("SSO_INIT", "true")
+//                .httpOnly(true)
+//                .secure(false)      // true in prod
+//                .sameSite("Lax")
+//                .path("/")
+//                .maxAge(Duration.ofMinutes(1)) // 🔑 very short
+//                .build();
+//
+//        response.addHeader(HttpHeaders.SET_COOKIE, ssoInitCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         // 6. Redirect back to React
-        response.sendRedirect("http://localhost:5173");
+        response.sendRedirect("http://localhost:5173/sso-page");
     }
 	
 
