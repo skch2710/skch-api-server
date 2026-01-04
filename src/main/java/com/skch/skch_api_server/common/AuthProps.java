@@ -14,6 +14,7 @@ public class AuthProps {
 
     private Server server = new Server();
     private String clientId;
+    private String clientSecret;
     private String redirectUri;
     private String scope;
 

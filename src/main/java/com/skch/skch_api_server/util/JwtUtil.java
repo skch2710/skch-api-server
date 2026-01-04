@@ -143,29 +143,28 @@ public class JwtUtil {
 	
 	// Authorization Code Grant Type
 	public JwtDTO getAuthCodeTokens(String code, String codeVerifier) {
-	    try {
-	        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
-	        requestBody.add("grant_type", "authorization_code");
-	        requestBody.add("client_id", authProps.getClientId());
-	        requestBody.add("code", code);
-	        requestBody.add("redirect_uri", authProps.getRedirectUri());
-	        requestBody.add("code_verifier", codeVerifier);
+		try {
+			MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+			requestBody.add("grant_type", "authorization_code");
+			requestBody.add("code", code);
+			requestBody.add("redirect_uri", authProps.getRedirectUri());
+			requestBody.add("code_verifier", codeVerifier);
 
-	        ResponseEntity<JwtDTO> response =
-	        			restClient.post()
-	                        .uri(authProps.getServer().getTokenUrl())
-	                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-	                        .body(requestBody)
-	                        .retrieve()
-	                        .toEntity(JwtDTO.class);
+			ResponseEntity<JwtDTO> response = restClient.post()
+					.uri(authProps.getServer().getTokenUrl())
+					.headers(headers -> 
+					headers.setBasicAuth(authProps.getClientId(), authProps.getClientSecret()))
+					.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+					.body(requestBody).retrieve()
+					.toEntity(JwtDTO.class);
+			return response.getBody();
 
-	        return response.getBody();
-
-	    } catch (Exception e) {
-	        log.error("Error exchanging authorization code for tokens", e);
-	        throw new CustomException("Failed to get tokens using authorization code", HttpStatus.BAD_REQUEST);
-	    }
+		} catch (Exception e) {
+			log.error("Error exchanging authorization code for tokens", e);
+			throw new CustomException("Failed to get tokens using authorization code", HttpStatus.BAD_REQUEST);
+		}
 	}
+
 
 
 }
