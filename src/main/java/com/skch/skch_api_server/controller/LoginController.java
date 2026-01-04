@@ -81,7 +81,7 @@ public class LoginController {
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
 				.httpOnly(true).secure(true) // true
 				.sameSite("Lax") // None + Secure in prod
-				.path("/authenticate/refresh").maxAge(Duration.ofHours(tokenExpiry)).build();
+				.path("/authenticate").maxAge(Duration.ofHours(tokenExpiry)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
@@ -173,7 +173,7 @@ public class LoginController {
 
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", dto.getRefresh_token())
 				.httpOnly(true).secure(false) // 🔒 true in HTTPS
-				.sameSite("Strict").path("/authenticate/refresh").maxAge(Duration.ofDays(7)).build();
+				.sameSite("Strict").path("/authenticate").maxAge(Duration.ofDays(7)).build();
 //        ResponseCookie ssoInitCookie = ResponseCookie.from("SSO_INIT", "true")
 //                .httpOnly(true)
 //                .secure(false)      // true in prod
@@ -247,7 +247,7 @@ public class LoginController {
 				.secure(true).sameSite("None").path("/").maxAge(Duration.ofMinutes(tokenExpiry)).build();
 
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", result.getRefresh_token()).httpOnly(true)
-				.secure(true).sameSite("None").path("/authenticate/refresh").maxAge(Duration.ofHours(tokenExpiry))
+				.secure(true).sameSite("None").path("/authenticate").maxAge(Duration.ofHours(tokenExpiry))
 				.build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
@@ -281,7 +281,17 @@ public class LoginController {
 				.sameSite("None").path("/").maxAge(0).build();
 
 		ResponseCookie clearRefresh = ResponseCookie.from("REFRESH_TOKEN", "").httpOnly(true).secure(true)
-				.sameSite("None").path("/auth/refresh").maxAge(0).build();
+				.sameSite("None").path("/authenticate").maxAge(0).build();
+		
+		Cookie cookie = WebUtils.getCookie(request, "REFRESH_TOKEN");
+		
+		if (cookie == null) {
+			throw new CustomException("Refresh Token is missing", HttpStatus.BAD_REQUEST);
+		}
+		
+		log.info(">>>> Refresh Token Cookie :: {}",cookie.getValue());
+
+		jwtUtil.revokeToken(cookie.getValue());
 
 		response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
 		response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());

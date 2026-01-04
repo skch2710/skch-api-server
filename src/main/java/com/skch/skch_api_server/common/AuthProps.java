@@ -23,5 +23,6 @@ public class AuthProps {
     public static class Server {
         private String authorizeUrl;
         private String tokenUrl;
+        private String revokeUrl;
     }
 }

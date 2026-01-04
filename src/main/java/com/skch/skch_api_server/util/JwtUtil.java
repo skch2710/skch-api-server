@@ -165,6 +165,30 @@ public class JwtUtil {
 		}
 	}
 
+	/**
+	 * Revokes the given token (access or refresh).
+	 *
+	 * @param token the token to be revoked
+	 * @throws CustomException if revocation fails
+	 **/
+	public void revokeToken(String token) {
+		try {
+			MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+			requestBody.add("token", token);
+			requestBody.add("token_type_hint", "refresh_token");
 
+			restClient.post()
+					.uri(authProps.getServer().getRevokeUrl())
+					.headers(headers -> 
+					headers.setBasicAuth(authProps.getClientId(), authProps.getClientSecret()))
+					.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+					.body(requestBody).retrieve()
+					.toBodilessEntity();
+
+		} catch (Exception e) {
+			log.error("Error revoking token", e);
+			throw new CustomException("Failed to revoke token", HttpStatus.BAD_REQUEST);
+		}
+	}
 
 }
