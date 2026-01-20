@@ -89,6 +89,20 @@ smarty:
   auth-token: ${SMARTY_AUTH_TOKEN}
   batch-size: 100
 
+powerbi:
+  client-id: ${CLIENT_ID}
+  client-secret: ${POWER_BI_CLIENT_SECRET}
+  tenant-id : ${TENANT_ID}
+  authority-url: https://login.microsoftonline.com/
+  resource-url: https://analysis.windows.net/powerbi/api/.default
+  workspace-id: ${WORKSPACE_ID}
+  role: RLS
+  embed-base-url: https://api.powerbi.com/v1.0/myorg/groups/%s/reports/%s
+  embed-token-url: /GenerateToken
+  proxy-host: ${PROXY_HOST}
+  proxy-port: ${PROXY_PORT}
+  report-id: a8d25e01-b4bf-4a96-98cc-7a085066a8b9
+
 #logging:
 #  level:
 #    org:
