@@ -58,7 +58,7 @@ spring:
       
 app:
   timezone: "Asia/Kolkata"
-  auth-cred: auth_code_client:sathish_ch@1234
+  auth-cred: auth_code_client:Sathish@123
   url: http://localhost:8061/oauth2/token
   passwordlink-expiry: 24
   otp-expiry: 5
@@ -74,7 +74,7 @@ auth:
     token-url: http://localhost:8061/oauth2/token
     revoke-url: http://localhost:8061/oauth2/revoke
   client-id: auth_code_client
-  client-secret: sathish_ch@1234
+  client-secret: Sathish@123
   redirect-uri: http://localhost:8062/authenticate/callback
   scope: read
 
