@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -31,8 +32,6 @@ import com.skch.skch_api_server.dto.LoginResponse;
 import com.skch.skch_api_server.dto.Navigation;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.SubNavigarion;
-import com.skch.skch_api_server.dto.UserDTO;
-import com.skch.skch_api_server.dto.UserPrivilegeDTO;
 import com.skch.skch_api_server.dto.ValidateLinkDTO;
 import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.mapper.ObjectMapper;
@@ -137,17 +136,27 @@ public class LoginServiceImpl implements LoginService {
 
 	@Override
 	public Result verifyOTP(LoginRequest request) {
-		Result resut = null;
+		Result result = null;
 		LoginResponse loginResponse = null;
 		try {
-			resut = new Result();
+			result = new Result();
 			loginResponse = new LoginResponse();
 			String emailId = request.getEmailId().toLowerCase().trim();
-			String serverOtp = cacheService.getOtp(emailId);
+			Optional<String> otpOpt = cacheService.getOtp(emailId);
+			
+			if (otpOpt.isEmpty()) {
+			    // expired (not present in cache)
+			    result.setStatusCode(HttpStatus.NOT_FOUND.value());
+			    result.setSuccessMessage("OTP is expired");
+			    return result;
+			}
+			
+			String serverOtp = otpOpt.get();
+			
 			if (request.getOtp().equals(serverOtp)) {
 //				Users user = userDAO.findByEmailIdIgnoreCase(emailId);
-				resut.setStatusCode(HttpStatus.OK.value());
-				resut.setSuccessMessage("OTP is successfully validated");
+				result.setStatusCode(HttpStatus.OK.value());
+				result.setSuccessMessage("OTP is successfully validated");
 				cacheService.clearOTP(emailId);
 
 				JwtDTO jwtDTO = jwtUtil.getToken(request);
@@ -157,20 +166,16 @@ public class LoginServiceImpl implements LoginService {
 //				loginResponse.setUser(userDto);
 				loginResponse.setJwtDTO(jwtDTO);
 //				loginResponse.setNavigations(getNavigations(user));
-				resut.setData(loginResponse);
-
-			} else if (Integer.valueOf(serverOtp) == 0) {
-				resut.setStatusCode(HttpStatus.NOT_FOUND.value());
-				resut.setSuccessMessage("OTP is expired");
-			} else {
-				resut.setStatusCode(HttpStatus.NOT_FOUND.value());
-				resut.setSuccessMessage("OTP is invalid");
+				result.setData(loginResponse);
+			}  else {
+				result.setStatusCode(HttpStatus.NOT_FOUND.value());
+				result.setSuccessMessage("OTP is invalid");
 			}
 		} catch (Exception e) {
 			log.error("Error in verifyOTP ... ", e);
 			throw new CustomException("Error in verifyOTP :: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return resut;
+		return result;
 	}
 
 	public Object getNavigations(Users user) {
