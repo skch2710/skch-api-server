@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.HostellerDTO;
+import com.skch.skch_api_server.dto.HostellerInactive;
 import com.skch.skch_api_server.dto.HostellerSearch;
 import com.skch.skch_api_server.dto.PaymentHistoryDTO;
 import com.skch.skch_api_server.dto.Result;
@@ -17,7 +19,9 @@ public interface HostelService {
 	
 	Result getHostellers(HostellerSearch search);
 	
-	Result uploadFile(MultipartFile file);
+	Result uploadFile(MultipartFile file,FileUploadDTO dto);
 	
 	ByteArrayOutputStream getHostelTemplate();
+
+	Result inactiveHosteller(HostellerInactive dto);
 }

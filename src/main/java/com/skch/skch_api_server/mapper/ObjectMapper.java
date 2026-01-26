@@ -79,6 +79,7 @@ public interface ObjectMapper {
 //	@Mapping(source = "joiningDate", target = "joiningDate", dateFormat = "MM/dd/yyyy")
 //	@Mapping(target = "phoneNumber", expression = "java(mapEncprict(hosteller.getPhoneNumber()))")
 //	@Mapping(target = "address", expression = "java(mapEncprict(hosteller.getAddress()))")
+	@Mapping(target = "vacatedDate", source = "vacatedDate", dateFormat = "yyyy-MM-dd h:mm a")
 	HostellerGridDTO formHostelGridModel(HostellerGrid hosteller);
 	List<HostellerGridDTO> formHostelGridModel(List<HostellerGrid> hostellersList);
 }

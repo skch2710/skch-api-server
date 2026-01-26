@@ -6,15 +6,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.web.client.RestClient;
 
 import com.smartystreets.api.ClientBuilder;
 import com.smartystreets.api.us_street.Client;
 
 @Configuration
-@EnableRetry
 public class AppConfig {
 	
 	@Value("${smarty.auth-id}")
@@ -42,6 +41,11 @@ public class AppConfig {
 	@Bean
 	Client smartyClient() {
 		return new ClientBuilder(authId, authToken).buildUsStreetApiClient();
+	}
+	
+	@Bean
+	public RestClient restClient(RestClient.Builder builder) {
+	    return builder.build();
 	}
 
 }

@@ -12,6 +12,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.WebUtils;
 
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.ProfileRequest;
@@ -36,6 +38,9 @@ import com.skch.skch_api_server.util.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -48,15 +53,18 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 	
-	@PostMapping("/profile")
-//	@PreAuthorize("hasAnyAuthority('User-R')")
-	@PreAuthorize("hasAuthority('User-R') and @jwtUtil.checkProfileMatch(#p0.getEmailId())")
+	@GetMapping("/profile")
+	@PreAuthorize("hasAnyAuthority('User-R')")
+//	@PreAuthorize("hasAuthority('User-R') and @jwtUtil.checkProfileMatch(#p0.getEmailId())")
 	@Operation(summary="Get User Profile",description = "Return the User Profile based on EmailId")
-	public ResponseEntity<?> profile(@RequestBody ProfileRequest request) {
+	public ResponseEntity<?> profile(HttpServletRequest request,HttpServletResponse response) {
 //		if(!JwtUtil.checkProfileMatch(request.getEmailId())) {
 //			throw new CustomException("Access Denied to fetch other user profile",HttpStatus.FORBIDDEN);
 //		}
-		Result result = userService.profile(request);
+//		Cookie ssoInit = WebUtils.getCookie(request, "SSO_INIT");
+//		System.out.println(ssoInit != null ? ssoInit.getValue() : "SSO_INIT cookie not found");
+
+		Result result = userService.profile();
 		return ResponseEntity.ok(result);
 	}
 

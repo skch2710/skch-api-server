@@ -53,8 +53,10 @@ import com.skch.skch_api_server.dao.HostellerDAO;
 import com.skch.skch_api_server.dao.HostellerGridDAO;
 import com.skch.skch_api_server.dao.PaymentHistoryDAO;
 import com.skch.skch_api_server.dto.ColumnFilter;
+import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.HostellerDTO;
 import com.skch.skch_api_server.dto.HostellerGridDTO;
+import com.skch.skch_api_server.dto.HostellerInactive;
 import com.skch.skch_api_server.dto.HostellerSearch;
 import com.skch.skch_api_server.dto.PaymentHistoryDTO;
 import com.skch.skch_api_server.dto.Result;
@@ -559,10 +561,9 @@ public class HostelServiceImpl implements HostelService {
 	 * @return result
 	 */
 	@Override
-	public Result uploadFile(MultipartFile file) {
+	public Result uploadFile(MultipartFile file,FileUploadDTO dto) {
 		Result result = new Result();
 		Long userId = JwtUtil.getUserId();
-
 		try {
 			long intialTime = System.currentTimeMillis();
 
@@ -581,11 +582,20 @@ public class HostelServiceImpl implements HostelService {
 						log.info("Total Records :: " + totalRecords);
 
 						// Method to Save the Data Synchronously
-						getRowValues(sheet, userId);
-
-						result.setData("Uploaded " + totalRecords + " records.");
+						result.setData("File contains " + totalRecords + " records.");
+						
+						if(!dto.isValidation()) {
+							String responce = getRowValues(sheet, userId);
+							if(!responce.isBlank()) {
+								log.info(responce);
+								result.setData(responce);
+							}
+						}
+						result.setStatusCode(HttpStatus.OK.value());
+						result.setSuccessMessage("File Processed Successfully");
 					} else {
 						result.setErrorMessage(headerCheck);
+						result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 					}
 				}
 			} else if (ExcelUtil.csvType(file)) {
@@ -599,17 +609,23 @@ public class HostelServiceImpl implements HostelService {
 					if (headerCheck.isBlank()) {
 						long totalRecords = csvDataList.size() - 1L;
 
-						CompletableFuture.runAsync(() -> getCsvValues(csvDataList, userId));
+						if(!dto.isValidation()) {
+							CompletableFuture.runAsync(() -> getCsvValues(csvDataList, userId));
+						}
 
 						log.info("Count of Records :: " + totalRecords);
 
-						result.setData("Uploaded " + totalRecords + " records.");
+						result.setData("File contains " + totalRecords + " records.");
+						result.setStatusCode(HttpStatus.OK.value());
+						result.setSuccessMessage("File Processed Successfully");
 					} else {
 						result.setErrorMessage(headerCheck);
+						result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 					}
 				}
 			} else {
 				result.setErrorMessage("The uploaded file is not Present or Not CSV or an Excel file");
+				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 			}
 
 			long finalTime = System.currentTimeMillis();
@@ -627,12 +643,12 @@ public class HostelServiceImpl implements HostelService {
 	 * @param sheet
 	 * @param userId
 	 */
-	public void getRowValues(Sheet sheet, Long userId) {
+	public String getRowValues(Sheet sheet, Long userId) {
 		ArrayList<HostellerDTO> dataList = new ArrayList<>();
 		List<HostellerDTO> errorList = new ArrayList<>();
 		List<CompletableFuture<Void>> features = new ArrayList<>();
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-
+		String result = "";
 		Map<String, Integer> countMap = new HashMap<>(Map.of("S", 0, "F", 0));
 		try {
 			sheet.forEach(row -> {
@@ -677,11 +693,14 @@ public class HostelServiceImpl implements HostelService {
         
 		log.info("Success {} records , failed {} records.", countMap.get("S"), countMap.get("F"));
 
+		result = "Success " + countMap.get("S") + " records , failed " + countMap.get("F") + " records.";
+		
 		} catch (Exception e) {
 			log.error("Error processing rows :: {} ", e.getMessage(), e);
 		} finally {
 			executor.shutdown();
 		}
+		return result;
 	}
 	
 	/**
@@ -773,6 +792,42 @@ public class HostelServiceImpl implements HostelService {
 			}
 		}
 		return bao;
+	}
+
+	/**
+	 * Inactive Hosteller
+	 * 
+	 * @param dto
+	 * @return result
+	 */
+	@Override
+	public Result inactiveHosteller(HostellerInactive dto) {
+		Result result = new Result();
+		try {
+			Thread.sleep(Duration.ofSeconds(10));
+			log.info("Starting at inactiveHosteller.....");
+			Hosteller hosteller = hostellerDAO.findByHostellerId(dto.getHostellerId());
+			if (hosteller != null) {
+				hosteller.setActive(false);
+				hosteller.setModifiedById(JwtUtil.getUserId());
+				hosteller.setModifiedDate(LocalDateTime.now());
+				hosteller.setVacatedDate(LocalDateTime.now());
+
+				hosteller = hostellerDAO.save(hosteller);
+
+				result.setStatusCode(HttpStatus.OK.value());
+				result.setSuccessMessage("Hosteller Inactivated Successfully...");
+				result.setData(hosteller);
+			} else {
+				result.setStatusCode(HttpStatus.NOT_FOUND.value());
+				result.setErrorMessage("Hosteller Not Found for Id :: " + dto.getHostellerId());
+			}
+			log.info("Ending at inactiveHosteller.....");
+		} catch (Exception e) {
+			log.error("Error at inactiveHosteller :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
 	}
 
 }

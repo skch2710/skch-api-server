@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -524,10 +525,13 @@ public class UserServiceImpl implements UserService {
 	 * @return result
 	 */
 	@Override
-	public Result profile(ProfileRequest request) {
+	public Result profile() {
 		Result result = new Result();
 		try {
-			Users user = usersDAO.findByEmailIdIgnoreCase(request.getEmailId());
+//			Thread.sleep(Duration.ofSeconds(10));
+			String emailId = JwtUtil.getUserName();
+			log.info("Profile Request :: {}", emailId);
+			Users user = usersDAO.findByEmailIdIgnoreCase(emailId);
 			if (user != null) {
 				UserDTO userDto = MAPPER.fromUserModel(user);
 				ProfileDto dto = new ProfileDto();

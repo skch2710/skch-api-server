@@ -1,5 +1,7 @@
 package com.skch.skch_api_server.config;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +11,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -17,7 +24,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-//@EnableMethodSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
@@ -36,26 +42,34 @@ public class SecurityConfig {
 //	@Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
 //	String jwkUri;
 
+	@Autowired
+	private CookieBearerTokenResolver cookieBearerTokenResolver;
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-	    return http.securityMatcher("/api/v1/**")
-	            .authorizeHttpRequests(auth -> auth
-	                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-	                    .anyRequest().authenticated())
-	            .oauth2ResourceServer(oauth2 -> oauth2
-	                    .jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-	                    .authenticationEntryPoint(this.customBearerTokenAuthenticationEntryPoint)
-	                    .accessDeniedHandler(this.customBearerTokenAccessDeniedHandler))
-	            .csrf(Customizer.withDefaults())
-	            .headers(headers -> headers
-	                    .xssProtection(Customizer.withDefaults())
-	                    .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'; object-src 'none'")))
-	            .build();
+		return http.securityMatcher("/api/v1/**").authorizeHttpRequests(auth -> auth
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll().anyRequest().authenticated())
+				.oauth2ResourceServer(oauth2 -> oauth2.bearerTokenResolver(cookieBearerTokenResolver)
+						.jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
+						.authenticationEntryPoint(customBearerTokenAuthenticationEntryPoint)
+						.accessDeniedHandler(customBearerTokenAccessDeniedHandler))
+				.csrf(Customizer.withDefaults())
+				.csrf(csrf -> csrf
+			            .ignoringRequestMatchers("/authenticate/login", "/authenticate/callback")
+			        )
+				.headers(headers -> headers.xssProtection(Customizer.withDefaults())
+						.contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'; object-src 'none'")))
+				.build();
 	}
 
 	@Bean
 	JwtDecoder jwtDecoder() {
-		return NimbusJwtDecoder.withIssuerLocation(issuerUri).build();
+		NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(issuerUri).build();
+		JwtTimestampValidator timestampValidator = new JwtTimestampValidator(Duration.ZERO);
+		OAuth2TokenValidator<Jwt> validator = new DelegatingOAuth2TokenValidator<>(
+				JwtValidators.createDefaultWithIssuer(issuerUri), timestampValidator);
+		decoder.setJwtValidator(validator);
+		return decoder;
 	}
 
 	private JwtAuthenticationConverter jwtAuthenticationConverter() {
