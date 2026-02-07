@@ -80,7 +80,7 @@ public class LoginController {
 		// REFRESH TOKEN (long-lived)
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
 				.httpOnly(true).secure(true) // true
-				.sameSite("Lax") // None + Secure in prod
+				.sameSite("Lax")
 				.path("/authenticate").maxAge(Duration.ofHours(tokenExpiry)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 
 import com.smartystreets.api.ClientBuilder;
 import com.smartystreets.api.us_street.Client;
@@ -46,6 +47,11 @@ public class AppConfig {
 	@Bean
 	public RestClient restClient(RestClient.Builder builder) {
 	    return builder.build();
+	}
+	
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
 	}
 
 }

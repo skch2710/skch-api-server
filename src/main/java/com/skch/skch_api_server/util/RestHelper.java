@@ -56,7 +56,7 @@ public class RestHelper {
 
 	public static <T> T restPost(String url, Object requestObject, String accessToken, Class<T> responseType) {
 		HttpHeaders headers = new HttpHeaders();
-		headers.add("Authorization", accessToken);
+		headers.setBearerAuth(accessToken);
 		HttpEntity<?> request = new HttpEntity<>(requestObject, headers);
 
 		ResponseEntity<T> response = new RestTemplate().exchange(url, HttpMethod.POST, request, responseType);
@@ -98,13 +98,14 @@ public class RestHelper {
 	 */
 	public static <T> T getToken(Map<String,String> values, Class<T> responseType) {
 		
-		String clientCredentials = values.get("clientId")+":"+values.get("clientSecret");
-		String encodedCredentials = new String(Base64.getEncoder().encode(clientCredentials.getBytes()));
+//		String clientCredentials = values.get("clientId")+":"+values.get("clientSecret");
+//		String encodedCredentials = new String(Base64.getEncoder().encode(clientCredentials.getBytes()));
 
 		// Create the request headers
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-		headers.add("Authorization", "Basic " + encodedCredentials);
+//		headers.add("Authorization", "Basic " + encodedCredentials);
+		headers.setBasicAuth(values.get("clientId"), values.get("clientSecret"));
 
 		// Create the request body with username and password
 		MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
