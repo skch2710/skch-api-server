@@ -31,8 +31,8 @@ import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.ValidateLinkDTO;
 import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.LoginService;
+import com.skch.skch_api_server.util.CacheUtil;
 import com.skch.skch_api_server.util.JwtUtil;
-import com.skch.skch_api_server.util.PkceService;
 import com.skch.skch_api_server.util.PkceUtil;
 
 import jakarta.servlet.http.Cookie;
@@ -55,7 +55,8 @@ public class LoginController {
 	private long tokenExpiry;
 
 	private final AuthProps authProps;
-	private final PkceService pkceService;
+	
+	private final CacheUtil cacheUtil;
 
 	/**
 	 * Login User and set HttpOnly cookies
@@ -65,27 +66,14 @@ public class LoginController {
 	 * @return
 	 */
 	@PostMapping("/login")
-	public ResponseEntity<Result> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
-
+	public ResponseEntity<Result> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response,
+			HttpServletRequest servletRequest) {
+		
 		Result result = loginService.login(request);
 		LoginResponse responce = (LoginResponse) result.getData();
-		String accessToken = responce.getJwtDTO().getAccess_token();
-		String refreshToken = responce.getJwtDTO().getRefresh_token();
-
-		// ACCESS TOKEN (short-lived)
-		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken)
-				.httpOnly(true).secure(true)
-				.sameSite("None").path("/").maxAge(Duration.ofMinutes(tokenExpiry)).build();
-
-		// REFRESH TOKEN (long-lived)
-		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
-				.httpOnly(true).secure(true) // true
-				.sameSite("Lax")
-				.path("/authenticate").maxAge(Duration.ofHours(tokenExpiry)).build();
-
-		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-
+		
+		cacheUtil.setCache(response, responce.getJwtDTO());
+		
 		return ResponseEntity.ok(result);
 	}
 
@@ -167,24 +155,7 @@ public class LoginController {
 		JwtDTO dto = jwtUtil.getAuthCodeTokens(code, codeVerifier);
 
 		// 5. Store tokens in HttpOnly cookies
-		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", dto.getAccess_token())
-				.httpOnly(true).secure(false) // 🔒 true in HTTPS
-				.sameSite("Strict").path("/").maxAge(Duration.ofMinutes(15)).build();
-
-		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", dto.getRefresh_token())
-				.httpOnly(true).secure(false) // 🔒 true in HTTPS
-				.sameSite("Strict").path("/authenticate").maxAge(Duration.ofDays(7)).build();
-//        ResponseCookie ssoInitCookie = ResponseCookie.from("SSO_INIT", "true")
-//                .httpOnly(true)
-//                .secure(false)      // true in prod
-//                .sameSite("Lax")
-//                .path("/")
-//                .maxAge(Duration.ofMinutes(1)) // 🔑 very short
-//                .build();
-//
-//        response.addHeader(HttpHeaders.SET_COOKIE, ssoInitCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+		cacheUtil.setCache(response, dto);
 
 		// 6. Redirect back to React
 		response.sendRedirect("http://localhost:5173/sso-page");
@@ -243,15 +214,8 @@ public class LoginController {
 
 		JwtDTO result = jwtUtil.getRefreshToken(refreshToken);
 
-		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", result.getAccess_token()).httpOnly(true)
-				.secure(true).sameSite("None").path("/").maxAge(Duration.ofMinutes(tokenExpiry)).build();
-
-		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", result.getRefresh_token()).httpOnly(true)
-				.secure(true).sameSite("None").path("/authenticate").maxAge(Duration.ofHours(tokenExpiry))
-				.build();
-
-		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+		cacheUtil.setCache(response, result);
+		
 		return ResponseEntity.ok().build();
 	}
 
@@ -277,12 +241,6 @@ public class LoginController {
 	@PostMapping("/logout")
 	public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
 
-		ResponseCookie clearAccess = ResponseCookie.from("ACCESS_TOKEN", "").httpOnly(true).secure(true)
-				.sameSite("None").path("/").maxAge(0).build();
-
-		ResponseCookie clearRefresh = ResponseCookie.from("REFRESH_TOKEN", "").httpOnly(true).secure(true)
-				.sameSite("None").path("/authenticate").maxAge(0).build();
-		
 		Cookie cookie = WebUtils.getCookie(request, "REFRESH_TOKEN");
 		
 		if (cookie == null) {
@@ -293,8 +251,7 @@ public class LoginController {
 
 		jwtUtil.revokeToken(cookie.getValue());
 
-		response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+		cacheUtil.setCacheLogout(response);
 
 		return ResponseEntity.ok().build();
 	}
