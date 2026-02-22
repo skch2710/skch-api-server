@@ -29,7 +29,7 @@ public class CacheUtil {
 		// REFRESH TOKEN (long-lived)
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", dto.getRefresh_token())
 				.httpOnly(true).secure(true)
-				.sameSite("Lax").path("/authenticate")
+				.sameSite("Lax").path("/apiService/authenticate")
 				.maxAge(Duration.ofHours(tokenExpiry)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
@@ -46,7 +46,7 @@ public class CacheUtil {
 		// REFRESH TOKEN
 		ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", "")
 				.httpOnly(true).secure(true)
-				.sameSite("Lax").path("/authenticate")
+				.sameSite("Lax").path("/apiService/authenticate")
 				.maxAge(Duration.ofHours(0)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());

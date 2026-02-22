@@ -244,6 +244,7 @@ public class LoginController {
 		Cookie cookie = WebUtils.getCookie(request, "REFRESH_TOKEN");
 		
 		if (cookie == null) {
+			log.info("No Refresh Token cookie found during logout");
 			throw new CustomException("Refresh Token is missing", HttpStatus.BAD_REQUEST);
 		}
 		

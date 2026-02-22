@@ -1,8 +1,9 @@
 package com.skch.skch_api_server.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.skch.skch_api_server.dto.JwtDTO;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.util.ApiCalling;
+import com.skch.skch_api_server.util.CacheDataService;
 import com.skch.skch_api_server.util.RetryUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,14 +31,18 @@ public class TestController {
 	@Autowired
 	private ApiCalling apiCalling;
 	
+	@Autowired
+	private CacheDataService cacheDataService;
+	
 	@GetMapping("/test/{resource}")
 	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
 //	@PreAuthorize("@jwtUtil.checkAccess(#p0)")
 //	@PreAuthorize("hasAuthority(#p0)")
 	public ResponseEntity<?> getNavTwo(@PathVariable("resource") String resource){
-		retryUtil.getRetry();
-		return ResponseEntity.ok("Access :: "+resource);
+//		retryUtil.getRetry();
+		Map<String, String> dataFromCache = cacheDataService.getDataFromCache(resource);
+		return ResponseEntity.ok(dataFromCache);
 	}
 	
 	@PostMapping("/test-post")

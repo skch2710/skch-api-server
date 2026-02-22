@@ -55,6 +55,14 @@ spring:
       enabled: true
       max-file-size: 50MB
       max-request-size: 50MB
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost # use "redis" if Spring Boot is dockerized
+      port: 6379
+      password: Redis@123
+      timeout: 2000
       
 app:
   timezone: "Asia/Kolkata"
