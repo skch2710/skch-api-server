@@ -31,6 +31,7 @@ import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.ValidateLinkDTO;
 import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.LoginService;
+import com.skch.skch_api_server.service.impl.RedisService;
 import com.skch.skch_api_server.util.CacheUtil;
 import com.skch.skch_api_server.util.JwtUtil;
 import com.skch.skch_api_server.util.PkceUtil;
@@ -57,6 +58,8 @@ public class LoginController {
 	private final AuthProps authProps;
 	
 	private final CacheUtil cacheUtil;
+	
+	private final RedisService redisService;
 
 	/**
 	 * Login User and set HttpOnly cookies
@@ -71,6 +74,9 @@ public class LoginController {
 		
 		Result result = loginService.login(request);
 		LoginResponse responce = (LoginResponse) result.getData();
+		
+		redisService.saveSession(request.getEmailId(), responce.getJwtDTO().getAccess_token(), 
+				Duration.ofMinutes(tokenExpiry));
 		
 		cacheUtil.setCache(response, responce.getJwtDTO());
 		
