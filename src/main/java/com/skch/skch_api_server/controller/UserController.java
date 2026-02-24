@@ -65,6 +65,7 @@ public class UserController {
 //		System.out.println(ssoInit != null ? ssoInit.getValue() : "SSO_INIT cookie not found");
 
 		Result result = userService.profile();
+		log.info("Profile Result :: {}",result);
 		return ResponseEntity.ok(result);
 	}
 
