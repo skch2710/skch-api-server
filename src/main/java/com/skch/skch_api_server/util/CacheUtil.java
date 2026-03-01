@@ -20,6 +20,7 @@ public class CacheUtil {
 	private long tokenExpiry;
 
 	public void setCache(HttpServletResponse response, JwtDTO dto) {
+		log.info("Setting cookies for access and refresh tokens...");
 		// ACCESS TOKEN (short-lived)
 		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", dto.getAccess_token())
 				.httpOnly(true).secure(true)
@@ -37,6 +38,7 @@ public class CacheUtil {
 	}
 	
 	public void setCacheLogout(HttpServletResponse response) {
+		log.info("Clearing cookies for logout...");
 		// ACCESS TOKEN
 		ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", "")
 				.httpOnly(true).secure(true)

@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -30,6 +32,7 @@ public class JwtUtil {
 	
     private final RestClient restClient;
     private final AuthProps authProps;
+    private final JwtDecoder jwtDecoder;
 	
 	public static final String SUPER_USER = "Super User";
 	
@@ -97,6 +100,19 @@ public class JwtUtil {
 			result = authentication.getName();
 		} catch (Exception e) {
 			log.error("Error in getUserName...:: ", e);
+		}
+		return result;
+	}
+	
+	public String getUserEmail(String accessToken) {
+		log.info(">>>>>Starting at getUserEmail...");
+		String result = "";
+		try {
+			Jwt jwt = jwtDecoder.decode(accessToken);
+			log.info(">>>>>Decoded JWT Subject :: {}", jwt.getSubject());
+			return jwt.getSubject();
+		} catch (Exception e) {
+			log.error("Error in getUserEmail...:: ", e);
 		}
 		return result;
 	}
@@ -172,6 +188,7 @@ public class JwtUtil {
 	 * @throws CustomException if revocation fails
 	 **/
 	public void revokeToken(String token) {
+		log.info(">> Starting Revoking token...");
 		try {
 			MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
 			requestBody.add("token", token);

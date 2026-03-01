@@ -56,9 +56,9 @@ public class LoginController {
 	private long tokenExpiry;
 
 	private final AuthProps authProps;
-	
+
 	private final CacheUtil cacheUtil;
-	
+
 	private final RedisService redisService;
 
 	/**
@@ -71,15 +71,15 @@ public class LoginController {
 	@PostMapping("/login")
 	public ResponseEntity<Result> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response,
 			HttpServletRequest servletRequest) {
-		
+
 		Result result = loginService.login(request);
 		LoginResponse responce = (LoginResponse) result.getData();
-		
-		redisService.saveSession(request.getEmailId(), responce.getJwtDTO().getAccess_token(), 
+
+		redisService.saveSession(request.getEmailId(), responce.getJwtDTO().getAccess_token(),
 				Duration.ofMinutes(tokenExpiry));
-		
+
 		cacheUtil.setCache(response, responce.getJwtDTO());
-		
+
 		return ResponseEntity.ok(result);
 	}
 
@@ -100,14 +100,12 @@ public class LoginController {
 		String state = UUID.randomUUID().toString();
 
 		// 3. Store STATE in HttpOnly cookie
-		ResponseCookie stateCookie = ResponseCookie.from("OAUTH2_STATE", state)
-				.httpOnly(true).secure(false) // 🔒 true
+		ResponseCookie stateCookie = ResponseCookie.from("OAUTH2_STATE", state).httpOnly(true).secure(false) // 🔒 true
 				.sameSite("Lax") // 🔑 REQUIRED for redirects
 				.path("/authenticate").maxAge(Duration.ofMinutes(5)).build();
 
 		// 4. Store PKCE verifier in HttpOnly cookie
-		ResponseCookie pkceCookie = ResponseCookie.from("PKCE_VERIFIER", codeVerifier)
-				.httpOnly(true).secure(false) // 🔒
+		ResponseCookie pkceCookie = ResponseCookie.from("PKCE_VERIFIER", codeVerifier).httpOnly(true).secure(false) // 🔒
 				.sameSite("Lax").path("/authenticate").maxAge(Duration.ofMinutes(5)).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, stateCookie.toString());
@@ -129,7 +127,7 @@ public class LoginController {
 			HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		log.info("OAuth Callback received with code: {} and state: {}", code, returnedState);
-		
+
 		// 1. Read cookies
 		Cookie stateCookie = WebUtils.getCookie(request, "OAUTH2_STATE");
 		Cookie pkceCookie = WebUtils.getCookie(request, "PKCE_VERIFIER");
@@ -144,15 +142,13 @@ public class LoginController {
 		}
 
 		String codeVerifier = pkceCookie.getValue();
-		
+
 		log.info("PKCE Code Verifier: {}", codeVerifier);
 
 		// 3. Clear temporary cookies
-		ResponseCookie clearState = ResponseCookie.from("OAUTH2_STATE", "")
-				.path("/authenticate").maxAge(0).build();
+		ResponseCookie clearState = ResponseCookie.from("OAUTH2_STATE", "").path("/authenticate").maxAge(0).build();
 
-		ResponseCookie clearPkce = ResponseCookie.from("PKCE_VERIFIER", "")
-				.path("/authenticate").maxAge(0).build();
+		ResponseCookie clearPkce = ResponseCookie.from("PKCE_VERIFIER", "").path("/authenticate").maxAge(0).build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, clearState.toString());
 		response.addHeader(HttpHeaders.SET_COOKIE, clearPkce.toString());
@@ -203,25 +199,20 @@ public class LoginController {
 	@PostMapping("/refresh")
 	public ResponseEntity<Void> refresh(HttpServletResponse response, HttpServletRequest request) {
 
-		String refreshToken = null;
-		if (request.getCookies() != null) {
-			for (Cookie cookie : request.getCookies()) {
-				log.info(cookie.getName() + " ::: " + cookie.getValue());
-				if ("REFRESH_TOKEN".equals(cookie.getName())) {
-					refreshToken = cookie.getValue();
-					break;
-				}
-			}
-		}
+		Cookie cookie = WebUtils.getCookie(request, "REFRESH_TOKEN");
 
-		if (refreshToken == null) {
+		if (cookie == null) {
+			log.info("No Refresh Token cookie found during refresh");
 			throw new CustomException("Refresh Token is missing", HttpStatus.BAD_REQUEST);
 		}
 
-		JwtDTO result = jwtUtil.getRefreshToken(refreshToken);
+		JwtDTO result = jwtUtil.getRefreshToken(cookie.getValue());
+		
+		redisService.saveSession(jwtUtil.getUserEmail(result.getAccess_token()), result.getAccess_token(),
+				Duration.ofMinutes(tokenExpiry));
 
 		cacheUtil.setCache(response, result);
-		
+
 		return ResponseEntity.ok().build();
 	}
 
@@ -247,14 +238,16 @@ public class LoginController {
 	@PostMapping("/logout")
 	public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
 
-		Cookie cookie = WebUtils.getCookie(request, "REFRESH_TOKEN");
+		log.info(">>>Starting Logout Process...");
 		
+		Cookie cookie = WebUtils.getCookie(request, "REFRESH_TOKEN");
+
 		if (cookie == null) {
 			log.info("No Refresh Token cookie found during logout");
 			throw new CustomException("Refresh Token is missing", HttpStatus.BAD_REQUEST);
 		}
-		
-		log.info(">>>> Refresh Token Cookie :: {}",cookie.getValue());
+
+		log.info(">>>> Refresh Token Cookie :: {}", cookie.getValue());
 
 		jwtUtil.revokeToken(cookie.getValue());
 
