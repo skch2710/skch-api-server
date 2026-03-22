@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -31,6 +30,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,10 +39,10 @@ import com.opencsv.CSVReader;
 import com.skch.skch_api_server.common.Constant;
 import com.skch.skch_api_server.dao.UploadFileDAO;
 import com.skch.skch_api_server.dao.UsersDAO;
+import com.skch.skch_api_server.dto.ChangePasswordDto;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.Navigation;
 import com.skch.skch_api_server.dto.ProfileDto;
-import com.skch.skch_api_server.dto.ProfileRequest;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.SubNavigarion;
 import com.skch.skch_api_server.dto.UserDTO;
@@ -79,6 +79,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private UploadFileDAO uploadFileDAO;
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 	
 	@Value("${app.batch-size}")
 	private int batchSize;
@@ -586,6 +589,41 @@ public class UserServiceImpl implements UserService {
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return navMap.values();
+	}
+
+	/**
+	 * Change Password
+	 */
+	@Override
+	public Result changePassword(ChangePasswordDto dto) {
+		log.info(">>> String Change Password Request");
+		Result result = new Result();
+		try {
+			String emailId = JwtUtil.getUserName();
+			Users user = usersDAO.findByEmailIdIgnoreCase(emailId);
+			if (user != null 
+					&& passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordSalt())
+					&& !dto.getCurrentPassword().equals(dto.getNewPassword())
+					&& Utility.isValidPassword(dto.getNewPassword())) {
+
+				user.setPasswordSalt(passwordEncoder.encode(dto.getNewPassword()));
+				user.setModifiedDate(LocalDateTime.now());
+				user.setModifiedById(user.getUserId());
+				
+				usersDAO.save(user);
+				
+				result.setStatusCode(HttpStatus.OK.value());
+				result.setSuccessMessage("Password Changed Successfully.");
+			} else {
+				result.setErrorMessage("The provided password does not comply with the password policy.");
+				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			}
+
+		} catch (Exception e) {
+			log.error("Error in getNavigations :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
 	}
 
 }

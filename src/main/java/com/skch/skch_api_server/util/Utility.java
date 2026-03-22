@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -42,6 +43,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Utility {
+	
+	private static final String PASSWORD_REGEX = 
+			"^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#])[A-Za-z\\d@$!%*?&^#]{10,}$";
+
+	public static boolean isValidPassword(String password) {
+		if (password == null || password.isBlank()) {
+			return false;
+		}
+		return Pattern.matches(PASSWORD_REGEX, password);
+	}
 	
 	public static void logTimeTaken(long milliSec) {
 		log.info("Total Time taken in MilliSec {} , Sec {} and Min {}",milliSec,
@@ -313,7 +324,7 @@ public class Utility {
 	}
 	
 	
-	public static void main(String[] args) {
+//	public static void main(String[] args) {
 		
 //		JsonTest test = new JsonTest();
 //		test.setEmailId("");
@@ -342,6 +353,6 @@ public class Utility {
 //       Map<String, String> validate = ValidationUtils.validate(dto);
 //       System.out.println(validate);
 		
-	}
+//	}
 	
 }

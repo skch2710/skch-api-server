@@ -92,12 +92,13 @@ public class LoginServiceImpl implements LoginService {
 			Users user = userDAO.findByEmailIdIgnoreCase(request.getEmailId().toLowerCase());
 
 			if (user == null) {
-				result.setErrorMessage("Invalid Email Address or Not Registered.");
+				result.setErrorMessage("Invalid credentials you entered.");
 				result.setStatusCode(HttpStatus.BAD_REQUEST.value());
 			} else {
 				if (!bCryptPasswordEncoder.matches(request.getPassword(), user.getPasswordSalt())) {
-					result.setErrorMessage("Invalid password you entered.");
+					result.setErrorMessage("Invalid credentials you entered.");
 					result.setStatusCode(HttpStatus.BAD_REQUEST.value());
+					return result;
 				} else {
 					loginResponse.setIsOtpEnable(isOtpEnable);
 					if (isOtpEnable) {

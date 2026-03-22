@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skch_api_server.dto.ChangePasswordDto;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.UserDTO;
@@ -155,4 +156,17 @@ public class UserController {
 		
 		return ResponseEntity.ok("Mail Sent.");
 	}
+	
+	/**
+	 * Change User Password
+	 * @param dto
+	 * @return result
+	 */
+	@PostMapping("/change-password")
+	@PreAuthorize("hasAnyAuthority('User-R')")
+	public ResponseEntity<?> changePassword(@RequestBody ChangePasswordDto dto) {
+		Result result = userService.changePassword(dto);
+		return ResponseEntity.ok(result);
+	}
+	
 }

@@ -73,6 +73,10 @@ public class LoginController {
 			HttpServletRequest servletRequest) {
 
 		Result result = loginService.login(request);
+		
+		if(result.getStatusCode() != HttpStatus.OK.value()) {
+			return ResponseEntity.ok(result);
+		}
 		LoginResponse responce = (LoginResponse) result.getData();
 
 		redisService.saveSession(request.getEmailId(), responce.getJwtDTO().getAccess_token(),

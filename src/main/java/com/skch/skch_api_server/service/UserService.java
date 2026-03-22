@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.skch.skch_api_server.dto.ChangePasswordDto;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.Result;
 import com.skch.skch_api_server.dto.UserDTO;
@@ -19,5 +20,7 @@ public interface UserService {
 	Result uploadUserFile(MultipartFile file,FileUploadDTO dto);
 	
 	Result profile();
+
+	Result changePassword(ChangePasswordDto dto);
 
 }
