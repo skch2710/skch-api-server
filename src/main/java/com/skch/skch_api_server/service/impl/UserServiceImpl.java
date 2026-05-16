@@ -36,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.github.pjfanning.xlsx.StreamingReader;
 import com.opencsv.CSVReader;
+import com.skch.skch_api_server.cache.DataCacheService;
 import com.skch.skch_api_server.common.Constant;
 import com.skch.skch_api_server.dao.UploadFileDAO;
 import com.skch.skch_api_server.dao.UsersDAO;
@@ -85,6 +86,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Value("${app.batch-size}")
 	private int batchSize;
+	
+	@Autowired
+	private DataCacheService dataCacheService;
 
 	/**
 	 * User Save Or Update Method
@@ -621,6 +625,25 @@ public class UserServiceImpl implements UserService {
 
 		} catch (Exception e) {
 			log.error("Error in getNavigations :: ", e);
+			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return result;
+	}
+
+	/**
+	 * Get User Roles
+	 */
+	@Override
+	public Result getUserRoles() {
+		log.info(">>> Starting Get User Roles Request");
+		Result result = new Result();
+		try {
+			List<Roles> allRoles = dataCacheService.getAllRoles();			
+			result.setData(allRoles);
+			result.setStatusCode(HttpStatus.OK.value());
+			result.setSuccessMessage("User Roles Fetched Successfully.");
+		} catch (Exception e) {
+			log.error("Error in getUserRoles :: ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return result;

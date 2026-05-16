@@ -49,12 +49,12 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
-	
+
 	@GetMapping("/profile")
 	@PreAuthorize("hasAnyAuthority('User-R')")
 //	@PreAuthorize("hasAuthority('User-R') and @jwtUtil.checkProfileMatch(#p0.getEmailId())")
-	@Operation(summary="Get User Profile",description = "Return the User Profile based on EmailId")
-	public ResponseEntity<?> profile(HttpServletRequest request,HttpServletResponse response) {
+	@Operation(summary = "Get User Profile", description = "Return the User Profile based on EmailId")
+	public ResponseEntity<?> profile(HttpServletRequest request, HttpServletResponse response) {
 //		if(!JwtUtil.checkProfileMatch(request.getEmailId())) {
 //			throw new CustomException("Access Denied to fetch other user profile",HttpStatus.FORBIDDEN);
 //		}
@@ -62,7 +62,7 @@ public class UserController {
 //		System.out.println(ssoInit != null ? ssoInit.getValue() : "SSO_INIT cookie not found");
 
 		Result result = userService.profile();
-		log.info("Profile Result :: {}",result);
+		log.info("Profile Result :: {}", result);
 		return ResponseEntity.ok(result);
 	}
 
@@ -72,7 +72,7 @@ public class UserController {
 //	@PreAuthorize("hasAuthority(#object.accesId + '-User-R') or hasAuthority('User-R')")
 //	@PreAuthorize("hasAuthority(#accesId[0] + '-User-R') or hasAuthority('User-R')")
 //	@PreAuthorize("hasAuthority(#object.accesId[0] + '-User-R') or hasAuthority('User-R')")
-	@Operation(summary="Save or Update User",description = "Save or Update the User")
+	@Operation(summary = "Save or Update User", description = "Save or Update the User")
 	public ResponseEntity<?> saveOrUpdateUser(@RequestBody UserDTO dto) {
 		Result result = userService.saveOrUpdateUser(dto);
 		return ResponseEntity.ok(result);
@@ -81,24 +81,25 @@ public class UserController {
 	@GetMapping("/nav/{userId}")
 //	@PreAuthorize("hasAnyAuthority('Super User','Admin')")
 	@PreAuthorize("hasAnyAuthority('User-R')")
-	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
-	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId){
+	@Operation(summary = "get Navigations", description = "Return the Navigations based on User")
+	public ResponseEntity<?> getNav(@PathVariable("userId") Long userId) {
 		Result result = userService.navigations(userId);
 		System.out.println(JwtUtil.getUserId());
-		log.info("Result :: {}",result);
+		log.info("Result :: {}", result);
 		return ResponseEntity.ok(result);
 	}
-	
+
 	@GetMapping("/nav-two")
-	@Operation(summary="get Navigations",description = "Return the Navigations based on User")
-	public ResponseEntity<?> getNavTwo(@RequestParam("userId") String userId){
+	@Operation(summary = "get Navigations", description = "Return the Navigations based on User")
+	public ResponseEntity<?> getNavTwo(@RequestParam("userId") String userId) {
 //		Result result = userService.navigations(userId);
 		System.out.println(JwtUtil.getUserId());
 		return ResponseEntity.ok("Access");
 	}
-	
+
 	/**
 	 * Get the User Bulk Upload Template
+	 * 
 	 * @return
 	 */
 	@GetMapping("/user-template")
@@ -118,24 +119,24 @@ public class UserController {
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	/**
-	* This Method is validate the file and Upload
-	*
-	* @param file
-	* @param dto
-	* @return result
-	*/
+	 * This Method is validate the file and Upload
+	 *
+	 * @param file
+	 * @param dto
+	 * @return result
+	 */
 	@PostMapping(path = "/upload-user-file", consumes = "multipart/form-data")
 	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
 			@RequestPart(required = false, name = "dto") FileUploadDTO dto) {
-		Result result = userService.uploadUserFile(file,dto);
+		Result result = userService.uploadUserFile(file, dto);
 		return ResponseEntity.ok(result);
 	}
-	
+
 	@Autowired
 	private EmailSender emailSender;
-	
+
 	@GetMapping("/user-mail")
 	public ResponseEntity<?> getUserMail() throws UnsupportedEncodingException {
 
@@ -147,18 +148,19 @@ public class UserController {
 		String uuid = UUID.randomUUID().toString().split("-")[0];
 		Long timeMilli = System.currentTimeMillis();
 		System.out.println(uuid);
-		
+
 		String link = "https://localhost:8080/createPassword?uuid=" + AESUtils.encrypt(uuid + "#" + timeMilli);
 //        String encodedLink = URLEncoder.encode(link, StandardCharsets.UTF_8.name());
 		mapModel.put("createPasswordLink", link);
 
 		emailSender.sendEmail(mapModel);
-		
+
 		return ResponseEntity.ok("Mail Sent.");
 	}
-	
+
 	/**
 	 * Change User Password
+	 * 
 	 * @param dto
 	 * @return result
 	 */
@@ -168,5 +170,17 @@ public class UserController {
 		Result result = userService.changePassword(dto);
 		return ResponseEntity.ok(result);
 	}
-	
+
+	/**
+	 * Get User Roles
+	 * 
+	 * @return result
+	 */
+	@GetMapping("/roles")
+	@PreAuthorize("hasAnyAuthority('User-R')")
+	@Operation(summary = "Get User Roles", description = "Return the User Roles")
+	public ResponseEntity<?> getUserRoles() {
+		Result result = userService.getUserRoles();
+		return ResponseEntity.ok(result);
+	}
 }

@@ -22,5 +22,7 @@ public interface UserService {
 	Result profile();
 
 	Result changePassword(ChangePasswordDto dto);
+	
+	Result getUserRoles();
 
 }
