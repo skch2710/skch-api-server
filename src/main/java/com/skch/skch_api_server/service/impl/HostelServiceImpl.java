@@ -230,7 +230,7 @@ public class HostelServiceImpl implements HostelService {
 	 */
 	@Override
 	public Result getHostellers(HostellerSearch search) {
-		log.info(">>>>>>>>Starting at getHostellers");
+		log.info(">>>>>>>>Starting at getHostellers from User-uid {} ",JwtUtil.getUserId());
 		long intialTime = System.currentTimeMillis();
 		Result result = new Result();
 		try {

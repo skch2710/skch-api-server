@@ -3,6 +3,7 @@ package com.skch.skch_api_server.util;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -77,16 +78,12 @@ public class JwtUtil {
 	}
 	
 	public static Long getUserId() {
-		Long result = 1L;
+		Long result = 0L;
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-			String auth = authentication.getAuthorities().stream()
-					.map(GrantedAuthority::getAuthority) // Extract authority as string
-					.filter(authority -> authority != null && authority.startsWith("USER_ID"))
-					.findFirst().orElse("");
-
-			result = Long.valueOf(AESUtils.decrypt(Utility.check(auth) ? auth.split(":")[1].trim() : "1L"));
+			Jwt jwt = (Jwt) authentication.getPrincipal();
+			String uid = AESUtils.decrypt(jwt.getClaimAsString("uid"));
+			result = Long.valueOf(ObjectUtils.isNotEmpty(uid) ? uid : "0");
 		} catch (Exception e) {
 			log.error("Error in getUserId...:: ",e);
 		}
