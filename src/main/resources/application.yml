@@ -37,8 +37,8 @@ spring:
 
   mail:
     host: smtp.office365.com #smtp.gmail.com
-    username: skch@outlook.com
-    password: mypass
+    username: temp2710@outlook.com
+    password: ldnmdrzvollvbsav
     protocol: smtp
     port: 587
     properties:
@@ -59,11 +59,13 @@ spring:
     type: redis
   data:
     redis:
-      host: localhost # use "redis" if Spring Boot is dockerized
-      port: 6379
-      password: Redis@123
+      host: ${REDIS_HOST} #localhost # use "redis" if Spring Boot is dockerized
+      port: ${REDIS_PORT} #6379
+      password: ${REDIS_PASSWORD} #Redis@123
       timeout: 2000
-      
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED} #false
+
 app:
   timezone: "Asia/Kolkata"
   auth-cred: auth_code_client:Sathish@123

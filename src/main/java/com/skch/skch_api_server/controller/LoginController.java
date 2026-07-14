@@ -159,6 +159,9 @@ public class LoginController {
 
 		// 4. Exchange authorization code for tokens
 		JwtDTO dto = jwtUtil.getAuthCodeTokens(code, codeVerifier);
+		
+		redisService.saveSession(jwtUtil.getUserEmail(dto.getAccess_token()) , dto.getAccess_token(),
+				Duration.ofMinutes(tokenExpiry));
 
 		// 5. Store tokens in HttpOnly cookies
 		cacheUtil.setCache(response, dto);
