@@ -11,6 +11,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -82,11 +83,13 @@ public class DateUtility {
 		return LocalDate.parse(date,formatter);
 	}
 	
+	//Full Date Time Format
 	public static LocalDateTime stringToDateTime(String date,String format) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
 		return LocalDateTime.parse(date,formatter);
 	}
 	
+	//Only Date Format
 	public static LocalDateTime stringToDateTimes(String date, String format) {
 		if(date != null && !date.isBlank()) {
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
@@ -179,6 +182,59 @@ public class DateUtility {
 		System.out.println(time.isBefore(LocalTime.of(17, 01)));
 		
 		System.out.println(LocalTime.of(17, 01));
+		
+		//Local Date Methods
+		
+		//Starting of Day in Month
+		LocalDate date = LocalDate.now();
+		LocalDate firstDayOfMonth = date.withDayOfMonth(1);
+		System.out.println(firstDayOfMonth);
+		
+		//Ending of Day in Month
+		LocalDate lastDayOfMonth = date.withDayOfMonth(date.lengthOfMonth());
+		System.out.println(lastDayOfMonth);
+		
+		//Using TemporalAdjusters to get the first and last day of the month
+		System.out.println(date.with(TemporalAdjusters.firstDayOfMonth()));
+		System.out.println(date.with(TemporalAdjusters.lastDayOfMonth()));
+		
+		//Length of Month
+		int lengthOfMonth = date.lengthOfMonth();
+		System.out.println(lengthOfMonth);
+		
+		//Current Day of Month
+		int currentDayOfMonth = date.getDayOfMonth();
+		System.out.println(currentDayOfMonth);
+		
+		//Current Day of Week
+		DayOfWeek currentDayOfWeek = date.getDayOfWeek();
+		System.out.println(currentDayOfWeek);
+		System.out.println(currentDayOfWeek.getValue()); // 1 (Monday) to 7 (Sunday)
+		System.out.println(currentDayOfWeek == DayOfWeek.SATURDAY); // true if it's Sunday
+		
+		//Current Week of Year
+		int currentWeekOfYear = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+		System.out.println(currentWeekOfYear);
+		
+		//First Sunday of the Month
+		LocalDate firstSundayOfMonth = date.with(TemporalAdjusters.firstInMonth(DayOfWeek.SUNDAY));
+		System.out.println(firstSundayOfMonth);
+		
+		//Last Sunday of the Month
+		LocalDate lastSundayOfMonth = date.with(TemporalAdjusters.lastInMonth(DayOfWeek.SUNDAY));
+		System.out.println(lastSundayOfMonth);
+		
+		//Last Working Day of the Month (Assuming working days are Monday to Friday)
+		LocalDate lastWorkingDay = date.with(TemporalAdjusters.lastDayOfMonth());
+
+		if (lastWorkingDay.getDayOfWeek() == DayOfWeek.SATURDAY) {
+		    lastWorkingDay = lastWorkingDay.minusDays(1);
+		} else if (lastWorkingDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+		    lastWorkingDay = lastWorkingDay.minusDays(2);
+		}
+
+		System.out.println(lastWorkingDay);
+		
 		
 	}
 	
