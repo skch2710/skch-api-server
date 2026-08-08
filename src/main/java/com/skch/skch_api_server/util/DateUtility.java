@@ -6,15 +6,15 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
-import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -165,7 +165,7 @@ public class DateUtility {
 		
 		long date = LocalDate.now().atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli();
 		
-		log.info("Long Date in UTC :: {}",date);*/
+		log.info("Long Date in UTC :: {}",date);
 		
 		LocalDateTime dateTime = LocalDateTime.now();
 		
@@ -235,7 +235,46 @@ public class DateUtility {
 
 		System.out.println(lastWorkingDay);
 		
+		*/
 		
+		   LocalDate date = LocalDate.of(2026, 8, 10);
+	       System.out.println(date.getMonth() + " -- " + date.getYear());
+
+	       System.out.println("Week Map :: " + getWeekMap(date));
+	       
+	       for (Map.Entry<String, Map<LocalDate, DayOfWeek>> entry : getWeekMap(date).entrySet()) {
+	           String session = entry.getKey();
+	           Map<LocalDate, DayOfWeek> week = entry.getValue();
+	           
+	           System.out.println(session + ":" + week);
+	       }
+	    
+	}
+	
+	public static Map<String, Map<LocalDate, DayOfWeek>> getWeekMap(LocalDate date) {
+		Map<String, Map<LocalDate, DayOfWeek>> weekMap = new LinkedHashMap<>();
+
+		LocalDate firstDay = date.withDayOfMonth(1);
+		LocalDate lastDay = date.withDayOfMonth(date.lengthOfMonth());
+
+		int[][] sessions = {{1, 7}, {8, 14}, {15, 21}, {22, lastDay.getDayOfMonth()}};
+
+		for (int session = 0; session < sessions.length; session++) {
+
+			int startDay = sessions[session][0];
+			int endDay = sessions[session][1];
+
+			Map<LocalDate, DayOfWeek> week = new LinkedHashMap<>();
+
+			for (int day = startDay; day <= endDay; day++) {
+				LocalDate currentDate = firstDay.withDayOfMonth(day);
+				week.put(currentDate, currentDate.getDayOfWeek());
+			}
+
+			weekMap.put("Session-" + (session + 1), week);
+		}
+
+		return weekMap;
 	}
 	
 	public static LocalDateTime toLocalDateTimeUtc(Long timeMilli) {
