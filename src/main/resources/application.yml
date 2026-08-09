@@ -32,13 +32,13 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8061
+          issuer-uri: ${OAUTH_SERVICE_ENDPOINT}
 #          jwk-set-uri: http://localhost:8060/.well-known/jwks.json
 
   mail:
-    host: smtp.office365.com #smtp.gmail.com
-    username: temp2710@outlook.com
-    password: ldnmdrzvollvbsav
+    host: ${SMTP_HOST}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
     protocol: smtp
     port: 587
     properties:
@@ -68,24 +68,24 @@ spring:
 
 app:
   timezone: "Asia/Kolkata"
-  auth-cred: auth_code_client:Sathish@123
-  url: http://localhost:8061/oauth2/token
+  auth-cred: ${OAUTH_CLIENT_ID}:${OAUTH_CLIENT_SECRET}
+  url: ${OAUTH_SERVICE_ENDPOINT}/oauth2/token
   passwordlink-expiry: 24
   otp-expiry: 5
   isOtpEnable: false
-  aes-key: U2F0aGlzaEt1bWFyQ2gyNw==
+  aes-key: ${AES_KEY}
   batch-size: 1000
   request-verify-token: SpringBootReactRequestDevelopment
   token-expiry: 20
 
 auth:
   server:
-    authorize-url: http://localhost:8061/oauth2/authorize
-    token-url: http://localhost:8061/oauth2/token
-    revoke-url: http://localhost:8061/oauth2/revoke
-  client-id: auth_code_client
-  client-secret: Sathish@123
-  redirect-uri: http://localhost:8062/authenticate/callback
+    authorize-url: ${OAUTH_SERVICE_ENDPOINT}/oauth2/authorize
+    token-url: ${OAUTH_SERVICE_ENDPOINT}/oauth2/token
+    revoke-url: ${OAUTH_SERVICE_ENDPOINT}/oauth2/revoke
+  client-id: ${OAUTH_CLIENT_ID}
+  client-secret: ${OAUTH_CLIENT_SECRET}
+  redirect-uri: http://localhost:8060/apiService/authenticate/callback
   scope: read
 
 cors:  
