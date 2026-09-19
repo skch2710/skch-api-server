@@ -421,7 +421,7 @@ public class SmartyServiceImpl implements SmartyService {
 	public Result getSmartyTemplate(String fileType) {
 		Result result = new Result();
 	    try (ByteArrayOutputStream bao = new ByteArrayOutputStream()) {
-	        if (fileType.equals("Excel")) {
+	        if (fileType.equalsIgnoreCase("Excel")) {
 	            try (Workbook workbook = new XSSFWorkbook()) {
 	                Sheet sheet = workbook.createSheet("Smarty_Template");
 	                Row header = sheet.createRow(0);

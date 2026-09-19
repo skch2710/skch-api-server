@@ -32,7 +32,7 @@ public class NppesApi {
 			
 			String url = NPPES_API_URL + npiNumber;
 //			String jsonData = RestHelper.getRetry(url, String.class);
-			String jsonData = RestClientHelper.getRetry(url, String.class);
+			String jsonData = RestClientHelper.get(url, String.class);
 			System.out.println(jsonData);
 			Gson gson = new Gson();
 			response = gson.fromJson(jsonData, NppesResponse.class);

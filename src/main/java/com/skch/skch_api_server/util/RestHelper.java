@@ -3,8 +3,6 @@ package com.skch.skch_api_server.util;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpEntity;
@@ -13,8 +11,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -29,30 +25,30 @@ public class RestHelper {
 //	ResultRest result = restGet(URL, accessToken, ResultRest.class);
 //	DTO dtoList = result.getData();
 	
-	public static RetryTemplate retryTemplate() {
-		Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
-		retryableExceptions.put(Exception.class, true);
-		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions);
-		return RetryTemplate.builder().customPolicy(retryPolicy).fixedBackoff(2000).build();
-	}
-	
-	public static <T> T getRetry(String url, Class<T> responseType) {
-		try {
-			return retryTemplate().execute(context -> {
-				try {
-					ResponseEntity<T> response = new RestTemplate().getForEntity(url,responseType);
-					return response.getBody();
-				} catch (Exception e) {
-					int count = context.getRetryCount() + 1;
-					log.error("Error in getRetry #{} attempt failed : {}", count, e.getMessage(), e);
-					throw e;
-				}
-			});
-		} catch (Exception e) {
-			log.error("Error in getRetry ", e);
-			return null;
-		}
-	}
+//	public static RetryTemplate retryTemplate() {
+//		Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
+//		retryableExceptions.put(Exception.class, true);
+//		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions);
+//		return RetryTemplate.builder().customPolicy(retryPolicy).fixedBackoff(2000).build();
+//	}
+//	
+//	public static <T> T getRetry(String url, Class<T> responseType) {
+//		try {
+//			return retryTemplate().execute(context -> {
+//				try {
+//					ResponseEntity<T> response = new RestTemplate().getForEntity(url,responseType);
+//					return response.getBody();
+//				} catch (Exception e) {
+//					int count = context.getRetryCount() + 1;
+//					log.error("Error in getRetry #{} attempt failed : {}", count, e.getMessage(), e);
+//					throw e;
+//				}
+//			});
+//		} catch (Exception e) {
+//			log.error("Error in getRetry ", e);
+//			return null;
+//		}
+//	}
 
 	public static <T> T restPost(String url, Object requestObject, String accessToken, Class<T> responseType) {
 		HttpHeaders headers = new HttpHeaders();

@@ -10,7 +10,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -61,8 +60,7 @@ public class TokenService {
 	}
 
 	public JwtDTO fetchToken() {
-		int attemptCount = RetrySynchronizationManager.getContext().getRetryCount() + 1;
-		log.info("Attempting #{} fetchToken", attemptCount);
+		log.info(">>>>>Attempting fetchToken");
 		try {
 			String encodedCredentials = Base64.getEncoder()
 					.encodeToString(CLIENT_CREDENTIALS.getBytes(StandardCharsets.UTF_8));
@@ -77,7 +75,7 @@ public class TokenService {
 			
 			return response.getBody();
 		} catch (Exception e) {
-			log.error("Error in fetchToken #{}", attemptCount, e);
+			log.error("Error in fetchToken : ", e);
 			throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

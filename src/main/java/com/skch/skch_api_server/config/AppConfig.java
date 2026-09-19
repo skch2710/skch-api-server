@@ -45,8 +45,8 @@ public class AppConfig {
 	}
 	
 	@Bean
-	public RestClient restClient(RestClient.Builder builder) {
-	    return builder.build();
+	RestClient restClient() {
+	    return RestClient.create();
 	}
 	
 	@Bean

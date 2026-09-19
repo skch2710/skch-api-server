@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,9 @@ import com.skch.skch_api_server.exception.CustomException;
 import com.skch.skch_api_server.service.SmartyService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Encoding;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -82,11 +86,16 @@ public class SmartyController {
 	* @param dto
 	* @return result
 	*/
-	@PostMapping(path = "/upload-smartys-file", consumes = "multipart/form-data")
-	public ResponseEntity<?> uploadFile(@RequestPart(required = true, name = "file") MultipartFile file,
-			@RequestPart(required = false, name = "dto") SmartyFileUploadDTO dto) {
-		Result result = smartyService.uploadSmartyFile(file,dto);
-		return ResponseEntity.ok(result);
-	}
+	@PostMapping(path = "/upload-smartys-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(summary = "Upload Smarty file", description = "Uploads a Smarty file and processes it.")
+		public ResponseEntity<?> uploadFile(@RequestPart(name = "file", required = true) MultipartFile file,
+				@io.swagger.v3.oas.annotations.parameters.RequestBody(
+						content = @Content(encoding = @Encoding(name = "dto", 
+						contentType = MediaType.APPLICATION_JSON_VALUE)))
+				@RequestPart(name = "dto", required = false) SmartyFileUploadDTO dto) {
+			log.info(">>>>>uploadFile Controller :: dto : {}", dto);
+			Result result = smartyService.uploadSmartyFile(file, dto);
+			return ResponseEntity.ok(result);
+		}
 
 }

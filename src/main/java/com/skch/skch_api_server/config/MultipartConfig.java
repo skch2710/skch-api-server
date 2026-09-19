@@ -1,50 +1,35 @@
-package com.skch.skch_api_server.config;
-
-import java.lang.reflect.Type;
-import java.util.List;
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import com.skch.skch_api_server.dto.FileUploadDTO;
-import com.skch.skch_api_server.dto.SmartyFileUploadDTO;
-
-@Configuration
-@EnableWebMvc
-public class MultipartConfig implements WebMvcConfigurer {
-
-	@Override
-	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-		converters.add(new Converter());
-		converters.add(new FileUploadConverter());
-		converters.add(new SmartyFileUploadConverter());
-	}
-}
-
-class Converter extends MappingJackson2HttpMessageConverter {
-
-	@Override
-	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
-		return type.getTypeName().equals(Object.class.getName());
-	}
-}
-
-class FileUploadConverter extends MappingJackson2HttpMessageConverter {
-
-	@Override
-	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
-		return type.getTypeName().equals(FileUploadDTO.class.getName());
-	}
-}
-
-class SmartyFileUploadConverter extends MappingJackson2HttpMessageConverter {
-
-	@Override
-	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
-		return type.getTypeName().equals(SmartyFileUploadDTO.class.getName());
-	}
-}
+//package com.skch.skch_api_server.config;
+//
+//import java.util.List;
+//
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.http.converter.HttpMessageConverter;
+//import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
+//import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+//
+//import com.skch.skch_api_server.dto.FileUploadDTO;
+//import com.skch.skch_api_server.dto.SmartyFileUploadDTO;
+//
+//@Configuration
+//public class MultipartConfig implements WebMvcConfigurer {
+//
+//	@Override
+//	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+//		converters.add(new FileUploadConverter());
+//		converters.add(new SmartyFileUploadConverter());
+//	}
+//}
+//
+//class FileUploadConverter extends JacksonJsonHttpMessageConverter {
+//	@Override
+//	protected boolean supports(Class<?> clazz) {
+//		return FileUploadDTO.class.equals(clazz);
+//	}
+//}
+//
+//class SmartyFileUploadConverter extends JacksonJsonHttpMessageConverter {
+//	@Override
+//	protected boolean supports(Class<?> clazz) {
+//		return SmartyFileUploadDTO.class.equals(clazz);
+//	}
+//}
