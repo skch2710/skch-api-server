@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import com.skch.skch_api_server.dao.HostellerDAO;
 import com.skch.skch_api_server.dto.FileUploadDTO;
 import com.skch.skch_api_server.dto.HostellerDTO;
 import com.skch.skch_api_server.dto.HostellerInactive;
+import com.skch.skch_api_server.dto.HostellerInactiveGroup;
 import com.skch.skch_api_server.dto.HostellerSearch;
 import com.skch.skch_api_server.dto.JsonTest;
 import com.skch.skch_api_server.dto.PaymentHistoryDTO;
@@ -32,6 +34,7 @@ import com.skch.skch_api_server.util.Utility;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -47,7 +50,7 @@ public class HostelController {
 	@PostMapping("/save-update-hosteller")
 //	@PreAuthorize("hasAnyAuthority('Super User')")
 	@PreAuthorize("hasAnyAuthority('Hostellers-W')")
-	public ResponseEntity<?> saveUpdateHosteller(@RequestBody HostellerDTO dto) {
+	public ResponseEntity<?> saveUpdateHosteller(@RequestBody @Valid HostellerDTO dto) {
 		Result result = hostelService.saveOrUpdateHosteller(dto);
 		return ResponseEntity.ok(result);
 	}
@@ -142,7 +145,8 @@ public class HostelController {
 	@PostMapping("/inactive-hosteller")
 	@PreAuthorize("hasAnyAuthority('Hostellers-X')")
 	@Operation(summary = "Inactive Hosteller", description = "Inactive Hosteller")
-	public ResponseEntity<?> inactiveHosteller(@RequestBody HostellerInactive dto) {
+	public ResponseEntity<?> inactiveHosteller(@Validated(HostellerInactiveGroup.class)
+			@RequestBody HostellerInactive dto) {
 		Result result = hostelService.inactiveHosteller(dto);
 		return ResponseEntity.ok(result);
 	}
